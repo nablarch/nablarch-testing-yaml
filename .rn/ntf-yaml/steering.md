@@ -1,33 +1,142 @@
 # Goal
 
-NTF（Nablarch Testing Framework）にYAML形式のテストデータサポートを追加する。
-詳細な作業指示は後で渡される予定のため、現時点での情報を元に作成しており、指示受領後に更新する。
+nablarch-testing の YAML 読み込み機構（src/main 12件）とその単体テスト（src/test 52件）を
+nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の状態にする。
+実装は一切変更せず、ファイルの物理コピー（パス変更）と package/import の機械的調整、
+および pom 設定のみを行う。
 
 # Acceptance criteria
 
-- YAML形式のテストデータファイルを読み込んでテストに利用できる
-- 既存のExcel形式のテストデータと同等の機能を提供する
-- 既存のテストが引き続きパスする
+- `mvn test` 全テスト PASS（yaml リポジトリ単体で緑）
+- 全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）
+- 本体（nablarch-testing）に一切書き込みをしていない
+- push 済み
 
 # Assumptions
 
-- NTFはnablarch-testingリポジトリをベースにしている
-- YAML対応はExcelの代替入力フォーマットとして追加される
-- 詳細な作業指示が後で提供される（現時点の内容は暫定）
+- nablarch-testing と nablarch-testing-yaml は同じ親ディレクトリに clone 済み（`../nablarch-testing`）
+- 本体は `convert-testdata-excel-to-text` ブランチのまま（書き込み禁止・参照のみ）
+- 本体テストクラスを extends する `*YamlTest` や `YamlModeTestBase` はこのリポジトリに含めない（integration 行き）
+- コンパイル・テストが通らず実装変更が要ると判断したら止めてユーザーに確認する
 
 # Rules
 
 - 1 task = 1 commit
-- Javaのコーディング規約に従う
-- テストはJUnit形式で記述する
+- 実装の変更は一切しない（物理コピー・package/import 機械的調整・pom 設定のみ許可）
+- 本体（nablarch-testing）には書き込まない
+- 変更が必要と判断したら **止めてユーザーに確認**（テスト PASS のために実装をいじるのは禁止）
 
 # Tasks
 
-<!-- タスクは作業指示受領後に追加する -->
+### #1: pom.xml の作成
+
+**Purpose**: yaml リポジトリのビルドが通るよう pom.xml を作成する
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] 本体 pom.xml を参照し、親 POM・groupId・依存（nablarch-testing compile、snakeyaml-engine、JUnit）を設定した pom.xml を作成する
+- [ ] `mvn validate`（またはコンパイルのみ）でパース・設定エラーがないことを確認する
+- [ ] self-check (OK/NG per completion criterion, record in checks/task-01.md)
+- [ ] QA expert review (subagent)
+- [ ] user review
+
+**Completion criteria**:
+
+- pom.xml が作成されており `mvn validate` がエラーなく通る
+- 親 POM に `com.nablarch:nablarch-parent` を指定している
+- compile 依存に `com.nablarch.framework:nablarch-testing` が含まれている
+- compile 依存に `org.snakeyaml:snakeyaml-engine:3.0.1` が含まれている
+- テスト依存に JUnit が含まれている
+
+---
+
+### #2: src/main ファイルのコピー配置（12件）
+
+**Purpose**: 本体ブランチの src/main 対象 12 件を yaml リポジトリの同一パッケージパスへコピーし、package/import を機械的に調整する
+
+**Prerequisites**: #1
+
+**Steps**:
+
+- [ ] A. src/main（java 11件 + schema 1件）を対応パスへコピー
+  - `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/StubDbInfo.java`
+  - `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/InterpreterResolver.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/YamlFileBuilder.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/YamlLoader.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/YamlMessageBuilder.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java`
+  - `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java`
+  - `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json`
+- [ ] package/import の機械的調整（必要な場合のみ）
+- [ ] `mvn compile` でコンパイルエラーがないことを確認
+- [ ] 差分チェック: 全ファイルを本体現ブランチと diff し package/import 以外の差分がないことを確認
+- [ ] self-check (OK/NG per completion criterion, record in checks/task-02.md)
+- [ ] QA expert review (subagent)
+- [ ] language expert review (subagent)
+- [ ] software-engineering expert review (subagent)
+- [ ] user review
+
+**Completion criteria**:
+
+- 12 件すべてが `src/main` の対応パスに配置されている
+- `mvn compile` がエラーなく通る
+- 全ファイルが本体現ブランチと package/import を除き完全一致
+
+---
+
+### #3: src/test ファイルのコピー配置（52件）と mvn test 全 PASS
+
+**Purpose**: 単体テスト（java 9件）とテストデータ（43件）を yaml リポジトリへコピー配置し、`mvn test` 全 PASS を確認する
+
+**Prerequisites**: #2
+
+**Steps**:
+
+- [ ] B. src/test java（9件）を対応パスへコピー
+  - `src/test/java/nablarch/test/core/file/TestCoreFileAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java`
+  - `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest.java`
+  - `src/test/java/nablarch/test/core/reader/yaml/YamlLoaderTest.java`
+  - `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest.java`
+  - `src/test/java/nablarch/test/core/reader/yaml/YamlSectionTest.java`
+  - `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest.java`
+- [ ] C. テストデータ（43件）を対応パスへコピー（テストクラスと同じ相対パスを維持）
+  - `YamlTestCoreAdapterTest/*`（4件）
+  - `YamlTestDataParserTest/*`（16件）
+  - `YamlFileBuilderTest/*`（2件）
+  - `YamlLoaderTest/*`（13件）
+  - `YamlMessageBuilderTest/*`（3件）
+  - `YamlTableDataBuilderTest/*`（5件）
+- [ ] `mvn test` 実行・全 PASS 確認（落ちたら配置/pom で解決。実装変更は禁止）
+- [ ] 差分チェック: テスト java 9件を本体現ブランチと diff し package/import 以外の差分がないことを確認
+- [ ] self-check (OK/NG per completion criterion, record in checks/task-03.md)
+- [ ] QA expert review (subagent)
+- [ ] language expert review (subagent)
+- [ ] software-engineering expert review (subagent)
+- [ ] user review
+
+**Completion criteria**:
+
+- 単体テスト java 9件・テストデータ 43件すべてが `src/test` の対応パスに配置されている
+- `mvn test` 全テスト PASS
+- テスト java 9件が本体現ブランチと package/import を除き完全一致
 
 # Decisions
 
-<!-- 決定事項は作業進行に応じて追記する -->
+## D-1: ブランチを develop から切り develop へマージ
+- **Issue**: マージ先ブランチの選択
+- **Conclusion**: develop へ PR・マージ
+- **Rationale**: 作業指示に従い develop を統合先とする
+- **Evidence**: cc1-yaml-build.md「develop から作業ブランチを作成」
+- **Sources**: .rn/ntf-yaml/tasks/cc1-yaml-build.md
 
 # State
 
@@ -36,5 +145,5 @@ NTF（Nablarch Testing Framework）にYAML形式のテストデータサポー�
 - **Status**: not suspended
 - **Date**: YYYY-MM-DD
 - **Last completed**: none
-- **Next**: none (awaiting work instructions)
-- **Notes**: steering.md created, awaiting detailed work instructions before defining tasks
+- **Next**: #1 pom.xml の作成
+- **Notes**: steering.md 確定、PR 作成後にタスク実行開始
