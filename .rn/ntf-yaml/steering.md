@@ -158,9 +158,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] B. `mvn clean test` 実行・全 PASS 確認（落ちたら止めて報告）
 - [ ] C. 緑確認後 commit・push
 - [ ] D. `mvn install` 実行・成功確認
-- [ ] self-check (OK/NG per completion criterion, record in checks/task-04.md)
-- [ ] QA expert review (subagent)
-- [ ] user review
+- [x] self-check (OK/NG per completion criterion, record in checks/task-04.md)
+- [x] QA expert review (subagent)
+- [x] user review
 
 **Completion criteria**:
 
@@ -172,4 +172,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+- **Status**: paused
+- **Date**: 2026-06-22
+- **Last completed**: タスク #4 完了 — converter 専用 Adapter 群削除（src/main 4件・src/test 3件・データ4件）+ dangling Javadoc 4件修正。push 済み（commit: aace774）
+- **Next**: PR（feature/ntf-yaml → develop）のユーザーレビュー後マージ。マージ後は converter 側 CC が yaml:1.0.0-SNAPSHOT を参照して converter への移植作業を行う予定。
+- **Notes**: タスク #1〜#4 すべて完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。~/.m2 の jar は task #3 完了時の install で最新化済み（task #4 は削除のみのため jar の中身に差異なし。必要なら再 install 可）。次の作業が発生した場合は新しいタスクを steering.md に追記して /rn:hi で再開する。
