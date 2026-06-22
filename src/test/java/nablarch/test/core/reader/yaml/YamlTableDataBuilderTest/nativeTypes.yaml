@@ -1,0 +1,39 @@
+list_maps:
+  - id: nativeTypeTest
+    rows:
+      - STR_COL: "hello"
+        NULL_COL: null
+        BOOL_TRUE: true
+        BOOL_FALSE: false
+        INT_COL: 42
+        FLOAT_COL: 3.14
+
+  - id: interpreterTest
+    rows:
+      - QUOTED_NULL: "null"
+        SPACE_COL: " "
+        CR_COL: "\\r"
+
+  - id: dateTimeTest
+    rows:
+      - EXACT_COL: "${systemTime}"
+        PARTIAL_COL: "prefix_${systemTime}"
+
+  - id: binaryFileTest
+    rows:
+      - BIN_COL: "${binaryFile:YamlTableDataBuilderTest/test.bin}"
+
+  - id: charGenTest
+    rows:
+      - ALPHA_COL: "${半角英字,10}"
+        NUM_COL: "${半角数字,5}"
+
+  - id: quotationTest
+    rows:
+      - DQ_COL: "\""
+        UPDATE_COL: "${updateTime}"
+        SET_UP_TIME_COL: "${setUpTime}"
+
+  - id: singleQuoteNotationTest
+    rows:
+      - DQ_COL: '"'

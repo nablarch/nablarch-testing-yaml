@@ -1,0 +1,197 @@
+# getMessage / getMessageWithoutCache テスト用
+
+messages:
+  - id: req001
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+      resendFlag: "0"
+      resultCode: "0000"
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+  - id: sendSyncTestData/REQ001/message
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "REQ0000001"
+      userId: "pathUser01"
+      resendFlag: "0"
+      resultCode: "0000"
+    records:
+      - record_type: BODY
+        fields:
+          - name: PAYLOAD
+            type: 半角
+            length: 10
+        rows:
+          - ["PAYLOADDAT"]
+
+  # fw_header が空マップ（emptyRows001: FW ヘッダなし）
+  - id: emptyRows001
+    fw_header: {}
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+  # fw_header にリスト形式（誤記）- ClassCastException を引き起こす
+  - id: malformed001
+    fw_header:
+      - requestId: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
+  # fw_header に一部のキーのみ
+  - id: partialHeader001
+    fw_header:
+      requestId: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
+  # fw_header なし（BODY のみ）
+  - id: bodyOnly001
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
+expected_request_header_messages:
+  - id: req001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+          - name: userId
+            type: 半角
+            length: 10
+          - name: resendFlag
+            type: 半角
+            length: 1
+          - name: resultCode
+            type: 半角
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+
+expected_request_body_messages:
+  - id: req001
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+response_body_messages:
+  - id: resp001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: 半角
+            length: 4
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["0000", "RESULT_DAT"]
+
+  - group_id: grp1
+    id: sync001
+    directives:
+      text-encoding: UTF-8
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: 半角
+            length: 4
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["0000", "SYNC_DATA1"]
+
+  - group_id: grp2
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["NO_ID_DATA"]
+
+  # 全フィールド length なし（NPE 再現用）
+  - group_id: noLengthGrp
+    id: noLengthResp
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: BODY
+        fields:
+          - name: PAYLOAD
+            type: 半角
+        rows:
+          - ["TESTDATA"]
+
+  # 一部フィールドに length あり、一部なし（混在ケース）
+  - group_id: mixedLengthGrp
+    id: mixedLengthResp
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: BODY
+        fields:
+          - name: FIXED_FIELD
+            type: 半角
+            length: 5
+          - name: NO_LENGTH_FIELD
+            type: 半角
+        rows:
+          - ["ABCDE", "XYZ"]
+
+response_header_messages:
+  - group_id: grp1
+    id: resp001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+        rows:
+          - ["0000000001"]

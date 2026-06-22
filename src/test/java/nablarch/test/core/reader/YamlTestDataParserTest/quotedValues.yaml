@@ -1,0 +1,13 @@
+# #16: yamlInterpreters（QuotationTrimmerなし）でのクォート値処理テスト
+# YAML はパーサがダブルクォートを構文として処理するため、
+# QuotationTrimmer なしで正しく値が取得できることを確認する
+
+list_maps:
+  - id: quotedValueTest
+    rows:
+      - COL1: "hello"
+        COL2: "world"
+        COL3: ""
+      - COL1: "with space"
+        COL2: "123"
+        COL3: "true"

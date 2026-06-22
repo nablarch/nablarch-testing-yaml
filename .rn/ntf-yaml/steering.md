@@ -52,7 +52,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #2: src/main ファイルのコピー配置（12件）
+### ~~#2: src/main ファイルのコピー配置（12件）~~
 
 **Purpose**: 本体ブランチの src/main 対象 12 件を yaml リポジトリの同一パッケージパスへコピーし、package/import を機械的に調整する
 
