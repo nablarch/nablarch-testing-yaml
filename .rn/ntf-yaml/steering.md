@@ -36,11 +36,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] 本体 pom.xml を参照し、親 POM・groupId・依存（nablarch-testing compile、snakeyaml-engine、JUnit）を設定した pom.xml を作成する
-- [ ] `mvn validate`（またはコンパイルのみ）でパース・設定エラーがないことを確認する
-- [ ] self-check (OK/NG per completion criterion, record in checks/task-01.md)
-- [ ] QA expert review (subagent)
-- [ ] user review
+- [x] 本体 pom.xml を参照し、親 POM・groupId・依存（nablarch-testing compile、snakeyaml-engine、JUnit）を設定した pom.xml を作成する
+- [x] `mvn validate`（またはコンパイルのみ）でパース・設定エラーがないことを確認する
+- [x] self-check (OK/NG per completion criterion, record in checks/task-01.md)
+- [x] QA expert review (subagent)
+- [x] user review
 
 **Completion criteria**:
 
@@ -60,7 +60,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. src/main（java 11件 + schema 1件）を対応パスへコピー
+- [x] A. src/main（java 11件 + schema 1件）を対応パスへコピー
   - `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java`
   - `src/main/java/nablarch/test/core/reader/StubDbInfo.java`
   - `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java`
@@ -73,14 +73,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java`
   - `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java`
   - `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json`
-- [ ] package/import の機械的調整（必要な場合のみ）
-- [ ] `mvn compile` でコンパイルエラーがないことを確認
-- [ ] 差分チェック: 全ファイルを本体現ブランチと diff し package/import 以外の差分がないことを確認
-- [ ] self-check (OK/NG per completion criterion, record in checks/task-02.md)
-- [ ] QA expert review (subagent)
-- [ ] language expert review (subagent)
-- [ ] software-engineering expert review (subagent)
-- [ ] user review
+- [x] package/import の機械的調整（必要な場合のみ）
+- [x] `mvn compile` でコンパイルエラーがないことを確認
+- [x] 差分チェック: 全ファイルを本体現ブランチと diff し package/import 以外の差分がないことを確認
+- [x] self-check (OK/NG per completion criterion, record in checks/task-02.md)
+- [x] QA expert review (subagent)
+- [x] language expert review (subagent)
+- [x] software-engineering expert review (subagent)
+- [x] user review
 
 **Completion criteria**:
 
@@ -98,7 +98,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] B. src/test java（9件）を対応パスへコピー
+- [x] B. src/test java（9件）を対応パスへコピー
   - `src/test/java/nablarch/test/core/file/TestCoreFileAdapterTest.java`
   - `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java`
   - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java`
@@ -108,20 +108,20 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest.java`
   - `src/test/java/nablarch/test/core/reader/yaml/YamlSectionTest.java`
   - `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest.java`
-- [ ] C. テストデータ（43件）を対応パスへコピー（テストクラスと同じ相対パスを維持）
+- [x] C. テストデータ（43件）を対応パスへコピー（テストクラスと同じ相対パスを維持）
   - `YamlTestCoreAdapterTest/*`（4件）
   - `YamlTestDataParserTest/*`（16件）
   - `YamlFileBuilderTest/*`（2件）
   - `YamlLoaderTest/*`（13件）
   - `YamlMessageBuilderTest/*`（3件）
   - `YamlTableDataBuilderTest/*`（5件）
-- [ ] `mvn test` 実行・全 PASS 確認（落ちたら配置/pom で解決。実装変更は禁止）
-- [ ] 差分チェック: テスト java 9件を本体現ブランチと diff し package/import 以外の差分がないことを確認
-- [ ] self-check (OK/NG per completion criterion, record in checks/task-03.md)
-- [ ] QA expert review (subagent)
-- [ ] language expert review (subagent)
-- [ ] software-engineering expert review (subagent)
-- [ ] user review
+- [x] `mvn test` 実行・全 PASS 確認（落ちたら配置/pom で解決。実装変更は禁止）
+- [x] 差分チェック: テスト java 9件を本体現ブランチと diff し package/import 以外の差分がないことを確認
+- [x] self-check (OK/NG per completion criterion, record in checks/task-03.md)
+- [x] QA expert review (subagent)
+- [x] language expert review (subagent)
+- [x] software-engineering expert review (subagent)
+- [x] user review
 
 **Completion criteria**:
 
