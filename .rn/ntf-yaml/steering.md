@@ -144,6 +144,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-22
-- **Last completed**: #3 src/test ファイルのコピー配置（52件）と mvn test 全 PASS
-- **Next**: すべてのタスク完了 → Acceptance criteria の確認
-- **Notes**: タスク #1〜#3 すべて完了・push済み。PR #1（feature/ntf-yaml → develop）に全コミットが乗っている。ユーザーが PR をレビュー中。次は steering.md の Acceptance criteria（mvn test 全 PASS・全移動ファイル実装無改変・本体への書き込みなし・push済み）を確認して完了宣言するか、ユーザーのフィードバックに応じて対処する。
+- **Last completed**: mvn clean install（nablarch-testing-yaml:1.0.0-SNAPSHOT を ~/.m2 に install）
+- **Next**: 次工程（converter CC）の作業を待つ、または PR のマージ
+- **Notes**: タスク #1〜#3 完了・push済み。PR #1（feature/ntf-yaml → develop）はユーザーレビュー中。`mvn clean install -Dmaven.javadoc.skip=true` BUILD SUCCESS（JAVA_HOME 未設定のため javadoc skip、テスト 184件 PASS）。`~/.m2/repository/com/nablarch/framework/nablarch-testing-yaml/1.0.0-SNAPSHOT/` に jar 配置済み。converter から `com.nablarch.framework:nablarch-testing-yaml:1.0.0-SNAPSHOT` を参照可能な状態。
