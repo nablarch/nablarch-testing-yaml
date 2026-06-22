@@ -90,7 +90,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #3: src/test ファイルのコピー配置（52件）と mvn test 全 PASS
+### ~~#3: src/test ファイルのコピー配置（52件）と mvn test 全 PASS~~
 
 **Purpose**: 単体テスト（java 9件）とテストデータ（43件）を yaml リポジトリへコピー配置し、`mvn test` 全 PASS を確認する
 
@@ -141,3 +141,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 (written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
+- **Status**: paused
+- **Date**: 2026-06-22
+- **Last completed**: #3 src/test ファイルのコピー配置（52件）と mvn test 全 PASS
+- **Next**: すべてのタスク完了 → Acceptance criteria の確認
+- **Notes**: タスク #1〜#3 すべて完了・push済み。PR #1（feature/ntf-yaml → develop）に全コミットが乗っている。ユーザーが PR をレビュー中。次は steering.md の Acceptance criteria（mvn test 全 PASS・全移動ファイル実装無改変・本体への書き込みなし・push済み）を確認して完了宣言するか、ユーザーのフィードバックに応じて対処する。
