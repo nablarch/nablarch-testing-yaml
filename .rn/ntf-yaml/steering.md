@@ -141,9 +141,3 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 (written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
-- **Status**: paused
-- **Date**: 2026-06-22
-- **Last completed**: none（タスク未着手）
-- **Next**: #1 pom.xml の作成
-- **Notes**: steering.md・PR・ブランチ作成完了。PR#1（feature/ntf-yaml → develop）は https://github.com/nablarch/nablarch-testing-yaml/pull/1 。本体は /home/tie303177/work/nablarch/nablarch-testing ブランチ convert-testdata-excel-to-text にあり参照のみ。次の作業は本体 pom.xml を参照して yaml リポジトリの pom.xml を作成し mvn validate が通ることを確認する（タスク #1）。
