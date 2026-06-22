@@ -68,7 +68,7 @@ public final class YamlMessageBuilder {
      *
      * <p>
      * {@link #buildMessagePool} が {@link RequestTestingMessagePool} へ包む前の生の構成要素を返す。
-     * 変換ツール（{@link nablarch.test.core.reader.YamlTestCoreAdapter}）は本体 {@link MessagePool} の
+     * 変換ツールは本体 {@link MessagePool} の
      * {@code getSource()} が別パッケージから不可視なため、本メソッドで本文の {@link FixedLengthFile} を直接受け取る。
      * </p>
      *

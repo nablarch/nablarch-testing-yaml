@@ -138,12 +138,38 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Evidence**: cc1-yaml-build.md「develop から作業ブランチを作成」
 - **Sources**: .rn/ntf-yaml/tasks/cc1-yaml-build.md
 
+### #4: converter 専用 Adapter 群の削除
+
+**Purpose**: yaml リポジトリに混入していた converter 専用クラス（4件）とその随伴テスト（3件＋データ4件）を削除し、`mvn clean test` 全 PASS・`mvn install` 成功を確認する
+
+**Prerequisites**: #3
+
+**Steps**:
+
+- [ ] A. 以下のファイルを `git rm` で削除
+  - `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java`
+  - `src/main/java/nablarch/test/core/reader/StubDbInfo.java`
+  - `src/test/java/nablarch/test/core/file/TestCoreFileAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java`
+  - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest/`（配下4件）
+- [ ] B. `mvn clean test` 実行・全 PASS 確認（落ちたら止めて報告）
+- [ ] C. 緑確認後 commit・push
+- [ ] D. `mvn install` 実行・成功確認
+- [ ] self-check (OK/NG per completion criterion, record in checks/task-04.md)
+- [ ] QA expert review (subagent)
+- [ ] user review
+
+**Completion criteria**:
+
+- 削除対象 4件（src/main）＋テスト3件＋データ4件がリポジトリから消えている
+- `mvn clean test` 全テスト PASS
+- `mvn install` BUILD SUCCESS
+
+---
+
 # State
 
 (written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
-- **Status**: paused
-- **Date**: 2026-06-22
-- **Last completed**: mvn clean install（nablarch-testing-yaml:1.0.0-SNAPSHOT を ~/.m2 に install）
-- **Next**: 次工程（converter CC）の作業を待つ、または PR のマージ
-- **Notes**: タスク #1〜#3 完了・push済み。PR #1（feature/ntf-yaml → develop）はユーザーレビュー中。`mvn clean install -Dmaven.javadoc.skip=true` BUILD SUCCESS（JAVA_HOME 未設定のため javadoc skip、テスト 184件 PASS）。`~/.m2/repository/com/nablarch/framework/nablarch-testing-yaml/1.0.0-SNAPSHOT/` に jar 配置済み。converter から `com.nablarch.framework:nablarch-testing-yaml:1.0.0-SNAPSHOT` を参照可能な状態。

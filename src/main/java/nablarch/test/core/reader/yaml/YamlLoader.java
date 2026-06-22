@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * <p>
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダ（{@code Yaml*Builder}）・
- * {@link nablarch.test.core.reader.YamlTestDataParser}・{@link nablarch.test.core.reader.YamlTestCoreAdapter} から使用する。
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  *
  * <p>

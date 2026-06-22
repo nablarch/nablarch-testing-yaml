@@ -20,7 +20,7 @@ import nablarch.test.core.util.interpreter.TestDataInterpreter;
  * <ul>
  * <li>実行時（{@link nablarch.test.core.reader.YamlTestDataParser}）は {@link #withBinaryFile} を用い、
  *     設定済みインタープリタの先頭に basePath 付き {@link BinaryFileInterpreter} を積む。</li>
- * <li>変換ツールの読み込み（{@link nablarch.test.core.reader.YamlTestCoreAdapter}）は {@link #raw} を用い、
+ * <li>変換ツールの読み込みは {@link #raw} を用い、
  *     インタープリタを一切積まない＝IN 値を記法のまま（{@code ${binaryFile:...}} も未解決のまま）取り出す。</li>
  * </ul>
  *
