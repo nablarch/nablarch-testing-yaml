@@ -28,7 +28,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # Tasks
 
-### #1: pom.xml の作成
+### ~~#1: pom.xml の作成~~
 
 **Purpose**: yaml リポジトリのビルドが通るよう pom.xml を作成する
 

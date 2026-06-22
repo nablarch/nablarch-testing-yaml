@@ -34,12 +34,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.networknt</groupId>
-      <artifactId>json-schema-validator</artifactId>
-      <version>3.0.2</version>
-    </dependency>
-
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
