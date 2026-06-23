@@ -885,4 +885,105 @@ public class YamlMessageBuilderTest {
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
         assertThat("fw_header: マップなしの messages エントリは空 Map であること", fwHeader.isEmpty(), is(true));
     }
+
+    // ========================================================================
+    // buildSendSyncBodies: group_id 一致・不一致・null のテスト
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncBodies: group_id が一致するとき FixedLengthFile リストが返ること。
+     *
+     * <p>
+     * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
+     * When:  buildSendSyncBodies(yaml, "response_body_messages", "grp1", path) を呼ぶ<br>
+     * Then:  FixedLengthFile が 1 件返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncBodies_groupIdMatchReturnsFixedLengthFileList() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<FixedLengthFile> result = builder.buildSendSyncBodies(
+                yaml, "response_body_messages", "grp1", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat("group_id が一致するとき 1 件返ること", result.size(), is(1));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncBodies: group_id が不一致のとき空リストが返ること。
+     *
+     * <p>
+     * Given: response_body_messages に "grp1" のエントリが定義されている<br>
+     * When:  buildSendSyncBodies(yaml, "response_body_messages", "noSuchGroup", path) を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncBodies_groupIdMismatchReturnsEmptyList() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<FixedLengthFile> result = builder.buildSendSyncBodies(
+                yaml, "response_body_messages", "noSuchGroup", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat("group_id が不一致のとき空リストが返ること", result.isEmpty(), is(true));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncBodies: groupId に null を渡したとき空リストが返ること。
+     *
+     * <p>
+     * buildSendSyncBodies は rawGroupId の null チェック（{@code rawGroupId != null &&}）で比較前に
+     * 短絡評価するため、groupId=null でも NPE は発生せず全エントリがスキップされる。<br>
+     * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
+     * When:  buildSendSyncBodies(yaml, "response_body_messages", null, path) を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncBodies_nullGroupIdReturnsEmptyList() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: rawGroupId != null の短絡評価により全エントリがスキップされ空リストが返る
+        List<FixedLengthFile> result = builder.buildSendSyncBodies(
+                yaml, "response_body_messages", null, DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat("null groupId のとき空リストが返ること", result.isEmpty(), is(true));
+    }
+
+    // ========================================================================
+    // InterpreterResolver.raw(): resolve("any") が空リストを返すこと
+    // ========================================================================
+
+    /**
+     * [InterpreterResolver] raw(): resolve("any") が常に空リストを返すこと。
+     *
+     * <p>
+     * Given: InterpreterResolver.raw() で生成したリゾルバ<br>
+     * When:  resolver.resolve("anyPath") を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void interpreterResolverRaw_resolveReturnsEmptyList() {
+        // Given
+        InterpreterResolver resolver = InterpreterResolver.raw();
+
+        // When
+        List<nablarch.test.core.util.interpreter.TestDataInterpreter> result = resolver.resolve("anyPath");
+
+        // Then
+        assertNotNull(result);
+        assertThat("raw() の resolve は常に空リストを返すこと", result.isEmpty(), is(true));
+    }
 }

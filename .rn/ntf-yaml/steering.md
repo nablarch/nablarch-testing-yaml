@@ -206,7 +206,35 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!-- template: do not edit manually — managed by /rn -->
-- **Status**: active
-- **Last completed**: #4
-- **Next**: #5
+- **Status**: paused
+- **Date**: 2026-06-24
+- **Last completed**: #4（タスク #5 は WIP — カバレッジ不備が判明、修正中）
+- **Next**: タスク #5 の修正
+- **Notes**: |
+    カバレッジ計測方法: `mvn clean test` → `jacoco.exec` 生成 → `mvn jacoco:restore-instrumented-classes jacoco:report` → `target/site/jacoco/jacoco.csv` を確認。
+
+    タスク #5 で追加したテスト・変更の現状:
+    - A. buildSendSyncBodies テスト3件追加: group_id一致・不一致・null → OK（`buildSendSyncBodies` 自体のカバレッジは取れている）
+    - B. InterpreterResolver.raw() テスト追加 → OK（カバレッジ達成済み）
+    - C. YamlLoader 末尾"/"テスト: `load_trailingSlashBasePathLoadsCorrectly` を追加したが**誤り**
+      - `DIR = "src/test/java/.../yaml/"` は元々 `/` 終わりなので L51（true ブランチ）は既存テストで全部カバー済み
+      - L53（false ブランチ = スラッシュなし）が未カバー → テストを「スラッシュなし basePath」で書き直す必要あり
+    - D. YamlFileBuilder コメント追加 → OK（理由ありとして正しい）
+    - stripBrackets 未カバー問題:
+      - `stripBrackets` を呼ぶのは `buildSendSyncList`（L129）のみ。`buildSendSyncBodies` は呼ばない
+      - `buildSendSyncList` に `null` groupId テストと `"[grp1]"` 形式テストを追加すれば3分岐すべてカバー可能
+      - `buildSendSyncList` の既存テストは素の `"grp1"` のみ使用（`stripBrackets` の `[xxx]` → `xxx` 分岐が未通過）
+
+    残っている2件の未カバー（タスク #5 対象外・既存のギャップ）:
+    - `YamlSection.isMarker` L166: `column` が null のとき → `isMarker(null)` のテストを `YamlSectionTest` に追加
+    - `YamlTableDataBuilder.buildListMapRows` L159: `rawRow.isEmpty()` が true のケース → 空行（`{}`）を含む list_maps テストデータが必要
+
+    次の具体アクション（task-workflow の Execute フェーズ相当で実施）:
+    1. `YamlLoaderTest.load_trailingSlashBasePathLoadsCorrectly` を「スラッシュなし basePath（`DIR.replace("/", "")` 等）」で書き直す
+       - 正確には `DIR` の末尾スラッシュを除いたパスで `load` を呼び、L53 を踏むことを確認
+    2. `YamlMessageBuilderTest` に `buildSendSyncList` の `null` groupId テストと `"[grp1]"` 形式テストを追加
+       - `buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", DIR)` → `stripBrackets("[grp1]")` = `"grp1"` → grp1 エントリがヒットすること
+       - `buildSendSyncMessageList(yaml, "response_body_messages", null, DIR)` → null → 全スキップ → null が返ること
+    3. `YamlSectionTest` に `isMarker(null)` → false のテストを追加
+    4. `YamlTableDataBuilderTest` のテストデータに空行（`{}`）を含む list_maps エントリを追加
+    5. `mvn clean test` + JaCoCo レポートで全クラス 100% を確認してから reviews へ

@@ -179,6 +179,8 @@ public final class YamlFileBuilder {
 
             int rowNo = 1;
             for (Object rowObj : getList(record, FIELD_ROWS)) {
+                // SnakeYAML Engine では rows: の各要素は通常 List だが、外部入力（YAML ファイル）にマッピングや null が
+                // 混入した場合への防御的ガード。Java 言語仕様上この分岐は通常到達不能だが、堅牢性のために残す。
                 if (!(rowObj instanceof List)) {
                     continue;
                 }

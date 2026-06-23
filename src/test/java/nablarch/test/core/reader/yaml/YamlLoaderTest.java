@@ -263,6 +263,33 @@ public class YamlLoaderTest {
                 first == reloaded, is(false));
     }
 
+    // ========================================================================
+    // load: 末尾 "/" 付き basePath でも正常にロードできること
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: basePath に末尾 "/" が付いていても正常にロードできること。
+     *
+     * <p>
+     * buildFilePath の末尾 "/" 分岐: basePath が "/" で終わっている場合は余分な "/" を追加しない。<br>
+     * Given: 末尾 "/" 付きの basePath（DIR + "/"）<br>
+     * When:  load(DIR + "/", "YamlLoaderTest/simple") を呼ぶ<br>
+     * Then:  Map が返り、setup_tables キーが存在すること
+     * </p>
+     */
+    @Test
+    public void load_trailingSlashBasePathLoadsCorrectly() {
+        // Given: 末尾 "/" 付き basePath
+        String basePathWithSlash = DIR + "/";
+
+        // When
+        Map<String, Object> result = YamlLoader.load(basePathWithSlash, "YamlLoaderTest/simple");
+
+        // Then
+        assertThat(result, notNullValue());
+        assertTrue(result.containsKey("setup_tables"));
+    }
+
     /**
      * [YamlLoader] load: 最近アクセスしたエントリが LRU キャッシュから追い出されないこと（QA観点2-中）。
      *
