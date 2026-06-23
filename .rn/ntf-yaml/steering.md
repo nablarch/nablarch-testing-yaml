@@ -170,6 +170,51 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #5: カバレッジ未達箇所の対処（テスト追加 + コメント追加）
+
+**Purpose**: JaCoCo レポートで判明した未カバー箇所を NTF 仕様視点で分類し、テスト追加・コメント追加で解消する
+
+**Prerequisites**: #4
+
+**Steps**:
+
+- [ ] A. `YamlMessageBuilderTest` に `buildSendSyncBodies` のテストを追加（converter の仕様を満たすことを確認）
+  - group_id 一致時に FixedLengthFile リストが返ること
+  - group_id 不一致時に空リストが返ること
+  - `stripBrackets(null)` のブランチも自然にカバー
+- [ ] B. `InterpreterResolver` の `raw()` のテストを追加
+  - `raw().resolve("any")` が空リストを返すこと
+- [ ] C. `YamlLoaderTest` に末尾 "/" 付き basePath のテストを追加
+  - 末尾 "/" 付きパスでも正常にロードできること
+- [ ] D. `YamlFileBuilder.java` 182行付近に SnakeYAML Engine の仕様を説明するコメントを追加
+- [ ] E. `mvn clean test` 全 PASS 確認
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-05.md)
+- [ ] G. QA expert review (subagent)
+- [ ] H. language expert review (subagent)
+- [ ] I. software-engineering expert review (subagent)
+- [ ] J. user review
+
+**Completion criteria**:
+
+- `buildSendSyncBodies`（converter 仕様）がテストでカバーされている
+- `InterpreterResolver.raw()` がテストでカバーされている
+- `YamlLoader` の末尾 "/" 分岐がテストでカバーされている
+- `YamlFileBuilder` の `instanceof` ガードにコメントが追加されている
+- `mvn clean test` 全 PASS
+
+---
+
 # State
 
-<!-- replace this comment with status when suspending -->
+- **Status**: paused
+- **Date**: 2026-06-23
+- **Last completed**: カバレッジ未達箇所を NTF 仕様視点で分類完了。タスク #5 を steering.md に追加。
+- **Next**: タスク #5 — テスト追加（buildSendSyncBodies / InterpreterResolver.raw() / YamlLoader 末尾"/"）+ YamlFileBuilder コメント追加。
+- **Notes**: |
+    - JaCoCo を yaml リポジトリルートの jacoco.exec から生成: `mvn jacoco:report -Djacoco.dataFile=/home/tie303177/work/nablarch/nablarch-testing-yaml/jacoco.exec`
+    - 未カバー箇所の分類:
+      - ② NTF仕様内・テスト追加: `YamlMessageBuilder.buildSendSyncBodies`（163〜175行）、`InterpreterResolver.raw()`（55行）、`YamlLoader.buildFilePath` 末尾"/"分岐（50〜51行）
+      - ③ Java言語仕様上必要: `YamlFileBuilder` 182〜183行の `instanceof` ガード → コメント追加
+    - `buildSendSyncBodies` は converter の `YamlTestCoreAdapter` から呼ばれる公開API。yaml リポジトリが所有するので yaml 側でテストする。
+    - `InterpreterResolver.raw()` は converter の `YamlTestCoreAdapter` コンストラクタで `InterpreterResolver.raw()` として使用される。
+    - テストデータ YAML は既存テストの形式を踏襲して作成する（`src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/` 配下）。
