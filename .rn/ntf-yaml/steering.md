@@ -146,7 +146,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 以下のファイルを `git rm` で削除
+- [x] A. 以下のファイルを `git rm` で削除
   - `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java`
   - `src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java`
   - `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java`
@@ -155,9 +155,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java`
   - `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java`
   - `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest/`（配下4件）
-- [ ] B. `mvn clean test` 実行・全 PASS 確認（落ちたら止めて報告）
-- [ ] C. 緑確認後 commit・push
-- [ ] D. `mvn install` 実行・成功確認
+- [x] B. `mvn clean test` 実行・全 PASS 確認（落ちたら止めて報告）
+- [x] C. 緑確認後 commit・push
+- [x] D. `mvn install` 実行・成功確認
 - [x] self-check (OK/NG per completion criterion, record in checks/task-04.md)
 - [x] QA expert review (subagent)
 - [x] user review
@@ -172,12 +172,4 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-06-23
-- **Last completed**: repo-split-filelist.md を nablarch-testing から同期（#52-55/#64-67 の行き先を yaml→converter に訂正、件数表更新）。commit: 24251e1。
-- **Next**: PR（feature/ntf-yaml → develop）のユーザーレビュー待ち。レビュー後マージ。
-- **Notes**: |
-    - yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。
-    - ExcelToYamlEquivalenceTest は converter リポジトリへの配置となり、このリポジトリでは作業不要。
-    - repo-split-filelist.md は nablarch-testing 側が正（変更あれば再同期）。
-    - 次の作業は integration CC① への作業指示（nablarch-testing 側 steering.md 参照）。
+<!-- replace this comment with status when suspending -->
