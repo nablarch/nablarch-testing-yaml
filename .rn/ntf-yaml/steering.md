@@ -173,7 +173,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 - **Status**: paused
-- **Date**: 2026-06-22
-- **Last completed**: タスク #4 完了 — converter 専用 Adapter 群削除（src/main 4件・src/test 3件・データ4件）+ dangling Javadoc 4件修正。push 済み（commit: aace774）
-- **Next**: PR（feature/ntf-yaml → develop）のユーザーレビュー後マージ。マージ後は converter 側 CC が yaml:1.0.0-SNAPSHOT を参照して converter への移植作業を行う予定。
-- **Notes**: タスク #1〜#4 すべて完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。~/.m2 の jar は task #3 完了時の install で最新化済み（task #4 は削除のみのため jar の中身に差異なし。必要なら再 install 可）。次の作業が発生した場合は新しいタスクを steering.md に追記して /rn:hi で再開する。
+- **Date**: 2026-06-23
+- **Last completed**: タスク #4 完了（commit: aace774）。今会話では `ExcelToYamlEquivalenceTest` を yaml リポジトリへコピーしようとしたが、方針が誤りと判明し全破棄。
+- **Next**: `ExcelToYamlEquivalenceTest` は converter リポジトリに正しく配置する（yaml リポジトリへの配置は不要）。yaml 側タスクは #4 で完了済み。次は PR（feature/ntf-yaml → develop）のマージ後、converter 側 CC で yaml:1.0.0-SNAPSHOT を参照して ExcelToYamlEquivalenceTest を converter リポジトリへ配置する作業を行う。
+- **Notes**: yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。ExcelToYamlEquivalenceTest の配置先は converter リポジトリ（`nablarch-testing` 側で ExcelToYamlEquivalenceTest を正しく設計してから converter へ移植）。yaml 側では一切手を加えない。
