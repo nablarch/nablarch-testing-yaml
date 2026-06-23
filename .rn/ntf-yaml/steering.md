@@ -206,15 +206,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-06-23
-- **Last completed**: カバレッジ未達箇所を NTF 仕様視点で分類完了。タスク #5 を steering.md に追加。
-- **Next**: タスク #5 — テスト追加（buildSendSyncBodies / InterpreterResolver.raw() / YamlLoader 末尾"/"）+ YamlFileBuilder コメント追加。
-- **Notes**: |
-    - JaCoCo を yaml リポジトリルートの jacoco.exec から生成: `mvn jacoco:report -Djacoco.dataFile=/home/tie303177/work/nablarch/nablarch-testing-yaml/jacoco.exec`
-    - 未カバー箇所の分類:
-      - ② NTF仕様内・テスト追加: `YamlMessageBuilder.buildSendSyncBodies`（163〜175行）、`InterpreterResolver.raw()`（55行）、`YamlLoader.buildFilePath` 末尾"/"分岐（50〜51行）
-      - ③ Java言語仕様上必要: `YamlFileBuilder` 182〜183行の `instanceof` ガード → コメント追加
-    - `buildSendSyncBodies` は converter の `YamlTestCoreAdapter` から呼ばれる公開API。yaml リポジトリが所有するので yaml 側でテストする。
-    - `InterpreterResolver.raw()` は converter の `YamlTestCoreAdapter` コンストラクタで `InterpreterResolver.raw()` として使用される。
-    - テストデータ YAML は既存テストの形式を踏襲して作成する（`src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/` 配下）。
+<!-- template: do not edit manually — managed by /rn -->
+- **Status**: active
+- **Last completed**: #4
+- **Next**: #5
