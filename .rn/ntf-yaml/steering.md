@@ -174,6 +174,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-23
-- **Last completed**: タスク #4 完了（commit: aace774）。
+- **Last completed**: repo-split-filelist.md を nablarch-testing から同期（#52-55/#64-67 の行き先を yaml→converter に訂正、件数表更新）。commit: 24251e1。
 - **Next**: PR（feature/ntf-yaml → develop）のユーザーレビュー待ち。レビュー後マージ。
-- **Notes**: yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。ExcelToYamlEquivalenceTest は converter リポジトリへの配置となり、このリポジトリでは作業不要。
+- **Notes**: |
+    - yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。
+    - ExcelToYamlEquivalenceTest は converter リポジトリへの配置となり、このリポジトリでは作業不要。
+    - repo-split-filelist.md は nablarch-testing 側が正（変更あれば再同期）。
+    - 次の作業は integration CC① への作業指示（nablarch-testing 側 steering.md 参照）。
