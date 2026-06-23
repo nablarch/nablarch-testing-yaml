@@ -74,8 +74,8 @@ CC 間の連携は、私の中間リストではなく **構築 CC の実成果�
 |---|---|---|
 | 残留（本体のみ） | 40 | |
 | コピー（本体＋integration） | 31 | Excel ベース 20＋補助 11 |
-| 移動 → yaml | 64 | src/main 12（java 11＋schema 1）＋単体テスト 9＋テストデータ 43 |
-| 移動 → converter | 49 | |
+| 移動 → yaml | 53 | src/main 8（java 7＋schema 1）＋単体テスト 6＋テストデータ 39 |
+| 移動 → converter | 60 | |
 | 移動 → integration | 44 | YAML サブ 20＋基盤＋設定＋変換生成データ |
 | rst反映 → nablarch-document | 11 | 解説書 10＋構造リファレンス 1 |
 | **合計** | **239** | PR 225 ＋ コピー用既存 14 |
@@ -137,10 +137,10 @@ CC 間の連携は、私の中間リストではなく **構築 CC の実成果�
 | 49 | `src/test/java/nablarch/test/core/messaging/RequestTestingMessagingContextTest.java` | M | コピー | nablarch-testing ＋ integration | 本体(c継承元・改変) |
 | 50 | `src/test/java/nablarch/test/core/messaging/RequestTestingSendSyncBatchTest.java` | M | コピー | nablarch-testing ＋ integration | 本体(c継承元・改変) |
 | 51 | `src/test/java/nablarch/test/core/messaging/RequestTestingSendSyncSupportTest.java` | M | コピー | nablarch-testing ＋ integration | 本体(c継承元・改変) |
-| 52 | `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
-| 53 | `src/main/java/nablarch/test/core/reader/StubDbInfo.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
-| 54 | `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
-| 55 | `src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
+| 52 | `src/main/java/nablarch/test/core/file/TestCoreFileAdapter.java` | A | 移動 | nablarch-testing-converter | converter |
+| 53 | `src/main/java/nablarch/test/core/reader/StubDbInfo.java` | A | 移動 | nablarch-testing-converter | converter |
+| 54 | `src/main/java/nablarch/test/core/reader/TestCoreReaderAdapter.java` | A | 移動 | nablarch-testing-converter | converter |
+| 55 | `src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java` | A | 移動 | nablarch-testing-converter | converter |
 | 56 | `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
 | 57 | `src/main/java/nablarch/test/core/reader/yaml/InterpreterResolver.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
 | 58 | `src/main/java/nablarch/test/core/reader/yaml/YamlFileBuilder.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
@@ -149,10 +149,10 @@ CC 間の連携は、私の中間リストではなく **構築 CC の実成果�
 | 61 | `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
 | 62 | `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
 | 63 | `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` | A | 移動 | nablarch-testing-yaml | yaml(main) |
-| 64 | `src/test/java/nablarch/test/core/file/TestCoreFileAdapterTest.java` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
-| 65 | `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
-| 66 | `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
-| 67 | `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest/*（4件）` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
+| 64 | `src/test/java/nablarch/test/core/file/TestCoreFileAdapterTest.java` | A | 移動 | nablarch-testing-converter | converter |
+| 65 | `src/test/java/nablarch/test/core/reader/TestCoreReaderAdapterTest.java` | A | 移動 | nablarch-testing-converter | converter |
+| 66 | `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest.java` | A | 移動 | nablarch-testing-converter | converter |
+| 67 | `src/test/java/nablarch/test/core/reader/YamlTestCoreAdapterTest/*（4件）` | A | 移動 | nablarch-testing-converter | converter |
 | 68 | `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
 | 69 | `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/*（16件）` | A | 移動 | nablarch-testing-yaml | yaml(test/a) |
 | 70 | `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest.java` | A | 移動 | nablarch-testing-yaml | yaml(main) |
