@@ -174,6 +174,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-23
-- **Last completed**: タスク #4 完了（commit: aace774）。今会話では `ExcelToYamlEquivalenceTest` を yaml リポジトリへコピーしようとしたが、方針が誤りと判明し全破棄。
-- **Next**: `ExcelToYamlEquivalenceTest` は converter リポジトリに正しく配置する（yaml リポジトリへの配置は不要）。yaml 側タスクは #4 で完了済み。次は PR（feature/ntf-yaml → develop）のマージ後、converter 側 CC で yaml:1.0.0-SNAPSHOT を参照して ExcelToYamlEquivalenceTest を converter リポジトリへ配置する作業を行う。
-- **Notes**: yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。ExcelToYamlEquivalenceTest の配置先は converter リポジトリ（`nablarch-testing` 側で ExcelToYamlEquivalenceTest を正しく設計してから converter へ移植）。yaml 側では一切手を加えない。
+- **Last completed**: タスク #4 完了（commit: aace774）。
+- **Next**: PR（feature/ntf-yaml → develop）のユーザーレビュー待ち。レビュー後マージ。
+- **Notes**: yaml リポジトリのタスク #1〜#4 は完了。`mvn clean test` 140件 PASS、`mvn clean install` BUILD SUCCESS。ExcelToYamlEquivalenceTest は converter リポジトリへの配置となり、このリポジトリでは作業不要。
