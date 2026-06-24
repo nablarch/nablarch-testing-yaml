@@ -25,6 +25,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 実装の変更は一切しない（物理コピー・package/import 機械的調整・pom 設定のみ許可）
 - 本体（nablarch-testing）には書き込まない
 - 変更が必要と判断したら **止めてユーザーに確認**（テスト PASS のために実装をいじるのは禁止）
+- `mvn install` は `JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64 mvn clean install` で実行する（`$JAVA_HOME` が `/usr/bin/java` を指しており javadoc プラグインが失敗するため）
 
 # Tasks
 
