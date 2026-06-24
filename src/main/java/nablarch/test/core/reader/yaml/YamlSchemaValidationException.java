@@ -1,6 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
-import com.networknt.schema.Error;
+import com.networknt.schema.ValidationMessage;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 public class YamlSchemaValidationException extends IllegalStateException {
 
     private final String filePath;
-    private final List<Error> errors;
+    private final List<ValidationMessage> errors;
 
     /**
      * @param filePath path to the YAML file that failed validation
      * @param errors   list of schema violations
      */
-    public YamlSchemaValidationException(String filePath, List<Error> errors) {
+    public YamlSchemaValidationException(String filePath, List<ValidationMessage> errors) {
         super("YAML file failed schema validation: " + filePath);
         this.filePath = filePath;
         this.errors = errors;
@@ -27,13 +27,13 @@ public class YamlSchemaValidationException extends IllegalStateException {
     @Override
     public String getMessage() {
         return "YAML file failed schema validation: " + filePath + "\n"
-                + errors.stream().map(Error::toString).collect(Collectors.joining("\n"));
+                + errors.stream().map(ValidationMessage::toString).collect(Collectors.joining("\n"));
     }
 
     /**
      * @return unmodifiable list of schema violations
      */
-    public List<Error> getErrors() {
+    public List<ValidationMessage> getErrors() {
         return Collections.unmodifiableList(errors);
     }
 }

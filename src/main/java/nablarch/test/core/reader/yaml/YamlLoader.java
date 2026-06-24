@@ -1,23 +1,25 @@
 package nablarch.test.core.reader.yaml;
 
-import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.SpecificationVersion;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import nablarch.test.NablarchTestUtils;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 import org.snakeyaml.engine.v2.exceptions.YamlEngineException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * YAML ファイルのロードとキャッシュ管理。
@@ -50,7 +52,7 @@ public final class YamlLoader {
             NablarchTestUtils.createLRUMap(YAML_CACHE_MAX_SIZE);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Schema JSON_SCHEMA;
+    private static final JsonSchema JSON_SCHEMA;
 
     static {
         try (InputStream schemaStream = YamlLoader.class.getClassLoader()
@@ -58,7 +60,7 @@ public final class YamlLoader {
             if (schemaStream == null) {
                 throw new IllegalStateException("Schema file not found on classpath");
             }
-            JSON_SCHEMA = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
+            JSON_SCHEMA = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
                     .getSchema(schemaStream);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load JSON schema", e);
@@ -117,9 +119,9 @@ public final class YamlLoader {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = (Map<String, Object>) loaded;
             JsonNode jsonNode = OBJECT_MAPPER.valueToTree(result);
-            List<Error> errors = JSON_SCHEMA.validate(jsonNode);
+            Set<ValidationMessage> errors = JSON_SCHEMA.validate(jsonNode);
             if (!errors.isEmpty()) {
-                throw new YamlSchemaValidationException(filePath, errors);
+                throw new YamlSchemaValidationException(filePath, new ArrayList<>(errors));
             }
             YAML_CACHE.put(filePath, result);
             return result;

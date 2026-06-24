@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import com.networknt.schema.Error;
+import com.networknt.schema.ValidationMessage;
 
 /**
  * {@link YamlLoader} のテストクラス。
@@ -348,7 +348,7 @@ public class YamlLoaderTest {
             // Then
             assertThat("エラーメッセージにファイルパスが含まれること",
                     e.getMessage(), containsString("YamlLoaderTest/schemaViolation_wrongType_rows"));
-            List<Error> errors = e.getErrors();
+            List<ValidationMessage> errors = e.getErrors();
             assertThat("エラーが1件以上あること", errors.isEmpty(), is(false));
         }
     }
