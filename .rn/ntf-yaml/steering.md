@@ -138,7 +138,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Evidence**: cc1-yaml-build.md「develop から作業ブランチを作成」
 - **Sources**: .rn/ntf-yaml/tasks/cc1-yaml-build.md
 
-### #4: converter 専用 Adapter 群の削除
+### ~~#4: converter 専用 Adapter 群の削除~~
 
 **Purpose**: yaml リポジトリに混入していた converter 専用クラス（4件）とその随伴テスト（3件＋データ4件）を削除し、`mvn clean test` 全 PASS・`mvn install` 成功を確認する
 
@@ -192,7 +192,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] G. QA expert review (subagent)
 - [x] H. language expert review (subagent)
 - [x] I. software-engineering expert review (subagent)
-- [ ] J. user review
+- [x] J. user review
 
 **Completion criteria**:
 
@@ -204,7 +204,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #6: YamlLoader への JSON Schema バリデーション組み込み
+### ~~#6: YamlLoader への JSON Schema バリデーション組み込み~~
 
 **Purpose**: YAML パース時に `ntf-testdata-yaml-schema.json` でバリデーションをかけ、スキーマ違反を即座に検出できるようにする。スキーマと実装の整合性を CI で継続的に担保する。
 
@@ -228,7 +228,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] G. QA expert review (subagent)
 - [x] H. language expert review (subagent)
 - [x] I. software-engineering expert review (subagent)
-- [ ] J. user review
+- [x] J. user review
 
 **Completion criteria**:
 
@@ -242,37 +242,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
+<!-- template: update when pausing
 - **Status**: paused
-- **Date**: 2026-06-24
-- **Last completed**: #6（スキーマバリデーション組み込み — user review 待ち）
-- **Next**: タスク #6 の user review 後、カバレッジ確認（C0/C1 100% か・NTF仕様テストか）
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N (description)
+- **Next**: #N+1
 - **Notes**: |
-    ## カバレッジ計測手順（このリポジトリ固有）
-
-    親 POM に JaCoCo Offline Instrumentation が定義済み。pom.xml 変更不要。
-
-    ```
-    mvn clean jacoco:instrument test jacoco:restore-instrumented-classes jacoco:report
-    ```
-
-    - `jacoco.exec` の出力先は `target/` ではなく **プロジェクトルート**（`${user.dir}/jacoco.exec`）
-    - レポートが見つからないエラーが出たら `-Djacoco.dataFile=./jacoco.exec` を追加:
-
-    ```
-    mvn jacoco:report -Djacoco.dataFile=./jacoco.exec
-    ```
-
-    - レポートは `target/site/jacoco/jacoco.csv` に出力される
-
-    ## タスク #6 で追加したスキーマ違反テストの確認事項
-
-    再開後に以下を確認すること:
-
-    1. **カバレッジ C0/C1**: `YamlLoader`・`YamlSchemaValidationException` がコメント除外で 100% か
-    2. **テストの性質確認**: 追加テストが「NTF仕様に対するテスト」か「カバレッジのためだけのテスト」かを精査
-       - スキーマ違反テスト6件はユーザーが誤った YAML を書いたときの検出確認 → NTF仕様テストとして妥当
-       - カバレッジのためだけの無意味なテストがあれば削除する
-
-    ## タスク #6 user review 後の次アクション
-
-    steering.md の task #6 step J（user review）をチェックオフして complete task #6 コミットを打つ。
+    (context for resumption)
+-->
