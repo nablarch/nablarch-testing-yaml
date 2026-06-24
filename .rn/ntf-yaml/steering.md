@@ -242,11 +242,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!-- template: update when pausing
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N (description)
-- **Next**: #N+1
+- **Date**: 2026-06-24
+- **Last completed**: #6（全タスク完了 — Acceptance criteria 確認済み）
+- **Next**: PR #1 を DRAFT → Ready for review に変更してマージ
 - **Notes**: |
-    (context for resumption)
--->
+    ## 現状
+
+    全6タスク完了。Acceptance criteria クリア済み：
+    - `mvn clean install` BUILD SUCCESS（Tests run: 156, Failures: 0）
+    - 本体への書き込みなし
+    - push 済み
+
+    ## 次のアクション
+
+    `gh pr ready 1` で PR #1 を Ready for review にする。
+    PR URL: `gh pr view 1 --web` で確認可能。
