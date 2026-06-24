@@ -164,7 +164,8 @@ public final class YamlFileBuilder {
      * @param skipFwHeader true の場合 FW_HEADER レコードをスキップし、record_type を {@code "default"} に固定し、
      *                     長さ未指定フィールドを {@code "-"}（動的計算）として扱う（メッセージ系）
      * @param withId       true の場合、各値行に連番（1 始まりの行インデックス）を
-     *                     {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）
+     *                     {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
+     *                     {@code withId=true} は {@code skipFwHeader=true} のときのみ有効。
      * @param interps      使用するインタープリタリスト
      */
     private static void buildFragmentsInternal(DataFile file, List<Object> records,
