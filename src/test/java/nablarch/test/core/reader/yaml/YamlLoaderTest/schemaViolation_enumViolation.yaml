@@ -1,0 +1,4 @@
+setup_files:
+  - path: dummy/test.dat
+    type: csv        # fixed か variable のみ有効
+    records: []

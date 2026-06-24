@@ -35,10 +35,9 @@ messages:
         rows:
           - ["PAYLOADDAT"]
 
-  # fw_header が空マップ（emptyRows001: FW ヘッダなし） - スキーマ上 minProperties:1 のため dummy キーで代替
+  # fw_header が空マップ（emptyRows001: FW ヘッダなし）
   - id: emptyRows001
-    fw_header:
-      _dummy: "placeholder"
+    fw_header: {}
     records:
       - record_type: BODY
         fields:

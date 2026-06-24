@@ -6,9 +6,11 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -349,6 +351,48 @@ public class YamlLoaderTest {
                     e.getMessage(), containsString("YamlLoaderTest/invalidSchema"));
             List<Error> errors = e.getErrors();
             assertThat("エラーが1件以上あること", errors.isEmpty(), is(false));
+        }
+    }
+
+    // required フィールド漏れ
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_missingRequired() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_missingRequired");
+    }
+
+    // rows の型違反（配列でなくスカラー）
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_wrongTypeRows() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_wrongType_rows");
+    }
+
+    // enum 違反（type が fixed/variable 以外）
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_enumViolation() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_enumViolation");
+    }
+
+    // ネストが深い場所の違反 → エラーの JSON Path が深いパスを含むこと
+    @Test
+    public void load_schemaViolation_deepNested_errorPathIsDeep() {
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_deepNested");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // エラーパスに records か fields が含まれること（深いネストの場所が特定できること）
+            String msg = e.getMessage();
+            assertThat(msg, anyOf(containsString("records"), containsString("fields")));
+        }
+    }
+
+    // 複数違反 → getErrors() が複数件返ること
+    @Test
+    public void load_schemaViolation_multipleErrors_allReported() {
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_multipleErrors");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            assertThat("複数の違反が全て報告されること", e.getErrors().size(), is(greaterThan(1)));
         }
     }
 }
