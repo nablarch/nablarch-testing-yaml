@@ -248,20 +248,20 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. スキーマ横並びチェックを3軸で実施（subagent）
+- [x] A. スキーマ横並びチェックを3軸で実施（subagent）
   - 軸1（読み取り）: 実装（YamlLoader 等）が読むフィールド → スキーマに定義済みか
   - 軸2（書き込み）: converter（`YamlFormatWriter` 等）が書くフィールド → スキーマに定義済みか（`../nablarch-testing` の `convert-testdata-excel-to-text` ブランチを参照）
   - 軸3（required）: スキーマの required フィールド → NTF仕様で必須か（`ntf-impl-spec-list.md` と突き合わせ）
-- [ ] B. チェック結果を元に他に不備がないことを確認 → なければ判明済み2件を修正
-  - 不備1: `message_data` の properties に `group_id` を追加（NTF仕様根拠: §7.2 例に `group_id: case1` あり）
+- [x] B. チェック結果を元に他に不備がないことを確認 → NTF仕様に基づきスキーマ再設計
+  - 不備1（再設計）: `message_data`（messages専用: fw_header あり・group_id なし）と新 def `expected_request_message_data`（expected_request_*専用: fw_header なし・group_id あり）に分離
   - 不備2: `record_fragment.required` から `record_type` を外す（省略可能なフィールド）
-  - 追加不備があれば合わせて修正する（実装変更は禁止、スキーマのみ）
-- [ ] C. `mvn clean test` 全 PASS 確認
-- [ ] D. commit・push
-- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-07.md)
-- [ ] F. QA expert review (subagent)
-- [ ] G. language expert review (subagent) — スキーマ JSON ファイルの可読性・整合性
-- [ ] H. software-engineering expert review (subagent)
+  - 負例テスト3件追加（messages+group_id、expected_request_*+fw_header、group_id空文字）
+- [x] C. `mvn clean test` 全 PASS 確認（159件）
+- [x] D. commit・push（SHA: dd61c4e）
+- [x] E. self-check (OK — checks/task-07.md 記録済み)
+- [x] F. QA expert review (OK)
+- [x] G. language expert review (OK)
+- [x] H. software-engineering expert review (OK)
 - [ ] I. user review → PR #1 を Ready for review に変更
 
 **Completion criteria**:
@@ -276,5 +276,28 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!-- placeholder -->
+- **Status**: paused
+- **Date**: 2026-06-24
+- **Last completed**: #7 全ステップ完了（ユーザーレビュー待ち）
+- **Next**: ユーザーが PR #1 をレビュー → 承認後に PR を Ready for review に変更し、task #7 を check-off commit してクローズ
+- **Notes**: |
+    ## 現状
+
+    task #7 の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
+    `mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS）。
+
+    ## task #7 で実施した主な変更
+
+    - スキーマ再設計: `message_data`（messages専用）と `expected_request_message_data`（expected_request_*専用）を分離
+      - NTF仕様(MS-04)に基づく: expected_request_* は fw_header 不使用、group_id 有意義
+    - 負例テスト3件追加: messages+group_id / expected_request_*+fw_header / group_id空文字
+    - `record_type` を `record_fragment.required` から除去
+    - テスト件数: 156 → 159件
+
+    ## 再開後すぐ実施
+
+    1. ユーザーが PR #1 を確認・承認
+    2. PR を Ready for review に変更
+    3. steering.md の task #7 を check-off commit（`docs: complete task #7 — スキーマ横並びチェック・NTF仕様準拠再設計`）してプッシュ
+    4. Acceptance criteria を実行して全体完了を確認
 
