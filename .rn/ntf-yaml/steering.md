@@ -244,24 +244,47 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-24
-- **Last completed**: #6（全タスク完了 — Acceptance criteria 確認済み）
-- **Next**: PR #1 を DRAFT → Ready for review に変更してマージ
+- **Last completed**: #6（全タスク完了）
+- **Next**: スキーマ横並びチェックの軸を拡張し、判明した2件のスキーマ不備を修正する
 - **Notes**: |
     ## 現状
 
-    全6タスク完了。Acceptance criteria クリア済み：
-    - `mvn clean install` BUILD SUCCESS（Tests run: 156, Failures: 0）
-    - 本体への書き込みなし
-    - push 済み
+    全6タスク完了。integration テストで converter 側からスキーマ不備が2件発覚。
+    PR #1 はまだ DRAFT のまま（Ready for review にしていない）。
 
-    ## カバレッジ・テスト品質確認（2026-06-24 ユーザーレビュー）
+    ## 発覚したスキーマ不備
 
-    ユーザー質問「コメントあるもの除いてC0/C1 100%か・NTF仕様テストか」に回答済み：
-    - コメントで「到達不能」と明示した YamlFileBuilder の instanceof ガード1箇所を除き C0/C1 100%
-    - 全テストは仕様起点（Javadoc に解説書番号・仕様番号明記）、カバレッジ目的のテストは存在しない
-    - ユーザーからの明示的な承認待ち
+    ### 不備1: `message_data` に `group_id` が未定義
+    - `expected_request_header_messages` / `expected_request_body_messages` は
+      `buildSendSyncList` / `buildSendSyncBodies` 経由で `group_id` を読む
+    - スキーマの `message_data` には `additionalProperties: false` があり `group_id` が未定義
+      → converterが `group_id` を書いたYAMLがバリデーションで弾かれる
+    - NTF仕様根拠: `ntf-testdata-doc-examples-messaging.md` §7.2 の例に
+      `expected_request_header_messages: - group_id: case1` が明示されている
+    - **修正**: `message_data` の properties に `group_id` を追加する
 
-    ## 次のアクション
+    ### 不備2: `record_fragment.record_type` が `required` になっている
+    - converter の `YamlFormatWriter.emitRecords` は `record.getRecordType() != null` の
+      場合のみ `record_type` を出力する（省略あり得る）
+    - NTF仕様根拠: 解説書 §7.10「`record_type:` に任意の値を記述できる（可読性のためだけ）」
+      → 省略可能。§6.8 のエラーケースにも `record_type` 省略は含まれない
+    - **修正**: `record_fragment.required` から `record_type` を外す
 
-    ユーザーが品質確認に納得したら `gh pr ready 1` で PR #1 を Ready for review にする。
-    PR URL: `gh pr view 1 --web` で確認可能。
+    ## 横並びチェックの根本問題
+
+    今回のチェックは「読み取り方向（実装が読むフィールドがスキーマに定義されているか）」のみで、
+    以下2軸が欠けていた：
+    - **書き込み方向**: converterが書くフィールドがスキーマに定義されているか
+    - **required整合**: スキーマの `required` がNTF仕様と一致しているか
+
+    ## 次のアクション（再開後すぐ実施: 選択肢A）
+
+    1. スキーマ横並びチェックを3軸に拡張して実施する
+       - 軸1（読み取り）: 実装が読むフィールド → スキーマに定義済みか（既存）
+       - 軸2（書き込み）: converterが書くフィールド → スキーマに定義済みか（新規）
+         → `nablarch-testing` の `YamlFormatWriter` / `YamlFormatReader` が出力するフィールドを列挙
+       - 軸3（required）: スキーマの required フィールド → NTF仕様で必須か（新規）
+         → `ntf-impl-spec-list.md` の仕様と突き合わせ
+    2. 横並びチェックで他に不備がないことを確認してから2件を修正・コミット
+    3. `mvn clean test` 全PASS確認
+    4. PR #1 を Ready for review に変更
