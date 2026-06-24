@@ -15,6 +15,9 @@ import nablarch.test.core.reader.yaml.YamlSection;
 import nablarch.test.core.reader.yaml.YamlTableDataBuilder;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +33,14 @@ import java.util.Map;
  * 本体の器（{@link TableData}／{@link DataFile}／{@link MessagePool}）を直接組み立てる（設計書 判断 B）。
  * </p>
  * <p>
- * {@link TestDataReader} は使用しない（{@link #setTestDataReader} は {@link UnsupportedOperationException} をスローする）。
+ * {@link TestDataReader} は使用しない（{@link #setTestDataReader} は何もしない）。
  * </p>
  *
  * @author kiyotis
  */
 public class YamlTestDataParser extends BasicTestDataParser {
+
+    private static final Logger LOGGER = LoggerManager.get(YamlTestDataParser.class);
 
     private DbInfo dbInfo;
     private DefaultValues defaultValues = new BasicDefaultValues();
@@ -56,17 +61,14 @@ public class YamlTestDataParser extends BasicTestDataParser {
      *
      * <p>
      * {@code YamlTestDataParser} は {@link TestDataReader} を使用しない。
-     * YAML ファイルはファイルシステムから直接ロードするため、このメソッドを呼ぶ必要はない。
-     * DI 設定で本クラスを使用する場合は {@code setTestDataReader} を設定しないこと。
+     * YAML ファイルはファイルシステムから直接ロードするため、このメソッドは何もしない。
+     * Nablarch DI で同名コンポーネントを上書きした場合、親定義の {@code testDataReader} プロパティが
+     * 引き継がれてこのメソッドが呼ばれることがあるが、無視して問題ない。
      * </p>
-     *
-     * @throws UnsupportedOperationException 常にスローされる
      */
     @Override
     public void setTestDataReader(TestDataReader testDataReader) {
-        throw new UnsupportedOperationException(
-                "YamlTestDataParser does not use TestDataReader. "
-                        + "YAML files are loaded directly from the file system.");
+        LOGGER.logInfo("YamlTestDataParser does not use TestDataReader; the injected value is ignored.");
     }
 
     /** {@inheritDoc} */

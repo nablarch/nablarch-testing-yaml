@@ -11,6 +11,7 @@ import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
 import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.log.app.OnMemoryLogWriter;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 import org.junit.After;
@@ -844,22 +845,25 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // setTestDataReader: UnsupportedOperationException がスローされること
+    // setTestDataReader: 何もしない（INFO ログを出力して無視）
     // ========================================================================
 
     /**
-     * [RS-01] setTestDataReader: UnsupportedOperationException がスローされること。
+     * [RS-01] setTestDataReader: 何もしない（INFO ログを出力して無視）。
      *
      * <p>
      * Given: YamlTestDataParser インスタンス<br>
      * When:  setTestDataReader(reader) を呼ぶ<br>
-     * Then:  UnsupportedOperationException がスローされること
+     * Then:  例外なく終了し、INFO ログに "does not use TestDataReader" が含まれること
      * </p>
      */
-    @Test(expected = UnsupportedOperationException.class)
-    public void setTestDataReaderThrowsUnsupported() {
-        // Given / When / Then
+    @Test
+    public void setTestDataReaderLogsInfoAndIgnores() {
+        OnMemoryLogWriter.clear();
+        // Given / When
         sut.setTestDataReader(new MockTestDataReader());
+        // Then
+        OnMemoryLogWriter.assertLogContains("writer.memlog", "does not use TestDataReader");
     }
 
     // ========================================================================
