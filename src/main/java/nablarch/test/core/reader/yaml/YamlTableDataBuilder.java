@@ -18,6 +18,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TABLE;
 import static nablarch.test.core.reader.yaml.YamlSection.KEY_LIST_MAPS;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
+import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
 import static nablarch.test.core.reader.yaml.YamlSection.interpret;
 import static nablarch.test.core.reader.yaml.YamlSection.isMarker;
 import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
@@ -198,11 +199,4 @@ public final class YamlTableDataBuilder {
         return rawRows;
     }
 
-    /**
-     * 整形済みグループ ID（{@code "[xxx]"} または {@code ""}）と生のグループ ID が一致するか。
-     */
-    private static boolean groupMatches(String rawGroupId, String requestedFormatted) {
-        String formatted = rawGroupId != null ? "[" + rawGroupId + "]" : "";
-        return requestedFormatted.equals(formatted);
-    }
 }

@@ -196,6 +196,18 @@ public final class YamlSection {
     }
 
     /**
+     * 整形済みグループ ID（{@code "[xxx]"} または {@code ""}）と生のグループ ID が一致するか。
+     *
+     * @param rawGroupId        YAML エントリの {@code group_id} 値（null の場合はグループなし）
+     * @param requestedFormatted 呼び出し側が保持する整形済みグループ ID（{@code "[xxx]"} または {@code ""}）
+     * @return 一致する場合 {@code true}
+     */
+    public static boolean groupMatches(String rawGroupId, String requestedFormatted) {
+        String formatted = rawGroupId != null ? "[" + rawGroupId + "]" : "";
+        return requestedFormatted.equals(formatted);
+    }
+
+    /**
      * {@link DataType} から YAML セクションキーへ変換する。
      */
     public static String dataTypeToSectionKey(DataType dataType) {

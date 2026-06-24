@@ -26,6 +26,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.FILE_TYPE_FIXED;
 import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
+import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
 import static nablarch.test.core.reader.yaml.YamlSection.interpret;
 import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
 import static nablarch.test.core.reader.yaml.YamlSection.toStr;
@@ -214,11 +215,4 @@ public final class YamlFileBuilder {
         }
     }
 
-    /**
-     * 整形済みグループ ID（{@code "[xxx]"} または {@code ""}）と生のグループ ID が一致するか。
-     */
-    private static boolean groupMatches(String rawGroupId, String requestedFormatted) {
-        String formatted = rawGroupId != null ? "[" + rawGroupId + "]" : "";
-        return requestedFormatted.equals(formatted);
-    }
 }
