@@ -58,12 +58,12 @@ public final class YamlLoader {
         try (InputStream schemaStream = YamlLoader.class.getClassLoader()
                 .getResourceAsStream(SCHEMA_RESOURCE_PATH)) {
             if (schemaStream == null) {
-                throw new IllegalStateException("Schema file not found on classpath");
+                throw new IllegalStateException("Schema file not found on classpath: " + SCHEMA_RESOURCE_PATH);
             }
             JSON_SCHEMA = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
                     .getSchema(schemaStream);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to load JSON schema", e);
+            throw new IllegalStateException("Failed to load JSON schema from: " + SCHEMA_RESOURCE_PATH, e);
         }
     }
 
