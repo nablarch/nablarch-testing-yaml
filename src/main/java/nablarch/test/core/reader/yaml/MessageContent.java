@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * メッセージ本文（固定長ファイルの器）と FW 制御ヘッダの組。
  *
+ * @author kiyotis
  * @see YamlMessageBuilder#buildMessageContent(Map, String, String, boolean, String)
  */
 public final class MessageContent {
@@ -18,7 +19,7 @@ public final class MessageContent {
     private final FixedLengthFile body;
 
     /**
-     * コンストラクタ。
+     * コンストラクタ。インスタンス生成は {@link YamlMessageBuilder} のみが行う（package-private）。
      *
      * @param fwHeader FW 制御ヘッダ
      * @param body     本文
