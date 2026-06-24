@@ -39,6 +39,7 @@ setup_tables:
         NUMBER_COL2: "11.1"
 
   - group_id: missingTable
+    table: TEST_TABLE
     rows:
       - PK_COL1: "0000000099"
         PK_COL2: "XX"
@@ -113,7 +114,6 @@ list_maps:
   - id: nonMapRowTest
     rows:
       - KEY1: "valid"
-      - scalar_entry
       - KEY1: "also_valid"
 
   - id: partialBracketColTest

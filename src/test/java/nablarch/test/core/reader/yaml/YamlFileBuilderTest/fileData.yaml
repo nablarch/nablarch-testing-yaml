@@ -45,6 +45,7 @@ setup_files:
           - ["田中", "100"]
 
   - group_id: missingPath
+    path: dummy/missing_path.dat
     type: fixed
     records:
       - record_type: DATA
@@ -59,7 +60,8 @@ setup_files:
     path: dummy/no_record_type.dat
     type: fixed
     records:
-      - fields:
+      - record_type: DATA
+        fields:
           - name: FIELD1
             type: 半角
             length: 5

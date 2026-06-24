@@ -1,1 +1,3 @@
-key4: value4
+setup_tables:
+  - table: LRU_TABLE_4
+    rows: []

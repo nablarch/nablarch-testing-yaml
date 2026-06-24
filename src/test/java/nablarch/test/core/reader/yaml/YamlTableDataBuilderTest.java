@@ -330,8 +330,12 @@ public class YamlTableDataBuilderTest {
      */
     @Test
     public void buildTableDataList_missingTableThrowsException() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        // Given: 'table' キーを持たないエントリを直接構築（スキーマ検証の対象外で Builder の検証をテスト）
+        Map<String, Object> entryWithoutTable = new java.util.LinkedHashMap<>();
+        entryWithoutTable.put("group_id", "missingTable");
+        entryWithoutTable.put("rows", Collections.<Object>emptyList());
+        Map<String, Object> yaml = new java.util.LinkedHashMap<>();
+        yaml.put("setup_tables", Arrays.<Object>asList(entryWithoutTable));
 
         // When
         try {
@@ -770,8 +774,16 @@ public class YamlTableDataBuilderTest {
      */
     @Test
     public void buildListMapRows_nonMapRowSkipped() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        // Given: スカラー行（Map でない要素）を直接構築（スキーマ検証の対象外で Builder の防衛コードをテスト）
+        Map<String, Object> row1 = new java.util.LinkedHashMap<>();
+        row1.put("KEY1", "valid");
+        Map<String, Object> row2 = new java.util.LinkedHashMap<>();
+        row2.put("KEY1", "also_valid");
+        Map<String, Object> entry = new java.util.LinkedHashMap<>();
+        entry.put("id", "nonMapRowTest");
+        entry.put("rows", Arrays.<Object>asList(row1, "scalar_entry", row2));
+        Map<String, Object> yaml = new java.util.LinkedHashMap<>();
+        yaml.put("list_maps", Arrays.<Object>asList(entry));
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "nonMapRowTest", DIR);

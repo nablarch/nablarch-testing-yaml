@@ -12,6 +12,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.List;
+import com.networknt.schema.Error;
 
 /**
  * {@link YamlLoader} のテストクラス。
@@ -320,5 +322,33 @@ public class YamlLoaderTest {
         Map<String, Object> afterEviction = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
         assertThat("最近アクセスした lru1 はキャッシュに残っているため同一インスタンスであること",
                 lru1 == afterEviction, is(true));
+    }
+
+    // ========================================================================
+    // load: スキーマ違反の YAML は YamlSchemaValidationException をスローすること
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: スキーマ違反の YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: rows が配列でない YAML ファイル（スキーマ違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、メッセージにファイルパスが含まれること
+     * </p>
+     */
+    @Test
+    public void load_schemaViolation_throwsYamlSchemaValidationException() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/invalidSchema");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/invalidSchema"));
+            List<Error> errors = e.getErrors();
+            assertThat("エラーが1件以上あること", errors.isEmpty(), is(false));
+        }
     }
 }

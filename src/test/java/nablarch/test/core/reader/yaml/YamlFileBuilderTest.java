@@ -15,6 +15,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -243,8 +246,22 @@ public class YamlFileBuilderTest {
      */
     @Test
     public void buildFileList_recordTypeNullFallbackToDefault() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        // Given: record_type キーのないレコードエントリを直接構築（スキーマ検証の対象外で Builder の防衛コードをテスト）
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "FIELD1");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 5);
+        Map<String, Object> record = new LinkedHashMap<>();
+        // record_type キーを意図的に省略
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Collections.emptyList());
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("group_id", "noRecordType");
+        entry.put("path", "dummy/no_record_type.dat");
+        entry.put("type", "fixed");
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("setup_files", Arrays.<Object>asList(entry));
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[noRecordType]", DIR);
@@ -271,8 +288,22 @@ public class YamlFileBuilderTest {
      */
     @Test
     public void buildFileList_missingPathThrowsException() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        // Given: path キーのないエントリを直接構築（スキーマ検証の対象外で Builder の検証をテスト）
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "FIELD1");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 5);
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "DATA");
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Collections.emptyList());
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("group_id", "missingPath");
+        // path キーを意図的に省略
+        entry.put("type", "fixed");
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("setup_files", Arrays.<Object>asList(entry));
 
         // When
         try {

@@ -392,14 +392,14 @@
         }
       }
     },
-    "$comment_fw_header": "fw_header は任意キー許容マップ。directives(固定キー)とは異なり additionalProperties で任意のヘッダ名を許容する",
     "fw_header": {
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
         "type": "string"
       },
-      "description": "FW制御ヘッダ（キー: 値）。MESSAGE（messages セクション）専用。expected_request_*/response_* では使用せず、それらは records の fields/rows でフィールド単位に定義する。キー名はプロジェクト可変（reader.fwHeaderfields。既定例: requestId, userId, resendFlag, resultCode）"
+      "description": "FW制御ヘッダ（キー: 値）。MESSAGE（messages セクション）専用。expected_request_*/response_* では使用せず、それらは records の fields/rows でフィールド単位に定義する。キー名はプロジェクト可変（reader.fwHeaderfields。既定例: requestId, userId, resendFlag, resultCode）",
+      "$comment": "fw_header は任意キー許容マップ。directives(固定キー)とは異なり additionalProperties で任意のヘッダ名を許容する"
     }
   }
 }

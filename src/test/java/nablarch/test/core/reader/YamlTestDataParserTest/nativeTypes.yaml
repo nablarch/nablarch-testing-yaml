@@ -1,14 +1,14 @@
-# RS-03: YAML ネイティブ null
-# RS-04: YAML ネイティブ boolean
-# RS-05: YAML ネイティブ integer/float
+# RS-03: YAML null (null は schema 上許可: type: [string, null])
+# RS-04: 文字列 "true"/"false"
+# RS-05: 文字列 "42", "3.14"
 
 list_maps:
   - id: nativeTypeTest
     rows:
       - STR_COL: "hello"
         NULL_COL: null
-        BOOL_TRUE: true
-        BOOL_FALSE: false
-        INT_COL: 42
-        FLOAT_COL: 3.14
-        FLOAT_SCIENTIFIC: 1e10
+        BOOL_TRUE: "true"
+        BOOL_FALSE: "false"
+        INT_COL: "42"
+        FLOAT_COL: "3.14"
+        FLOAT_SCIENTIFIC: "1.0E10"

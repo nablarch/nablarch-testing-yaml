@@ -15,6 +15,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -418,8 +421,21 @@ public class YamlMessageBuilderTest {
      */
     @Test
     public void buildMessagePool_emptyFwHeaderRows() throws Exception {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        // Given: fw_header が空マップのエントリを直接構築（スキーマ上 minProperties:1 を回避）
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "SEARCH_KEY");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 10);
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "BODY");
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList("SEARCHKEY1")));
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("id", "emptyRows001");
+        entry.put("fw_header", new LinkedHashMap<String, Object>());  // 空マップ
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("messages", Arrays.<Object>asList(entry));
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "emptyRows001", DIR);
@@ -481,8 +497,23 @@ public class YamlMessageBuilderTest {
      */
     @Test
     public void buildMessagePool_malformedFwHeaderRowsThrowsException() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        // Given: fw_header がリスト形式（誤記）のエントリを直接構築（スキーマ検証の対象外で Builder の検証をテスト）
+        Map<String, Object> requestIdMap = new LinkedHashMap<>();
+        requestIdMap.put("requestId", "0000000001");
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "DATA");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 10);
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "BODY");
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList("TESTDATA1")));
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("id", "malformed001");
+        entry.put("fw_header", Arrays.<Object>asList(requestIdMap));  // リスト形式（誤記）
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("messages", Arrays.<Object>asList(entry));
 
         // When
         try {
@@ -535,8 +566,21 @@ public class YamlMessageBuilderTest {
      */
     @Test
     public void buildSendSyncMessageList_noIdEntryReturnsPoolWithNullRequestId() throws Exception {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        // Given: id キーのないエントリを直接構築（スキーマ検証の対象外で Builder の防衛コードをテスト）
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "DATA");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 10);
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "BODY");
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList("NO_ID_DATA")));
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("group_id", "grp2");
+        // id キーを意図的に省略
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("response_body_messages", Arrays.<Object>asList(entry));
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(

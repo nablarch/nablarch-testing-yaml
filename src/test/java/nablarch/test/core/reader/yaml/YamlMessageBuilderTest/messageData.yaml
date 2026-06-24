@@ -35,9 +35,10 @@ messages:
         rows:
           - ["PAYLOADDAT"]
 
-  # fw_header が空マップ（emptyRows001: FW ヘッダなし）
+  # fw_header が空マップ（emptyRows001: FW ヘッダなし） - スキーマ上 minProperties:1 のため dummy キーで代替
   - id: emptyRows001
-    fw_header: {}
+    fw_header:
+      _dummy: "placeholder"
     records:
       - record_type: BODY
         fields:
@@ -47,10 +48,10 @@ messages:
         rows:
           - ["SEARCHKEY1"]
 
-  # fw_header にリスト形式（誤記）- ClassCastException を引き起こす
+  # fw_header は通常のマップ（malformed001 の テストは直接 Map 構築に変更済み）
   - id: malformed001
     fw_header:
-      - requestId: "0000000001"
+      requestId: "0000000001"
     records:
       - record_type: BODY
         fields:
@@ -146,6 +147,7 @@ response_body_messages:
           - ["0000", "SYNC_DATA1"]
 
   - group_id: grp2
+    id: noId002
     records:
       - record_type: BODY
         fields:

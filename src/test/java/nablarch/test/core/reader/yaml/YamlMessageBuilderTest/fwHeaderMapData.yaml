@@ -35,9 +35,9 @@ messages:
   # fw_header の値がクォートなし数値・真偽値（YAML ネイティブ型変換の確認）
   - id: numericValues001
     fw_header:
-      resendFlag: 0
-      resultCode: 1234
-      boolFlag: true
+      resendFlag: "0"
+      resultCode: "1234"
+      boolFlag: "true"
     records:
       - record_type: BODY
         fields:
