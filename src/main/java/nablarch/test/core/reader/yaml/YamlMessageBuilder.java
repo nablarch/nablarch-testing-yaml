@@ -85,7 +85,7 @@ public final class YamlMessageBuilder {
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
-                FixedLengthFile file = buildBodyFile(new FixedLengthFile(id), map, false, interps);
+                FixedLengthFile file = buildMessageBodyFile(new FixedLengthFile(id), map, interps);
                 Map<String, String> fwHeader = useFwHeader
                         ? convertFwHeader(map.get(FIELD_FW_HEADER), id)
                         : Collections.<String, String>emptyMap();
@@ -186,24 +186,40 @@ public final class YamlMessageBuilder {
                                                   List<TestDataInterpreter> interps) {
         MockMessages file = new MockMessages(id != null ? id : "");
         // 送信同期メッセージは値行の連番（FIRST_FIELD_NO）を要求/応答電文の照合に使うため withId=true。
-        return buildBodyFile(file, map, true, interps);
+        return buildSendSyncBodyFile(file, map, interps);
     }
 
     /**
-     * 指定した本文ファイルにディレクティブとレコードレイアウト（本文・FW_HEADER スキップ）を組み立てて返す。
+     * 受信メッセージ用の本文ファイルにディレクティブとレコードレイアウト（本文・FW_HEADER スキップ）を組み立てて返す。
      *
-     * @param file    本文ファイル（{@link FixedLengthFile} または {@link MockMessages}）
+     * @param file    本文ファイル（{@link FixedLengthFile}）
      * @param map     エントリ Map
-     * @param withId  値行に連番（FIRST_FIELD_NO）を付与するか（送信同期メッセージのみ true）
      * @param interps 使用するインタープリタリスト
      * @param <T>     本文ファイルの具体型
      * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
      */
-    private static <T extends FixedLengthFile> T buildBodyFile(T file, Map<String, Object> map,
-                                                               boolean withId,
-                                                               List<TestDataInterpreter> interps) {
+    private static <T extends FixedLengthFile> T buildMessageBodyFile(T file, Map<String, Object> map,
+                                                                       List<TestDataInterpreter> interps) {
         YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
-        YamlFileBuilder.buildFragments(file, getList(map, FIELD_RECORDS), true, withId, interps);
+        YamlFileBuilder.buildFragmentsForMessage(file, getList(map, FIELD_RECORDS), interps);
+        return file;
+    }
+
+    /**
+     * 送信同期メッセージ用の本文ファイルにディレクティブとレコードレイアウト（本文・FW_HEADER スキップ）を組み立てて返す。
+     *
+     * <p>値行に連番（FIRST_FIELD_NO）を付与する。</p>
+     *
+     * @param file    本文ファイル（{@link MockMessages}）
+     * @param map     エントリ Map
+     * @param interps 使用するインタープリタリスト
+     * @param <T>     本文ファイルの具体型
+     * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
+     */
+    private static <T extends FixedLengthFile> T buildSendSyncBodyFile(T file, Map<String, Object> map,
+                                                                        List<TestDataInterpreter> interps) {
+        YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
+        YamlFileBuilder.buildFragmentsForSendSync(file, getList(map, FIELD_RECORDS), interps);
         return file;
     }
 

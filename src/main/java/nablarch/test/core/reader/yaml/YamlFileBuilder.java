@@ -38,7 +38,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * YAML トップレベル Map を走査し、ディレクティブ適用・レコードレイアウト／データ行の組み立て・
  * 特殊記法の解釈・グループ ID 絞り込みを行う。レコードレイアウト組み立て
- * （{@link #buildFragments}）とディレクティブ写し取り（{@link #mapDirectives}）は
+ * （{@link #buildFragmentsForFile}、{@link #buildFragmentsForMessage}、{@link #buildFragmentsForSendSync}）と
+ * ディレクティブ写し取り（{@link #mapDirectives}）は
  * メッセージ系（{@link YamlMessageBuilder}）からも再利用する。
  * </p>
  *
@@ -85,7 +86,7 @@ public final class YamlFileBuilder {
                     ? new FixedLengthFile(path)
                     : new VariableLengthFile(path);
             applyDirectives(file, mapDirectives(map), interps);
-            buildFragments(file, getList(map, FIELD_RECORDS), false, interps);
+            buildFragmentsForFile(file, getList(map, FIELD_RECORDS), interps);
             result.add(file);
         }
         return result;
@@ -107,33 +108,68 @@ public final class YamlFileBuilder {
     }
 
     /**
-     * エントリの {@code records:}（生の Map リスト）から {@link DataFileFragment} を組み立ててファイルに追加する。
+     * 通常ファイル用（{@code setup_files}／{@code expected_files}）にレコード群から
+     * {@link DataFileFragment} を組み立てる。
+     *
+     * <p>FW_HEADER レコードを含め、すべての {@code record_type} をそのまま使用する。</p>
+     *
+     * @param file    ファイル
+     * @param records 生のレコードレイアウト Map 群（YAML 順）
+     * @param interps 使用するインタープリタリスト
+     */
+    static void buildFragmentsForFile(DataFile file, List<Object> records,
+                                      List<TestDataInterpreter> interps) {
+        buildFragmentsInternal(file, records, false, false, interps);
+    }
+
+    /**
+     * 受信メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
+     *
+     * <p>FW_HEADER レコードをスキップし、{@code record_type} を {@code "default"} に固定し、
+     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。</p>
+     *
+     * @param file    ファイル
+     * @param records 生のレコードレイアウト Map 群（YAML 順）
+     * @param interps 使用するインタープリタリスト
+     */
+    static void buildFragmentsForMessage(DataFile file, List<Object> records,
+                                         List<TestDataInterpreter> interps) {
+        buildFragmentsInternal(file, records, true, false, interps);
+    }
+
+    /**
+     * 送信同期メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
+     *
+     * <p>FW_HEADER レコードをスキップし、{@code record_type} を {@code "default"} に固定し、
+     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
+     * 各値行に連番（1 始まりの行インデックス）を {@link DataFileFragment#FIRST_FIELD_NO} として付与する。
+     * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
+     * {@code FIRST_FIELD_NO} に隔離して保持し、{@code RequestTestingMessagingProvider} が
+     * 要求/応答電文の照合に使うため、YAML 経路でも連番を補う必要がある。</p>
+     *
+     * @param file    ファイル
+     * @param records 生のレコードレイアウト Map 群（YAML 順）
+     * @param interps 使用するインタープリタリスト
+     */
+    static void buildFragmentsForSendSync(DataFile file, List<Object> records,
+                                          List<TestDataInterpreter> interps) {
+        buildFragmentsInternal(file, records, true, true, interps);
+    }
+
+    /**
+     * レコード群から {@link DataFileFragment} を組み立てる共通実装。
      *
      * @param file         ファイル
      * @param records      生のレコードレイアウト Map 群（YAML 順）
      * @param skipFwHeader true の場合 FW_HEADER レコードをスキップし、record_type を {@code "default"} に固定し、
      *                     長さ未指定フィールドを {@code "-"}（動的計算）として扱う（メッセージ系）
+     * @param withId       true の場合、各値行に連番（1 始まりの行インデックス）を
+     *                     {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）
      * @param interps      使用するインタープリタリスト
      */
-    static void buildFragments(DataFile file, List<Object> records,
-                               boolean skipFwHeader, List<TestDataInterpreter> interps) {
-        buildFragments(file, records, skipFwHeader, false, interps);
-    }
-
-    /**
-     * レコード群から {@link DataFileFragment} を組み立てる。
-     *
-     * <p>
-     * {@code withId} が真の場合、各値行に連番（1 始まりの行インデックス）を
-     * {@link DataFileFragment#FIRST_FIELD_NO} として付与する（{@link DataFileFragment#addValueWithId} 相当）。
-     * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
-     * {@code FIRST_FIELD_NO} に隔離して保持し、{@code RequestTestingMessagingProvider} が
-     * 要求/応答電文の照合に使うため、YAML 経路でも連番を補う必要がある。受信メッセージ（MESSAGE）は
-     * 本体が連番を使わない（{@code addValue}）ため {@code withId=false}。
-     * </p>
-     */
-    static void buildFragments(DataFile file, List<Object> records,
-                               boolean skipFwHeader, boolean withId, List<TestDataInterpreter> interps) {
+    private static void buildFragmentsInternal(DataFile file, List<Object> records,
+                                               boolean skipFwHeader, boolean withId,
+                                               List<TestDataInterpreter> interps) {
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
             String recordType = toStr(record.get(FIELD_RECORD_TYPE));

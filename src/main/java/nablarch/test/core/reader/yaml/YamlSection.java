@@ -70,7 +70,8 @@ public final class YamlSection {
      * FW制御ヘッダレコード種別名。
      *
      * <p>
-     * {@link YamlFileBuilder#buildFragments} が messages セクションの records から FW_HEADER レコードを
+     * {@link YamlFileBuilder#buildFragmentsForMessage} および {@link YamlFileBuilder#buildFragmentsForSendSync} が
+     * messages セクションの records から FW_HEADER レコードを
      * スキップする際に使用する。FW制御ヘッダ自体は {@link #FIELD_FW_HEADER} マップから取得する。
      * </p>
      */
@@ -79,7 +80,7 @@ public final class YamlSection {
     /** messages エントリ直下の FW 制御ヘッダマップキー */
     public static final String FIELD_FW_HEADER = "fw_header";
 
-    /** フォールバック時に使用するレコードタイプ名。record_type が未指定の場合および skipFwHeader=true の場合に使用する。 */
+    /** フォールバック時に使用するレコードタイプ名。record_type が未指定の場合およびメッセージ系（FW_HEADER スキップ）の場合に使用する。 */
     public static final String DEFAULT_RECORD_TYPE = "default";
 
     // ========================================================================
