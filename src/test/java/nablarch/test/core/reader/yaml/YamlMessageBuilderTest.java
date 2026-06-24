@@ -421,7 +421,7 @@ public class YamlMessageBuilderTest {
      */
     @Test
     public void buildMessagePool_emptyFwHeaderRows() throws Exception {
-        // Given: fw_header が空マップのエントリを直接構築（スキーマ上 minProperties:1 を回避）
+        // Given: fw_header が空マップのエントリを直接構築（`fw_header` が空マップのケース（スキーマは `minProperties:0` で空マップを許容））
         Map<String, Object> fieldDef = new LinkedHashMap<>();
         fieldDef.put("name", "SEARCH_KEY");
         fieldDef.put("type", "半角");

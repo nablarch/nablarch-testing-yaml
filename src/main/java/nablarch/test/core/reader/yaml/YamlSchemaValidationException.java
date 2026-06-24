@@ -2,11 +2,12 @@ package nablarch.test.core.reader.yaml;
 
 import com.networknt.schema.Error;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * YAML ファイルがスキーマ検証に違反した場合にスローされる例外。
+ * YAML file failed JSON Schema validation.
  */
 public class YamlSchemaValidationException extends IllegalStateException {
 
@@ -14,28 +15,25 @@ public class YamlSchemaValidationException extends IllegalStateException {
     private final List<Error> errors;
 
     /**
-     * コンストラクタ。
-     *
-     * @param filePath 検証対象の YAML ファイルパス
-     * @param errors   スキーマ違反のエラーリスト
+     * @param filePath path to the YAML file that failed validation
+     * @param errors   list of schema violations
      */
     public YamlSchemaValidationException(String filePath, List<Error> errors) {
+        super("YAML file failed schema validation: " + filePath);
         this.filePath = filePath;
         this.errors = errors;
     }
 
     @Override
     public String getMessage() {
-        return "YAML がスキーマに違反しています: " + filePath + "\n"
+        return "YAML file failed schema validation: " + filePath + "\n"
                 + errors.stream().map(Error::toString).collect(Collectors.joining("\n"));
     }
 
     /**
-     * スキーマ違反エラーのリストを返す。
-     *
-     * @return バリデーションエラーリスト
+     * @return unmodifiable list of schema violations
      */
     public List<Error> getErrors() {
-        return errors;
+        return Collections.unmodifiableList(errors);
     }
 }

@@ -40,6 +40,8 @@ public final class YamlLoader {
 
     private static final String YAML_EXTENSION = ".yaml";
 
+    private static final String SCHEMA_RESOURCE_PATH = "nablarch/test/ntf-testdata-yaml-schema.json";
+
     /** 既存の {@link nablarch.test.core.reader.TableDataParser} 等のキャッシュサイズに合わせた値。 */
     private static final int YAML_CACHE_MAX_SIZE = 8;
 
@@ -52,7 +54,7 @@ public final class YamlLoader {
 
     static {
         try (InputStream schemaStream = YamlLoader.class.getClassLoader()
-                .getResourceAsStream("nablarch/test/ntf-testdata-yaml-schema.json")) {
+                .getResourceAsStream(SCHEMA_RESOURCE_PATH)) {
             if (schemaStream == null) {
                 throw new IllegalStateException("Schema file not found on classpath");
             }

@@ -14,7 +14,6 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.util.List;
 import com.networknt.schema.Error;
 
 /**
@@ -343,30 +342,54 @@ public class YamlLoaderTest {
     public void load_schemaViolation_throwsYamlSchemaValidationException() {
         // When
         try {
-            YamlLoader.load(DIR, "YamlLoaderTest/invalidSchema");
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_wrongType_rows");
             fail("YamlSchemaValidationException が期待される");
         } catch (YamlSchemaValidationException e) {
             // Then
             assertThat("エラーメッセージにファイルパスが含まれること",
-                    e.getMessage(), containsString("YamlLoaderTest/invalidSchema"));
+                    e.getMessage(), containsString("YamlLoaderTest/schemaViolation_wrongType_rows"));
             List<Error> errors = e.getErrors();
             assertThat("エラーが1件以上あること", errors.isEmpty(), is(false));
         }
     }
 
-    // required フィールド漏れ
+    /**
+     * [YamlLoader] load: required フィールドが欠落した YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: required フィールド（record_type 等）が欠落した YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
     @Test(expected = YamlSchemaValidationException.class)
     public void load_schemaViolation_missingRequired() {
         YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_missingRequired");
     }
 
-    // rows の型違反（配列でなくスカラー）
+    /**
+     * [YamlLoader] load: rows の型が配列でない（スカラー）YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: rows がスカラー値の YAML ファイル（スキーマ型違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
     @Test(expected = YamlSchemaValidationException.class)
     public void load_schemaViolation_wrongTypeRows() {
         YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_wrongType_rows");
     }
 
-    // enum 違反（type が fixed/variable 以外）
+    /**
+     * [YamlLoader] load: type フィールドが enum 違反（fixed/variable 以外）の YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: type フィールドに "invalid_type" が設定された YAML ファイル（enum 違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
     @Test(expected = YamlSchemaValidationException.class)
     public void load_schemaViolation_enumViolation() {
         YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_enumViolation");
@@ -381,7 +404,9 @@ public class YamlLoaderTest {
         } catch (YamlSchemaValidationException e) {
             // エラーパスに records か fields が含まれること（深いネストの場所が特定できること）
             String msg = e.getMessage();
-            assertThat(msg, anyOf(containsString("records"), containsString("fields")));
+            assertThat("error message must contain a path separator indicating nesting", msg, containsString("/"));
+            assertThat("error path must point to nested location", msg, anyOf(
+                    containsString("records"), containsString("fields")));
         }
     }
 
