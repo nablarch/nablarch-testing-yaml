@@ -221,6 +221,7 @@
       "required": ["id", "records"],
       "additionalProperties": false,
       "description": "EXPECTED_REQUEST_HEADER_MESSAGES / EXPECTED_REQUEST_BODY_MESSAGES のデータブロック。testShots の expectedMessage カラムで指定した group_id に対応するエントリが収集される（groupId 全件収集）。fw_header は使用しない（仕様 MS-04）",
+      "$comment": "header/body は現仕様(MS-04)で同一構造のため共通 def を使用。将来ヘッダ/ボディで構造が分岐する場合は expected_request_header_message_data / expected_request_body_message_data に分割する",
       "properties": {
         "group_id": {
           "type": "string",
@@ -229,7 +230,7 @@
         },
         "id": {
           "type": "string",
-          "description": "リクエストID。フォーマット定義ファイル（{requestId}_SEND）の解決に使用される"
+          "description": "リクエストID。Excel: EXPECTED_REQUEST_HEADER_MESSAGES[groupId]=ID の '=' 以降。フォーマット定義ファイル（{requestId}_SEND）の解決に使用される"
         },
         "directives": {
           "$ref": "#/$defs/directives"

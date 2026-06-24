@@ -1,0 +1,10 @@
+expected_request_body_messages:
+  - group_id: ""       # minLength: 1 違反（空文字は禁止）
+    id: "REQ001"
+    records:
+      - fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]

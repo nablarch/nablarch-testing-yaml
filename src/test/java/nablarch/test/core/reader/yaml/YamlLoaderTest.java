@@ -357,7 +357,7 @@ public class YamlLoaderTest {
      * [YamlLoader] load: required フィールドが欠落した YAML をロードした場合は YamlSchemaValidationException がスローされること。
      *
      * <p>
-     * Given: required フィールド（table, rows 等）が欠落した YAML ファイル<br>
+     * Given: required フィールド（table 等）が欠落した YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされること
      * </p>
@@ -419,5 +419,47 @@ public class YamlLoaderTest {
         } catch (YamlSchemaValidationException e) {
             assertThat("複数の違反が全て報告されること", e.getErrors().size(), is(greaterThan(1)));
         }
+    }
+
+    /**
+     * [YamlLoader] load: messages セクションに group_id を含む YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: messages セクションに group_id: case1 を含む YAML ファイル（message_data の additionalProperties: false 違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_messagesWithGroupId() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_messages_groupId");
+    }
+
+    /**
+     * [YamlLoader] load: expected_request_header_messages セクションに fw_header を含む YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: expected_request_header_messages セクションに fw_header: {requestId: "001"} を含む YAML ファイル（expected_request_message_data の additionalProperties: false 違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_expectedRequestWithFwHeader() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_expectedRequest_fwHeader");
+    }
+
+    /**
+     * [YamlLoader] load: expected_request_body_messages セクションに group_id: "" を含む YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * Given: expected_request_body_messages セクションに group_id: "" を含む YAML ファイル（minLength: 1 違反）<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされること
+     * </p>
+     */
+    @Test(expected = YamlSchemaValidationException.class)
+    public void load_schemaViolation_expectedRequestEmptyGroupId() {
+        YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_expectedRequest_emptyGroupId");
     }
 }
