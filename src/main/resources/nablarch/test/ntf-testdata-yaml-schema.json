@@ -195,6 +195,11 @@
       "additionalProperties": false,
       "description": "メッセージデータ。固定長ファイルと同じ構造で記述する。id が重複した場合は最初の1件のみ取得される",
       "properties": {
+        "group_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "グループID。expected_request_header_messages / expected_request_body_messages でグループフィルタリングに使用される。省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+        },
         "id": {
           "type": "string",
           "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降。ファイル内でユニークにすること"
@@ -324,7 +329,6 @@
     "record_fragment": {
       "type": "object",
       "required": [
-        "record_type",
         "fields",
         "rows"
       ],
