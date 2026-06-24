@@ -279,7 +279,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-24
-- **Last completed**: #7 全ステップ完了（ユーザーレビュー待ち）＋ integration FB 対応（length=0 スキーマ修正）
+- **Last completed**: integration FB 対応（setTestDataReader を INFO ログ＋無視に変更、630e700）
 - **Next**: ユーザーが PR #1 をレビュー → 承認後に PR を Ready for review に変更し、task #7 を check-off commit してクローズ
 - **Notes**: |
     ## 現状
@@ -301,8 +301,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
       - integer: `minimum: 1` → `minimum: 0`
       - string pattern: `^([1-9][0-9]*|-)$` → `^([0-9]+|-)$`
       - 理由: converter が `length: "0"` (ダミーフィールド) を正規に出力するが、スキーマが拒否していた
-      - 横並びチェック実施済み → 他に不備なし
-    - steering Rules に `mvn install` の JAVA_HOME 指定を追記（d5a04d0）
+    - `YamlTestDataParser.setTestDataReader()` を UnsupportedOperationException → INFO ログ＋無視に変更（630e700）
+      - 理由: Nablarch DI で同名コンポーネント上書き時に親の testDataReader プロパティが引き継がれ例外が発生する
+      - テスト `setTestDataReaderLogsInfoAndIgnores` で OnMemoryLogWriter によるログアサートに更新済み
 
     ## 再開後すぐ実施
 
