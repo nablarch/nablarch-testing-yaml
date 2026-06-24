@@ -140,7 +140,7 @@ public final class YamlSection {
      * </p>
      */
     public static String objectToString(Object value) {
-        return value != null ? value.toString() : null;
+        return toStr(value);
     }
 
     /**
