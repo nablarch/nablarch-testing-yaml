@@ -254,7 +254,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
     - 本体への書き込みなし
     - push 済み
 
+    ## カバレッジ・テスト品質確認（2026-06-24 ユーザーレビュー）
+
+    ユーザー質問「コメントあるもの除いてC0/C1 100%か・NTF仕様テストか」に回答済み：
+    - コメントで「到達不能」と明示した YamlFileBuilder の instanceof ガード1箇所を除き C0/C1 100%
+    - 全テストは仕様起点（Javadoc に解説書番号・仕様番号明記）、カバレッジ目的のテストは存在しない
+    - ユーザーからの明示的な承認待ち
+
     ## 次のアクション
 
-    `gh pr ready 1` で PR #1 を Ready for review にする。
+    ユーザーが品質確認に納得したら `gh pr ready 1` で PR #1 を Ready for review にする。
     PR URL: `gh pr view 1 --web` で確認可能。
