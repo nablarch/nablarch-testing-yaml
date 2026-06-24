@@ -357,7 +357,7 @@ public class YamlLoaderTest {
      * [YamlLoader] load: required フィールドが欠落した YAML をロードした場合は YamlSchemaValidationException がスローされること。
      *
      * <p>
-     * Given: required フィールド（record_type 等）が欠落した YAML ファイル<br>
+     * Given: required フィールド（table, rows 等）が欠落した YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされること
      * </p>

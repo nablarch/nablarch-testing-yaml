@@ -188,7 +188,8 @@ messages:
           - ["SEARCHKEY1"]
 
 expected_request_header_messages:
-  - id: msgId1
+  - group_id: case1
+    id: msgId1
     directives:
       text-encoding: Windows-31J
     records:
@@ -210,7 +211,8 @@ expected_request_header_messages:
           - ["0000000001", "testUser01", "0", "0000"]
 
 expected_request_body_messages:
-  - id: msgId1
+  - group_id: case1
+    id: msgId1
     records:
       - record_type: BODY
         fields:

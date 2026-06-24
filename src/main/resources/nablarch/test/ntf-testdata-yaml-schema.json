@@ -59,14 +59,14 @@
       "type": "array",
       "description": "EXPECTED_REQUEST_HEADER_MESSAGES",
       "items": {
-        "$ref": "#/$defs/message_data"
+        "$ref": "#/$defs/expected_request_message_data"
       }
     },
     "expected_request_body_messages": {
       "type": "array",
       "description": "EXPECTED_REQUEST_BODY_MESSAGES",
       "items": {
-        "$ref": "#/$defs/message_data"
+        "$ref": "#/$defs/expected_request_message_data"
       }
     },
     "response_header_messages": {
@@ -195,11 +195,6 @@
       "additionalProperties": false,
       "description": "メッセージデータ。固定長ファイルと同じ構造で記述する。id が重複した場合は最初の1件のみ取得される",
       "properties": {
-        "group_id": {
-          "type": "string",
-          "minLength": 1,
-          "description": "グループID。expected_request_header_messages / expected_request_body_messages でグループフィルタリングに使用される。省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
-        },
         "id": {
           "type": "string",
           "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降。ファイル内でユニークにすること"
@@ -218,6 +213,34 @@
         "fw_header": {
           "$ref": "#/$defs/fw_header",
           "description": "FW制御ヘッダ（キー: 値）。messages（MESSAGE: MockMessaging経路の要求/応答電文）でのみ使用する。FW制御ヘッダを名前:値で指定する。キー名はプロジェクト可変（reader.fwHeaderfields）。ここに書いたキーは全てFW制御ヘッダとして扱い、値でフィルタしない"
+        }
+      }
+    },
+    "expected_request_message_data": {
+      "type": "object",
+      "required": ["id", "records"],
+      "additionalProperties": false,
+      "description": "EXPECTED_REQUEST_HEADER_MESSAGES / EXPECTED_REQUEST_BODY_MESSAGES のデータブロック。testShots の expectedMessage カラムで指定した group_id に対応するエントリが収集される（groupId 全件収集）。fw_header は使用しない（仕様 MS-04）",
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "グループID。Excel: EXPECTED_REQUEST_HEADER_MESSAGES[groupId]=ID の括弧内の値。testShots の expectedMessage カラムに対応。省略時は ID 直接指定経路（先着1件）で動作。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+        },
+        "id": {
+          "type": "string",
+          "description": "リクエストID。フォーマット定義ファイル（{requestId}_SEND）の解決に使用される"
+        },
+        "directives": {
+          "$ref": "#/$defs/directives"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "description": "電文フィールドのレコード。FW制御ヘッダ分離を行わないため fw_header は使用しない",
+          "items": {
+            "$ref": "#/$defs/record_fragment"
+          }
         }
       }
     },
