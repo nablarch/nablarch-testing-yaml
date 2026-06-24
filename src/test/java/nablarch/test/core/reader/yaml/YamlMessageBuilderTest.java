@@ -1054,7 +1054,7 @@ public class YamlMessageBuilderTest {
         InterpreterResolver resolver = InterpreterResolver.raw();
 
         // When
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> result = resolver.resolve("anyPath");
+        List<TestDataInterpreter> result = resolver.resolve("anyPath");
 
         // Then
         assertNotNull(result);
