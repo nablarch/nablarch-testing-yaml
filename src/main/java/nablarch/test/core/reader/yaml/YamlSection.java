@@ -204,7 +204,7 @@ public final class YamlSection {
      */
     public static boolean groupMatches(String rawGroupId, String requestedFormatted) {
         String formatted = rawGroupId != null ? "[" + rawGroupId + "]" : "";
-        return requestedFormatted.equals(formatted);
+        return formatted.equals(requestedFormatted);
     }
 
     /**
