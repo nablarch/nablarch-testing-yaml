@@ -279,13 +279,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-24
-- **Last completed**: #7 全ステップ完了（ユーザーレビュー待ち）
+- **Last completed**: #7 全ステップ完了（ユーザーレビュー待ち）＋ integration FB 対応（length=0 スキーマ修正）
 - **Next**: ユーザーが PR #1 をレビュー → 承認後に PR を Ready for review に変更し、task #7 を check-off commit してクローズ
 - **Notes**: |
     ## 現状
 
     task #7 の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
-    `mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS）。
+    `JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64 mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS）。
 
     ## task #7 で実施した主な変更
 
@@ -294,6 +294,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
     - 負例テスト3件追加: messages+group_id / expected_request_*+fw_header / group_id空文字
     - `record_type` を `record_fragment.required` から除去
     - テスト件数: 156 → 159件
+
+    ## integration FB 対応（task #7 完了後に追加実施）
+
+    - `field_def.length` のスキーマ制約を修正（f375fde）
+      - integer: `minimum: 1` → `minimum: 0`
+      - string pattern: `^([1-9][0-9]*|-)$` → `^([0-9]+|-)$`
+      - 理由: converter が `length: "0"` (ダミーフィールド) を正規に出力するが、スキーマが拒否していた
+      - 横並びチェック実施済み → 他に不備なし
+    - steering Rules に `mvn install` の JAVA_HOME 指定を追記（d5a04d0）
 
     ## 再開後すぐ実施
 
