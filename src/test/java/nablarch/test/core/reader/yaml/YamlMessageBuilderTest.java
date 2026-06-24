@@ -890,6 +890,80 @@ public class YamlMessageBuilderTest {
     // buildSendSyncBodies: group_id 一致・不一致・null のテスト
     // ========================================================================
 
+    // ========================================================================
+    // buildSendSyncList: stripBrackets の null / 角括弧付き分岐カバレッジ
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に null を渡したとき null が返ること（stripBrackets null 分岐）。
+     *
+     * <p>
+     * stripBrackets(null) → null を返し、rawGroupId.equals(null) が呼ばれないため全エントリがスキップされ null が返る。<br>
+     * Given: response_body_messages にエントリが存在する<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", null, path) を呼ぶ<br>
+     * Then:  null が返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncMessageList_nullGroupIdReturnsNull() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: groupId=null → stripBrackets は null を返し、比較がスキップされ結果は null
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
+                yaml, "response_body_messages", null, DIR);
+
+        // Then
+        assertNull("groupId が null のとき null が返ること", result);
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に "[grp1]" を渡したとき stripBrackets が角括弧を除去してマッチすること。
+     *
+     * <p>
+     * stripBrackets("[grp1]") → "grp1" となり、YAML の group_id=grp1 にマッチする。<br>
+     * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が 1 件返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncMessageList_bracketGroupIdStripped() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: "[grp1]" → stripBrackets → "grp1" → YAML の group_id=grp1 にマッチ
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
+                yaml, "response_body_messages", "[grp1]", DIR);
+
+        // Then
+        assertNotNull("角括弧付き groupId でも正しくマッチして結果が返ること", result);
+        assertThat("1 件返ること", result.size(), is(1));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId が "[" で始まるが "]" で終わらない場合は角括弧が除去されずそのまま使われ null が返ること（stripBrackets partial-bracket 分岐）。
+     *
+     * <p>
+     * stripBrackets の条件 startsWith("[") &amp;&amp; endsWith("]") が false になる分岐（startsWith true / endsWith false）を踏む。<br>
+     * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1", path) を呼ぶ<br>
+     * Then:  "[grp1" はそのまま使われ、grp1 とはマッチしないため null が返ること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncMessageList_partialBracketGroupIdReturnsNull() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: "[grp1" は startsWith("[")=true かつ endsWith("]")=false → stripBrackets はそのまま返す → 不一致
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
+                yaml, "response_body_messages", "[grp1", DIR);
+
+        // Then
+        assertNull("角括弧が不完全な groupId はマッチせず null が返ること", result);
+    }
+
     /**
      * [YamlMessageBuilder] buildSendSyncBodies: group_id が一致するとき FixedLengthFile リストが返ること。
      *

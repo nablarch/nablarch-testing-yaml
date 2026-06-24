@@ -733,6 +733,32 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: rows に空マッピング（{}）が含まれる場合は空 Map として返ること。
+     *
+     * <p>
+     * buildListMapRows (private) の rawRow.isEmpty() == true 分岐: 空マッピング行は空の TreeMap として結果に含まれる。<br>
+     * 解説書 10.x: list_maps の rows に {} が含まれると空 Map が結果に追加されること<br>
+     * Given: list_maps の emptyRowListMap に 通常行・{} 行・通常行 の 3 エントリ<br>
+     * When:  buildListMapRows(yaml, "emptyRowListMap", path) を呼ぶ<br>
+     * Then:  3 件返り、2件目が空 Map であること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_emptyRowIncludedAsEmptyMap() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "emptyRowListMap", DIR);
+
+        // Then
+        assertThat("3 件返ること（空行を含む）", result.size(), is(3));
+        assertThat("1 件目の KEY1 が正しいこと", result.get(0).get("KEY1"), is("before"));
+        assertTrue("2 件目（空マッピング行）は空 Map であること", result.get(1).isEmpty());
+        assertThat("3 件目の KEY1 が正しいこと", result.get(2).get("KEY1"), is("after"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: rows に Map でない要素（スカラー）が含まれる場合はスキップされること。
      *
      * <p>

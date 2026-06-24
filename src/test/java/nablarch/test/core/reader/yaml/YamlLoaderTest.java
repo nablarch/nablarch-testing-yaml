@@ -268,22 +268,23 @@ public class YamlLoaderTest {
     // ========================================================================
 
     /**
-     * [YamlLoader] load: basePath に末尾 "/" が付いていても正常にロードできること。
+     * [YamlLoader] load: basePath に末尾 "/" がない場合でも正常にロードできること。
      *
      * <p>
-     * buildFilePath の末尾 "/" 分岐: basePath が "/" で終わっている場合は余分な "/" を追加しない。<br>
-     * Given: 末尾 "/" 付きの basePath（DIR + "/"）<br>
-     * When:  load(DIR + "/", "YamlLoaderTest/simple") を呼ぶ<br>
+     * buildFilePath の false 分岐（line 53）: basePath が "/" で終わっていない場合は "/" を補完して連結する。<br>
+     * DIR は末尾 "/" 付きのため、それを除いた basePath を使ってロードできることを確認する。<br>
+     * Given: 末尾 "/" なしの basePath（DIR の末尾 "/" を除いた文字列）<br>
+     * When:  load(DIR without trailing slash, "YamlLoaderTest/simple") を呼ぶ<br>
      * Then:  Map が返り、setup_tables キーが存在すること
      * </p>
      */
     @Test
-    public void load_trailingSlashBasePathLoadsCorrectly() {
-        // Given: 末尾 "/" 付き basePath
-        String basePathWithSlash = DIR + "/";
+    public void load_noTrailingSlashBasePathLoadsCorrectly() {
+        // Given: DIR の末尾 "/" を除いた basePath（false 分岐を踏む）
+        String basePathNoSlash = DIR.substring(0, DIR.length() - 1);
 
         // When
-        Map<String, Object> result = YamlLoader.load(basePathWithSlash, "YamlLoaderTest/simple");
+        Map<String, Object> result = YamlLoader.load(basePathNoSlash, "YamlLoaderTest/simple");
 
         // Then
         assertThat(result, notNullValue());

@@ -205,6 +205,28 @@ public class YamlSectionTest {
     // addBinaryFileInterpreter: interpreters が null の場合も BinaryFileInterpreter のみのリストが返ること
     // ========================================================================
 
+    // ========================================================================
+    // isMarker: null column は false を返すこと
+    // ========================================================================
+
+    /**
+     * [YamlSection] isMarker: null を渡した場合は false が返ること。
+     *
+     * <p>
+     * Given: column=null<br>
+     * When:  YamlSection.isMarker(null) を呼ぶ<br>
+     * Then:  false が返ること
+     * </p>
+     */
+    @Test
+    public void isMarker_nullReturnsFalse() {
+        // When
+        boolean result = YamlSection.isMarker(null);
+
+        // Then
+        assertThat("null を渡した場合は false が返ること", result, is(false));
+    }
+
     /**
      * [YamlSection] addBinaryFileInterpreter: interpreters が null の場合、
      * BinaryFileInterpreter のみを含む 1 件のリストが返ること。

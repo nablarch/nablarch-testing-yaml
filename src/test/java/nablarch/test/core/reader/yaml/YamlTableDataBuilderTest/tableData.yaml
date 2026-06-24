@@ -121,6 +121,12 @@ list_maps:
       - "[OPEN": "ignored_val"
         KEY1: "real_val"
 
+  - id: emptyRowListMap
+    rows:
+      - KEY1: "before"
+      - {}
+      - KEY1: "after"
+
 expected_tables:
   - group_id: markerColInTable
     table: TEST_TABLE
