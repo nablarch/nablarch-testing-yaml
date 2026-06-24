@@ -204,6 +204,42 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #6: YamlLoader への JSON Schema バリデーション組み込み
+
+**Purpose**: YAML パース時に `ntf-testdata-yaml-schema.json` でバリデーションをかけ、スキーマ違反を即座に検出できるようにする。スキーマと実装の整合性を CI で継続的に担保する。
+
+**Prerequisites**: #5
+
+**Steps**:
+
+- [x] A. `pom.xml` に `com.networknt:json-schema-validator:3.0.5` を compile スコープで追加
+- [x] B. `YamlSchemaValidationException` を新規作成
+  - `IllegalStateException` のサブクラス
+  - `filePath` と `List<Error>` を保持
+  - `getMessage()` をオーバーライド: ライブラリの `Error.toString()` をそのまま使い、ファイルパス + 全エラーを改行で連結
+- [x] C. `YamlLoader.load()` にバリデーションを追加
+  - パース直後・キャッシュ格納前にバリデーション実行
+  - `JSON_SCHEMA` はクラス変数としてシングルトンキャッシュ
+  - 違反があれば `YamlSchemaValidationException` をスロー
+- [x] D. `YamlLoaderTest` にバリデーション関連テストを追加（6パターン）
+  - required漏れ・型違反・enum違反・深いネスト・複数同時・基本検出
+- [x] E. `mvn clean test` 全 PASS 確認
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-06.md)
+- [x] G. QA expert review (subagent)
+- [x] H. language expert review (subagent)
+- [x] I. software-engineering expert review (subagent)
+- [ ] J. user review
+
+**Completion criteria**:
+
+- `pom.xml` に `json-schema-validator:3.0.5` が追加されている
+- `YamlSchemaValidationException` が存在し、`getMessage()` にファイルパスと全違反メッセージが含まれる
+- `YamlLoader.load()` がスキーマ違反 YAML に対して `YamlSchemaValidationException` をスローする
+- 正常な YAML は引き続き例外なく読み込まれる
+- `mvn clean test` 全 PASS
+
+---
+
 # State
 
 <!-- template placeholder -->
