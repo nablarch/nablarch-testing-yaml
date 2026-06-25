@@ -280,13 +280,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-25
-- **Last completed**: PR #1 本文を全タスク（#1〜#7 + Refactoring A〜E）反映に更新
+- **Last completed**: スキーマ description を NTF 実行時振る舞い仕様に全面書き換え（commit 6ea4655）
 - **Next**: ユーザーが PR #1 を確認・承認 → PR を Ready for review に変更 → task #7 を check-off commit してクローズ
 - **Notes**: |
     ## 現状
 
     - task #7（スキーマ横並びチェック）の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
     - PR #1 本文を更新済み（#1〜#7 + Refactoring A〜E の全タスクにチェックマーク、テスト件数 159 件・`mvn install` BUILD SUCCESS を反映）。
+    - 追加作業（task #7 完了後）: スキーマ description を全面書き換え済み（Excel 言及除去 + NTF 振る舞い仕様を記述）。commit 6ea4655、push 済み、`mvn clean install` BUILD SUCCESS（159件 PASS）。
 
     ## 再開後すぐ実施
 
