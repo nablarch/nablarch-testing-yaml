@@ -8,77 +8,77 @@
   "properties": {
     "setup_tables": {
       "type": "array",
-      "description": "SETUP_TABLE: DB事前準備用テーブルデータ",
+      "description": "テスト実行前に NTF が対象テーブルへ INSERT するデータ。rows: [] を指定するとそのテーブルの全件 DELETE のみ実行される（INSERT なし）。同一 group_id を持つ複数エントリはすべて収集されそれぞれ INSERT される",
       "items": {
         "$ref": "#/$defs/table_data"
       }
     },
     "expected_tables": {
       "type": "array",
-      "description": "EXPECTED_TABLE: 期待値テーブルデータ",
+      "description": "テスト実行後に NTF が DB の実際の状態と照合するデータ。rows に記載したカラムのみ比較対象（省略カラムは比較しない）。同一 group_id を持つ複数エントリはすべて収集されそれぞれ照合される",
       "items": {
         "$ref": "#/$defs/table_data"
       }
     },
     "expected_complete_tables": {
       "type": "array",
-      "description": "EXPECTED_COMPLETE_TABLE: 省略カラムにデフォルト値を補完する期待値テーブル",
+      "description": "テスト実行後に NTF が DB と照合するデータ。省略カラムにはカラム型ごとのデフォルト値（数値型=\"0\"、固定長文字=半角スペース×カラム長、可変長文字=\" \"、日付型=epoch 起点の JVM タイムゾーン依存値、バイナリ型=10バイトゼロ列の HexString、Boolean=\"false\"）を補完してから全カラム比較する",
       "items": {
         "$ref": "#/$defs/table_data"
       }
     },
     "list_maps": {
       "type": "array",
-      "description": "LIST_MAP: List<Map<String,String>> 形式データ。id が重複した場合は最初の1件のみ取得される",
+      "description": "汎用キーバリュー形式データ。テストケース定義（testShots）・リクエストパラメータ・期待ログ等に使用される。id で完全一致検索され、重複時は先着1件のみ有効（2件目以降は無視）。指定 id のエントリが存在しない場合は空データ扱い（エラーにならない）",
       "items": {
         "$ref": "#/$defs/list_map_data"
       }
     },
     "setup_files": {
       "type": "array",
-      "description": "SETUP_FIXED / SETUP_VARIABLE を統合。type フィールドで区別",
+      "description": "テスト実行前に NTF が入力ファイルとして配置する固定長・可変長ファイルデータ（SETUP_FIXED / SETUP_VARIABLE を統合）。type フィールドで固定長か可変長かを区別する。同一 group_id を持つ複数エントリはすべて収集される",
       "items": {
         "$ref": "#/$defs/file_data"
       }
     },
     "expected_files": {
       "type": "array",
-      "description": "EXPECTED_FIXED / EXPECTED_VARIABLE を統合。type フィールドで区別",
+      "description": "テスト実行後に NTF が出力ファイルの内容と照合する期待値ファイルデータ（EXPECTED_FIXED / EXPECTED_VARIABLE を統合）。type フィールドで固定長か可変長かを区別する。同一 group_id を持つ複数エントリはすべて収集される",
       "items": {
         "$ref": "#/$defs/file_data"
       }
     },
     "messages": {
       "type": "array",
-      "description": "MESSAGE: 要求電文。固定長ファイルと同じ構造で記述する",
+      "description": "MockMessaging 経路の要求/応答電文データ。id で完全一致検索され先着1件のみ有効（2件目以降は無視）。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールドを定義する。id は `sendSyncTestData/{requestId}/message` 形式で指定する",
       "items": {
         "$ref": "#/$defs/message_data"
       }
     },
     "expected_request_header_messages": {
       "type": "array",
-      "description": "EXPECTED_REQUEST_HEADER_MESSAGES",
+      "description": "要求電文ヘッダの期待値。testShots の expectedMessage カラムで group_id を指定すると同一 group_id を持つエントリを全件収集、group_id を省略すると id 直接指定で先着1件収集。expected_request_body_messages とエントリ数（rows 合計）を一致させること（不一致時はエラー）",
       "items": {
         "$ref": "#/$defs/expected_request_message_data"
       }
     },
     "expected_request_body_messages": {
       "type": "array",
-      "description": "EXPECTED_REQUEST_BODY_MESSAGES",
+      "description": "要求電文ボディの期待値。testShots の expectedMessage カラムで group_id を指定すると同一 group_id を持つエントリを全件収集、group_id を省略すると id 直接指定で先着1件収集。expected_request_header_messages とエントリ数（rows 合計）を一致させること（不一致時はエラー）",
       "items": {
         "$ref": "#/$defs/expected_request_message_data"
       }
     },
     "response_header_messages": {
       "type": "array",
-      "description": "RESPONSE_HEADER_MESSAGES",
+      "description": "応答電文ヘッダデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。errorMode 行（先頭値が `errorMode:timeout` または `errorMode:msgException`）を含めると送受信エラーをシミュレートできる（経路B のみ）",
       "items": {
         "$ref": "#/$defs/group_message_data"
       }
     },
     "response_body_messages": {
       "type": "array",
-      "description": "RESPONSE_BODY_MESSAGES",
+      "description": "応答電文ボディデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。各エントリの電文レコード全体のバイト長が同一でなければならない（不一致時はエラー）。errorMode 行を含めると送受信エラーをシミュレートできる（経路B のみ）",
       "items": {
         "$ref": "#/$defs/group_message_data"
       }
@@ -92,20 +92,20 @@
         "rows"
       ],
       "additionalProperties": false,
-      "description": "テーブルデータ1ブロック。Excel では SETUP_TABLE[groupId]=TABLE_NAME から始まる行群に対応",
+      "description": "テーブルデータ1ブロック。setup_tables / expected_tables / expected_complete_tables の各エントリ1件に対応する",
       "properties": {
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "グループID。Excel: SETUP_TABLE[groupId]=... の括弧内の値。省略時はグループIDなし扱い。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+          "description": "データブロックの収集単位。testShots の setUpTable / expectedTable 等のカラムで指定した値と一致するブロックが全件収集される。省略時はグループIDなし（デフォルトグループ）扱いで、testShots のカラムを省略したテストケースから参照される。バッチ処理テストでは `\"default\"` を指定するとグループIDなし扱いと同等に動作する（ウェブ・メッセージングテストでは `\"default\"` は通常の group_id として扱われる）。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "table": {
           "type": "string",
-          "description": "テーブル名。NTF により trim・大文字変換される"
+          "description": "対象テーブル名。NTF により trim・大文字変換される"
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時にデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムにデフォルト値を全件補完したうえで比較される。",
+          "description": "データ行。各要素がレコード1件（キー=カラム名、値=セル値）。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n`null`（クォートなし）および `\"null\"`（クォートあり）はともに NullInterpreter により Java null に変換される。日付型カラムに `\"\"` を指定すると null 扱いになる（文字型の `\"\"` は空文字のまま INSERT される）。\n空配列 [] は setup_tables において対象テーブルの全件 DELETE のみ実行する（INSERT なし）。\n各オブジェクトに含まれないカラム（省略したカラム）の挙動はセクションにより異なる: setup_tables では INSERT 時にデフォルト値が補完される（主キーは省略しないこと）。expected_tables では省略カラムは比較対象外になる。expected_complete_tables では型ごとのデフォルト値（親 description 参照）を補完してから全カラム比較される",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -125,15 +125,15 @@
         "rows"
       ],
       "additionalProperties": false,
-      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群。id が重複した場合は最初の1件のみ取得される",
+      "description": "LIST_MAP データ1ブロック。list_maps の各エントリ1件に対応する。id が重複した場合は最初の1件のみ有効（2件目以降は無視）",
       "properties": {
         "id": {
           "type": "string",
-          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列。ファイル内でユニークにすること"
+          "description": "識別ID。完全一致で検索される。`testShots` は予約ID（テストケース定義として NTF が自動読み込みし各行を1テストケースとして実行する。1件以上の rows が必須で0件はエラー）。ファイル内で重複した場合は先着1件のみ有効"
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素が Map<String,String> の1件。マーカーカラム除外後のキーと値のペア。\n数値・真偽値も必ず文字列（クォート付き）で記述すること。",
+          "description": "データ行。各要素が Map<String,String> の1件。NTF はこのマップをテストコードへそのまま渡す。数値・真偽値も必ず文字列（クォート付き）で記述すること",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -154,16 +154,16 @@
         "records"
       ],
       "additionalProperties": false,
-      "description": "ファイルデータ1ブロック。1ファイル＋複数のレコード種別で構成される",
+      "description": "ファイルデータ1ブロック。setup_files / expected_files の各エントリ1件に対応する。1ファイル分のディレクティブ・レコード定義・データ行を含む",
       "properties": {
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "グループID。Excel: SETUP_FIXED[groupId]=path の括弧内の値。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+          "description": "データブロックの収集単位。testShots の setUpFile / expectedFile 等のカラムで指定した値と一致するブロックが全件収集される。省略時はグループIDなし（デフォルトグループ）扱い。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "path": {
           "type": "string",
-          "description": "ファイルパス。Excel: SETUP_FIXED[groupId]=path の '=' 以降"
+          "description": "ファイルパス。setup_files では NTF がこのパスに入力ファイルを配置する。expected_files では NTF がこのパスに出力されたファイルの内容と期待値を照合する"
         },
         "type": {
           "type": "string",
@@ -171,7 +171,7 @@
             "fixed",
             "variable"
           ],
-          "description": "fixed = 固定長（SETUP_FIXED/EXPECTED_FIXED）、variable = 可変長（SETUP_VARIABLE/EXPECTED_VARIABLE）"
+          "description": "ファイル種別。fixed = 固定長（SETUP_FIXED / EXPECTED_FIXED）、variable = 可変長（SETUP_VARIABLE / EXPECTED_VARIABLE）。NTF はこの値に応じてパーサ・フォーマッタを切り替える"
         },
         "directives": {
           "$ref": "#/$defs/directives"
@@ -179,7 +179,7 @@
         "records": {
           "type": "array",
           "minItems": 0,
-          "description": "レコード種別ごとのブロック。空ファイル（0バイト）を定義する場合は空配列 [] を指定し、directives のみ記述してレコード定義を省略する（公式解説書: 03_Tips.rst）",
+          "description": "レコード種別ごとのブロック。空配列 [] を指定すると 0バイトの空ファイルを表現する（setup_files では空ファイルを配置、expected_files では出力ファイルが空であることを検証）",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
@@ -193,11 +193,11 @@
         "records"
       ],
       "additionalProperties": false,
-      "description": "メッセージデータ。固定長ファイルと同じ構造で記述する。id が重複した場合は最初の1件のみ取得される",
+      "description": "messages エントリ1件。MockMessaging 経路の要求/応答電文1メッセージを表す。id で完全一致検索され先着1件のみ有効。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールド（型・長さつき）を定義する",
       "properties": {
         "id": {
           "type": "string",
-          "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降。ファイル内でユニークにすること"
+          "description": "メッセージID。`sendSyncTestData/{requestId}/message` 形式で指定する（末尾の `message` は固定のパスセグメント）。ファイル内で重複した場合は先着1件のみ有効"
         },
         "directives": {
           "$ref": "#/$defs/directives"
@@ -205,14 +205,14 @@
         "records": {
           "type": "array",
           "minItems": 1,
-          "description": "電文本文のレコード。FW制御ヘッダは records ではなく fw_header: マップに記述する（messages 専用。record_type:FW_HEADER 方式は廃止）",
+          "description": "電文本文のレコード定義。FW 制御ヘッダは fw_header に記述するため records には含めない（旧形式の record_type: FW_HEADER は廃止）。MessageParser はこの records の record_type を内部で常に \"default\" に置換する",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
         },
         "fw_header": {
           "$ref": "#/$defs/fw_header",
-          "description": "FW制御ヘッダ（キー: 値）。messages（MESSAGE: MockMessaging経路の要求/応答電文）でのみ使用する。FW制御ヘッダを名前:値で指定する。キー名はプロジェクト可変（reader.fwHeaderfields）。ここに書いたキーは全てFW制御ヘッダとして扱い、値でフィルタしない"
+          "description": "FW 制御ヘッダ（キー: 値）。messages（MESSAGE: MockMessaging 経路）でのみ使用する。記述したキーはすべて FW 制御ヘッダとして NTF に渡される（値でのフィルタリングは行われない）。キー名はプロジェクトの reader.fwHeaderfields 設定に合わせること（既定例: requestId, userId, resendFlag, resultCode）"
         }
       }
     },
@@ -220,17 +220,17 @@
       "type": "object",
       "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "EXPECTED_REQUEST_HEADER_MESSAGES / EXPECTED_REQUEST_BODY_MESSAGES のデータブロック。testShots の expectedMessage カラムで指定した group_id に対応するエントリが収集される（groupId 全件収集）。fw_header は使用しない（仕様 MS-04）",
+      "description": "expected_request_header_messages / expected_request_body_messages のエントリ1件。要求電文の期待値を表す。fw_header は使用しない（requestId 等のヘッダフィールドも含め records の fields/rows にフィールド単位で定義する）",
       "$comment": "header/body は現仕様(MS-04)で同一構造のため共通 def を使用。将来ヘッダ/ボディで構造が分岐する場合は expected_request_header_message_data / expected_request_body_message_data に分割する",
       "properties": {
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "グループID。Excel: EXPECTED_REQUEST_HEADER_MESSAGES[groupId]=ID の括弧内の値。testShots の expectedMessage カラムに対応。省略時は ID 直接指定経路（先着1件）で動作。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+          "description": "データブロックの収集単位。testShots の expectedMessage カラムで指定した値と一致するブロックが全件収集される。省略時は id 直接指定（先着1件）で動作する。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "id": {
           "type": "string",
-          "description": "リクエストID。Excel: EXPECTED_REQUEST_HEADER_MESSAGES[groupId]=ID の '=' 以降。フォーマット定義ファイル（{requestId}_SEND）の解決に使用される"
+          "description": "リクエストID。NTF がフォーマット定義ファイル（{requestId}_SEND）を解決するために使用する。group_id を指定した全件収集モードでも id は必須（フォーマット定義解決のため）"
         },
         "directives": {
           "$ref": "#/$defs/directives"
@@ -238,7 +238,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
-          "description": "電文フィールドのレコード。FW制御ヘッダ分離を行わないため fw_header は使用しない",
+          "description": "電文フィールドのレコード定義。requestId 等の FW 制御ヘッダフィールドも含め、すべてのフィールドをここに定義する（fw_header は使用しない）",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
@@ -252,16 +252,16 @@
         "records"
       ],
       "additionalProperties": false,
-      "description": "RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES のデータブロック。アクセス経路が2つある:\n(A) RequestTestingSendSyncSupport 経由: group_id でフィルタリング。group_id 必須\n(B) MockMessagingContext / MockMessagingClient 経由: id で照合。group_id 不要\ngroup_id を省略した場合は経路B として扱われる。",
+      "description": "response_header_messages / response_body_messages のエントリ1件。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集する（この経路で使う場合は group_id が必須）、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集する（group_id 不要）。group_id を省略した場合は経路 B として動作する",
       "properties": {
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。RequestTestingSendSyncSupport 経路でフィルタリングに使用される。MockMessagingContext / MockMessagingClient 経路では不要のため省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+          "description": "データブロックの収集単位。RequestTestingSendSyncSupport 経路でフィルタリングに使用される。MockMessagingContext / MockMessagingClient 経路では参照されないため省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "id": {
           "type": "string",
-          "description": "Excel の '=' 以降の値。RequestTestingSendSyncSupport 経路では識別子のみ。MockMessagingContext / MockMessagingClient 経路ではこの値で照合される"
+          "description": "メッセージ識別子。MockMessagingContext / MockMessagingClient 経路ではこの値で照合される。RequestTestingSendSyncSupport 経路では group_id でのフィルタリング後に識別子として扱われる"
         },
         "directives": {
           "$ref": "#/$defs/directives"
@@ -269,6 +269,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
+          "description": "電文フィールドのレコード定義。先頭値が `errorMode:timeout` または `errorMode:msgException` の行を含めると MockMessagingContext / MockMessagingClient 経路で送受信エラーをシミュレートできる（RequestTestingSendSyncSupport 経路では errorMode は無視される）",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
@@ -278,7 +279,7 @@
     "directives": {
       "type": "object",
       "additionalProperties": false,
-      "description": "ファイルディレクティブ。固定長と可変長で有効なキーが異なる",
+      "description": "ファイルディレクティブ。NTF のフォーマット定義に渡すファイル属性を指定する。固定長（type=fixed）と可変長（type=variable）で有効なキーが異なる",
       "properties": {
         "text-encoding": {
           "type": "string",
@@ -286,11 +287,11 @@
         },
         "record-separator": {
           "type": "string",
-          "description": "[共通] レコード区切り文字。YAMLダブルクォート文字列内でエスケープシーケンスを使う（例: \"\\r\\n\" = CRLF、\"\\n\" = LF）。シンボル形式（\"CRLF\" / \"LF\" / \"CR\" / \"NONE\"）も有効"
+          "description": "[共通] レコード区切り文字。`\"CRLF\"` / `\"LF\"` / `\"CR\"` / `\"NONE\"` のシンボル指定、または任意のリテラル文字列が有効。YAML でリテラル指定する場合はダブルクォート文字列内でエスケープシーケンスを使う（例: `\"\\r\\n\"` = CRLF、`\"\\n\"` = LF）"
         },
         "file-type": {
           "type": "string",
-          "description": "[共通] ファイル種別（固定長=Fixed、可変長=Variable）。type フィールドから自動設定されるため通常は記述不要"
+          "description": "[共通] ファイル種別（固定長=Fixed、可変長=Variable）。type フィールドから自動設定されるため通常は記述不要。明示した場合は自動設定値を上書きする"
         },
         "record-length": {
           "type": "integer",
@@ -326,7 +327,7 @@
         },
         "field-separator": {
           "type": "string",
-          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。1文字のみ有効。\"\\\\t\" を指定するとタブ文字（U+0009）に変換される"
+          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。1文字のみ有効（2文字以上はエラー）。YAML では `\"\\t\"` と記述するとタブ文字（U+0009）に変換される"
         },
         "quoting-delimiter": {
           "type": "string",
@@ -357,23 +358,23 @@
         "rows"
       ],
       "additionalProperties": false,
-      "description": "レコード種別1ブロック。Excel の『先頭セルが種別名の行』から始まる行群。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（パーサが列順で対応付ける）。",
+      "description": "レコード種別1ブロック。1つのレコードレイアウト（フィールド定義 + データ行）を表す。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（NTF パーサが列順で対応付ける）",
       "properties": {
         "record_type": {
           "type": "string",
-          "description": "レコード種別名。MessageParser 経路では内部で \"default\" に置換され実行時の挙動に影響しない（可読性のため任意の名前を記述可。FW_HEADER のような予約値はない）。ファイルデータでは複数レコードレイアウトの識別に使われる"
+          "description": "レコード種別名。ファイルデータ（setup_files / expected_files）では複数レコードレイアウトを持つファイルの識別に使われる。メッセージング系（messages / expected_request_* / response_*）では NTF 内部で常に \"default\" に置換されるため実行時の挙動に影響しない（可読性のために任意の名前を記述してよい。FW_HEADER のような予約値はない）"
         },
         "fields": {
           "type": "array",
           "minItems": 1,
-          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合。同一レコード種別内のフィールド名は重複不可（重複時はエラー）",
+          "description": "フィールド定義リスト。フィールド名・データ型・フィールド長を1要素にまとめた定義。同一レコード種別内のフィールド名は重複不可（重複時はエラー）",
           "items": {
             "$ref": "#/$defs/field_def"
           }
         },
         "rows": {
           "type": "array",
-          "description": "データ行リスト。各要素は fields と同順・同件数の値配列。空ファイル（出力なし）の期待値検証ユースケースでは 0 件も有効",
+          "description": "データ行リスト。各要素は fields と同順・同件数の値配列。NTF は fields の順序でフィールドと値を対応付ける。各配列の要素数が fields の件数と一致しない場合は NTF がエラーを出す。0件も有効（setup_files では空ファイル、expected_files では出力なしの期待値として使用）",
           "items": {
             "type": "array",
             "items": {
@@ -394,19 +395,19 @@
         "type"
       ],
       "additionalProperties": false,
-      "description": "フィールド定義1件。Excel のフィールド名・データ型・フィールド長の3行に対応。固定長ファイル（type=fixed）では length が実質必須（省略するとパーサが record-length を計算できない）",
+      "description": "フィールド定義1件。フィールド名・データ型・フィールド長の3要素で1フィールドを定義する。固定長ファイル（type=fixed）では length が実質必須（省略すると NTF パーサが record-length を計算できない）",
       "properties": {
         "name": {
           "type": "string",
-          "description": "フィールド名。Excel のフィールド名行の各セル値"
+          "description": "フィールド名。NTF がフォーマット定義ファイルのフィールド名と照合するために使用する。同一レコード種別内で重複不可"
         },
         "type": {
           "type": "string",
           "minLength": 1,
-          "description": "データ型。日本語名称で記述する（半角英字 / 半角数字 / 半角 / 全角 / 全角漢字 / 数値 / 符号無ゾーン10進数 / 符号付ゾーン10進数 / 符号無パック10進数 / 符号付パック10進数 / 符号無数値 / 符号付数値 / バイナリ 等）。Excel・公式解説書と同一の表記。フレームワークが BasicDataTypeMapping により内部の型記号へ変換する。プロジェクト独自の型名称（dataTypeMapping で登録したもの）も許容するため、過度なパターン制約は設けない"
+          "description": "データ型。日本語名称で記述する（半角英字 / 半角数字 / 半角 / 全角 / 全角漢字 / 数値 / 符号無ゾーン10進数 / 符号付ゾーン10進数 / 符号無パック10進数 / 符号付パック10進数 / 符号無数値 / 符号付数値 / バイナリ 等）。NTF が BasicDataTypeMapping により内部の型記号へ変換する。プロジェクト独自の型名称（dataTypeMapping で登録したもの）も許容するため、過度なパターン制約は設けない"
         },
         "length": {
-          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"0\" はダミーフィールド（意味のある長さを持たないプレースホルダー）に使用可。\"-\" はオンデマンド計算（実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される。変換ツールは length を文字列としてリテラル保持するため \"10\" のようにクォートありで出力する。integer 記法（10）も文字列記法（\"10\"）もどちらも有効。",
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須（省略すると NTF が record-length を計算できない）。可変長ファイルでは不要（省略可）。\"0\" はダミーフィールド（意味のある長さを持たないプレースホルダー）に使用可。\"-\" はオンデマンド計算（そのフィールドに追加された全レコード値の最大バイト長に自動拡張される）。\"-\" フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する。integer 記法（10）も文字列記法（\"10\"）もどちらも有効",
           "anyOf": [
             {
               "type": "integer",
@@ -426,7 +427,7 @@
       "additionalProperties": {
         "type": "string"
       },
-      "description": "FW制御ヘッダ（キー: 値）。MESSAGE（messages セクション）専用。expected_request_*/response_* では使用せず、それらは records の fields/rows でフィールド単位に定義する。キー名はプロジェクト可変（reader.fwHeaderfields。既定例: requestId, userId, resendFlag, resultCode）",
+      "description": "FW 制御ヘッダ（キー: 値）。messages セクション専用。expected_request_* / response_* では使用せず、それらは records の fields/rows でフィールド単位（型・長さつき）に定義する。キー名はプロジェクトの reader.fwHeaderfields 設定に合わせる（既定例: requestId, userId, resendFlag, resultCode）。記述したキーはすべて FW 制御ヘッダとして NTF に渡される",
       "$comment": "fw_header は任意キー許容マップ。directives(固定キー)とは異なり additionalProperties で任意のヘッダ名を許容する"
     }
   }
