@@ -279,37 +279,27 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 - **Status**: paused
-- **Date**: 2026-06-24
-- **Last completed**: Jackson 2.x 統一対応（json-schema-validator 3.0.5→1.5.9、tools.jackson→com.fasterxml.jackson 書き換え、10feb3e）
+- **Date**: 2026-06-25
+- **Last completed**: リファクタリング task A〜E 全完了（groupMatches DRY解消・MessageContent抽出・objectToString委譲・buildFragments名前分割・YamlLoaderエラーメッセージ改善）、`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS、WARNING 1件は許容済み）
 - **Next**: ユーザーが PR #1 をレビュー → 承認後に PR を Ready for review に変更し、task #7 を check-off commit してクローズ
 - **Notes**: |
     ## 現状
 
-    task #7 の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
-    `JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64 mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS）。
+    - task #7（スキーマ横並びチェック）の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
+    - リファクタリング task A〜E が追加実施済み（steering.md のタスクリストには含まれていないが checks/task-A〜E.md に記録済み）。
 
-    ## Jackson 2.x 統一対応（task #7 完了後に追加実施、10feb3e）
+    ## mvn ルール変更（2026-06-25）
 
-    - `json-schema-validator` を `3.0.5` → `1.5.9` に下げた
-      - 3.0.5 は `tools.jackson:3.x` を引いており、Nablarch 他モジュールの `com.fasterxml.jackson:2.x` と classpath 競合していた
-      - 1.5.9 は `com.fasterxml.jackson:2.18.3` を使用（2.x 系で統一）
-    - `YamlLoader.java`: `tools.jackson.databind.{JsonNode,ObjectMapper}` → `com.fasterxml.jackson.databind.*` に変更
-      - `SchemaRegistry/SpecificationVersion/Schema` → `JsonSchemaFactory/SpecVersion/JsonSchema` に変更
-      - `List<Error>` → `Set<ValidationMessage>` に変更
-    - `YamlSchemaValidationException.java`: `Error` → `ValidationMessage` に変更
-    - `YamlLoaderTest.java`: `Error` → `ValidationMessage` に変更
+    - `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn ...` に統一（Nablarch v6 は Java 17 ターゲット）
+    - javadoc 生成時の WARNING 1個（maven-javadoc-plugin 2.10.4 と Java 9+ モジュールシステムの非互換）は許容済み
 
-    ## task #7 で実施した主な変更
+    ## リファクタリング task A〜E の内容（2026-06-25 実施）
 
-    - スキーマ再設計: `message_data`（messages専用）と `expected_request_message_data`（expected_request_*専用）を分離
-    - 負例テスト3件追加: messages+group_id / expected_request_*+fw_header / group_id空文字
-    - `record_type` を `record_fragment.required` から除去
-    - テスト件数: 156 → 159件
-
-    ## integration FB 対応
-
-    - `field_def.length` のスキーマ制約を修正（f375fde）
-    - `YamlTestDataParser.setTestDataReader()` を INFO ログ＋無視に変更（630e700）
+    - A: `groupMatches` を YamlSection に集約（DRY解消）+ NPE 修正（cadea59, a1268df）
+    - B: `MessageContent` をインナークラスからトップレベルクラスに抽出（6ab2526, 4cc0886）
+    - C: `objectToString` を `toStr` に委譲して実装一元化（5232b41）
+    - D: `buildFragments` の boolean フラグ2つを `buildFragmentsForFile` / `buildFragmentsForMessage` / `buildFragmentsForSendSync` に分割（7e3b609, d23aa19）
+    - E: `YamlLoader` static 初期化のエラーメッセージにスキーマパスを追加（8817083）
 
     ## 再開後すぐ実施
 
