@@ -280,31 +280,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-06-25
-- **Last completed**: リファクタリング task A〜E 全完了（groupMatches DRY解消・MessageContent抽出・objectToString委譲・buildFragments名前分割・YamlLoaderエラーメッセージ改善）、`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean install` BUILD SUCCESS 確認済み（テスト159件 PASS、WARNING 1件は許容済み）
-- **Next**: ユーザーが PR #1 をレビュー → 承認後に PR を Ready for review に変更し、task #7 を check-off commit してクローズ
+- **Last completed**: PR #1 本文を全タスク（#1〜#7 + Refactoring A〜E）反映に更新
+- **Next**: ユーザーが PR #1 を確認・承認 → PR を Ready for review に変更 → task #7 を check-off commit してクローズ
 - **Notes**: |
     ## 現状
 
     - task #7（スキーマ横並びチェック）の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
-    - リファクタリング task A〜E が追加実施済み（steering.md のタスクリストには含まれていないが checks/task-A〜E.md に記録済み）。
-
-    ## mvn ルール変更（2026-06-25）
-
-    - `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn ...` に統一（Nablarch v6 は Java 17 ターゲット）
-    - javadoc 生成時の WARNING 1個（maven-javadoc-plugin 2.10.4 と Java 9+ モジュールシステムの非互換）は許容済み
-
-    ## リファクタリング task A〜E の内容（2026-06-25 実施）
-
-    - A: `groupMatches` を YamlSection に集約（DRY解消）+ NPE 修正（cadea59, a1268df）
-    - B: `MessageContent` をインナークラスからトップレベルクラスに抽出（6ab2526, 4cc0886）
-    - C: `objectToString` を `toStr` に委譲して実装一元化（5232b41）
-    - D: `buildFragments` の boolean フラグ2つを `buildFragmentsForFile` / `buildFragmentsForMessage` / `buildFragmentsForSendSync` に分割（7e3b609, d23aa19）
-    - E: `YamlLoader` static 初期化のエラーメッセージにスキーマパスを追加（8817083）
+    - PR #1 本文を更新済み（#1〜#7 + Refactoring A〜E の全タスクにチェックマーク、テスト件数 159 件・`mvn install` BUILD SUCCESS を反映）。
 
     ## 再開後すぐ実施
 
-    1. ユーザーが PR #1 を確認・承認
-    2. PR を Ready for review に変更
-    3. steering.md の task #7 を check-off commit（`docs: complete task #7 — スキーマ横並びチェック・NTF仕様準拠再設計`）してプッシュ
+    1. ユーザーが PR #1 (https://github.com/nablarch/nablarch-testing-yaml/pull/1) を確認・承認
+    2. `gh pr ready 1` で PR を Ready for review に変更
+    3. steering.md の task #7 step I をチェックオフ → commit・push
+       （`docs: complete task #7 — スキーマ横並びチェック・NTF仕様準拠再設計`）
     4. Acceptance criteria を実行して全体完了を確認
 
