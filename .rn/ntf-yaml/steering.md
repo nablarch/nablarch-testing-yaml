@@ -279,21 +279,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 - **Status**: paused
-- **Date**: 2026-06-25
-- **Last completed**: スキーマ description を NTF 実行時振る舞い仕様に全面書き換え（commit 6ea4655）
-- **Next**: ユーザーが PR #1 を確認・承認 → PR を Ready for review に変更 → task #7 を check-off commit してクローズ
-- **Notes**: |
-    ## 現状
-
-    - task #7（スキーマ横並びチェック）の全実装・全レビューが完了。ユーザーレビュー（step I）のみ残っている。
-    - PR #1 本文を更新済み（#1〜#7 + Refactoring A〜E の全タスクにチェックマーク、テスト件数 159 件・`mvn install` BUILD SUCCESS を反映）。
-    - 追加作業（task #7 完了後）: スキーマ description を全面書き換え済み（Excel 言及除去 + NTF 振る舞い仕様を記述）。commit 6ea4655、push 済み、`mvn clean install` BUILD SUCCESS（159件 PASS）。
-
-    ## 再開後すぐ実施
-
-    1. ユーザーが PR #1 (https://github.com/nablarch/nablarch-testing-yaml/pull/1) を確認・承認
-    2. `gh pr ready 1` で PR を Ready for review に変更
-    3. steering.md の task #7 step I をチェックオフ → commit・push
-       （`docs: complete task #7 — スキーマ横並びチェック・NTF仕様準拠再設計`）
-    4. Acceptance criteria を実行して全体完了を確認
+- **Date**: 2026-07-15
+- **Last completed**: expected_tables/expected_complete_tables description に主キー対応・全行列挙要件を追記（commit b309359）、mvn clean install BUILD SUCCESS 確認済み
+- **Next**: ユーザーが PR #1 を確認・承認 → `gh pr ready 1` で Ready for review → task #7 step I をチェックオフ → commit・push
+- **Notes**: untracked paths（functional/ implementations/ jacoco.exec javac.*.args serdeBenchmark/ validateBenchmark/）はユーザー判断待ち（セッション間で継続）
 
