@@ -310,6 +310,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!-- template placeholder -->
+- **Status**: paused
+- **Date**: 2026-07-15
+- **Last completed**: task #8 — FK落とし穴2件を setup_tables/rows description に追記、mvn clean install BUILD SUCCESS（commits 2f20a91→09e0695→a6eafd6→7291e00）
+- **Next**: PR #1 をユーザーがレビュー・承認 → マージ
+- **Notes**: untracked paths（functional/ implementations/ jacoco.exec javac.*.args serdeBenchmark/ validateBenchmark/）はユーザー判断待ち
 
 
