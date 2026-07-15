@@ -276,7 +276,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #8: スキーマ description に FK 制約の落とし穴2件を追記
+### ~~#8: スキーマ description に FK 制約の落とし穴2件を追記~~
 
 **Purpose**: FK 制約のある環境で利用者がハマる NTF 挙動2点をスキーマ description に記載する
 
@@ -284,19 +284,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `setup_tables` の description に落とし穴1を追記
+- [x] A. `setup_tables` の description に落とし穴1を追記
   - 通常の INSERT でも対象テーブルは INSERT 前に全件 DELETE されること
   - FK の親テーブルを clear するなら子テーブルも `setup_tables` に列挙すること（NTF は子→親の順で削除する）
-- [ ] B. `table_data.rows` の description に落とし穴2を追記
+- [x] B. `table_data.rows` の description に落とし穴2を追記
   - FK 制約のある数値カラムを省略すると `"0"` が INSERT され、参照先に ID=0 の行が無ければ FK 違反になること
   - NULL 許容カラムを NULL にしたい場合は省略せず明示的に `null` を書くこと（省略≠NULL）
-- [ ] C. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"` 等）
-- [ ] D. `mvn clean test` 全 PASS 確認
-- [ ] E. commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-08.md)
-- [ ] G. QA expert review (subagent)
-- [ ] H. Craft expert review — writing (subagent)
-- [ ] I. Verification expert review — fact-check (subagent)
+- [x] C. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"` 等）
+- [x] D. `mvn clean test` 全 PASS 確認
+- [x] E. commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-08.md)
+- [x] G. QA expert review (subagent)
+- [x] H. Craft expert review — writing (subagent)
+- [x] I. Verification expert review — fact-check (subagent)
 
 **Completion criteria**:
 
