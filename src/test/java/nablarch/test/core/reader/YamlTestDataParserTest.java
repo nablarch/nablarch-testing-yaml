@@ -1,5 +1,6 @@
 package nablarch.test.core.reader;
 
+import nablarch.test.Assertion;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
@@ -378,6 +379,81 @@ public class YamlTestDataParserTest {
         // Then: expected_tables（グループIDなし 1 件）のみ
         assertThat(result.size(), is(1));
         assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
+    }
+
+    /**
+     * [BUG-F] getExpectedTableData: rows が空のとき DB に行があれば assertTableEquals が FAIL すること（偽陰性の防止）。
+     *
+     * <p>
+     * Given: DB の TEST_TABLE に 1 件のレコードがある<br>
+     * When:  expected_tables に rows: [] のエントリがある YAML で getExpectedTableData を呼び、
+     *        Assertion.assertTableEquals を実行する<br>
+     * Then:  AssertionError がスローされること（DB に行があるのに通り抜けない）
+     * </p>
+     */
+    @Test
+    public void emptyExpectedTable_failsWhenDbHasRows() {
+        // Given: DB に 1 件挿入
+        VariousDbTestHelper.insert(new TestTable("00001", 1L, "v", 1L,
+                new java.math.BigDecimal("1.0"),
+                java.sql.Date.valueOf("2024-01-01"),
+                java.sql.Timestamp.valueOf("2024-01-01 00:00:00"), null, null, null, null));
+
+        // When
+        List<TableData> expected = sut.getExpectedTableData(
+                DIR, "YamlTestDataParserTest/tableData", "emptyRows");
+
+        // Then: 1 件返り、assertTableEquals が AssertionError をスローすること
+        assertThat("1 件の TableData が返ること", expected.size(), is(1));
+        boolean assertionFired = false;
+        try {
+            Assertion.assertTableEquals("空テーブル検証", expected.get(0));
+        } catch (AssertionError e) {
+            // OK: assertTableEquals が正しく FAIL した
+            assertionFired = true;
+        }
+        assertTrue("DB に行があるのに assertTableEquals が通り抜けた（偽陰性）", assertionFired);
+    }
+
+    /**
+     * [BUG-F] getExpectedTableData: expected_complete_tables に rows: [] のとき NPE にならないこと。
+     *
+     * <p>
+     * Given: expected_complete_tables に rows: [] のエントリがある YAML<br>
+     * When:  getExpectedTableData を呼ぶ<br>
+     * Then:  NPE が発生せず TableData が返り、getColumnNames() が DB の全カラムを返すこと
+     * </p>
+     */
+    @Test
+    public void emptyExpectedCompleteTable_noNpe() {
+        // Given / When
+        List<TableData> result = sut.getExpectedTableData(
+                DIR, "YamlTestDataParserTest/emptyCompleteTable");
+
+        // Then
+        assertThat("1 件の TableData が返ること", result.size(), is(1));
+        String[] cols = result.get(0).getColumnNames();
+        assertTrue("getColumnNames() が DB の全カラムを返すこと（長さ > 0）", cols.length > 0);
+    }
+
+    /**
+     * [BUG-F] getSetupTableData: setup_tables の rows: [] が正常に TableData を返すこと（退行防止）。
+     *
+     * <p>
+     * Given: setup_tables に rows: [] のエントリがある YAML<br>
+     * When:  getSetupTableData を呼ぶ<br>
+     * Then:  NPE が発生せず TableData が 1 件返り、行数 0 件であること
+     * </p>
+     */
+    @Test
+    public void setupTableWithEmptyRows_clearsTable() {
+        // Given / When
+        List<TableData> setupData = sut.getSetupTableData(
+                DIR, "YamlTestDataParserTest/tableData", "emptyRows");
+
+        // Then
+        assertThat("setup_tables の 1 件が返ること", setupData.size(), is(1));
+        assertThat("行数が 0 件であること", setupData.get(0).size(), is(0));
     }
 
     /**

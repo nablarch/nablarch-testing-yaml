@@ -107,7 +107,17 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
+        TableData td;
+        if (dataColumns.isEmpty()) {
+            // 列名を未設定（null）にして TableData.getColumnNames() の dbInfo フォールバックを効かせる。
+            // 長さ 0 の配列を渡すと loadData() が DB を読まず、空テーブルの検証が素通りする。
+            td = new TableData();
+            td.setTableName(tableName);
+            td.setDbInfo(dbInfo);
+            td.setDefaultValues(defaultValues);
+        } else {
+            td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
+        }
         for (List<String> rawRow : rawRows) {
             if (rawRow.isEmpty()) {
                 // 空マッピング（{}）行はデータ行として扱わない。
@@ -119,7 +129,9 @@ public final class YamlTableDataBuilder {
             }
             td.addRow(values);
         }
-        if (fillDefaults) {
+        // 列名未設定のとき fillDefaultValues() は columnNames を直接参照して NPE になる。
+        // 0 行では行埋めが空回りし、列名は getColumnNames() のフォールバックで同じ結果になるためスキップしてよい。
+        if (fillDefaults && !dataColumns.isEmpty()) {
             td.fillDefaultValues();
         }
         return td;

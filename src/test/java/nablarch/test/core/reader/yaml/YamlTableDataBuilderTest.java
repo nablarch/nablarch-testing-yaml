@@ -399,13 +399,15 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: 先頭行が空エントリ（{}）の場合はカラム 0 件の TableData が返ること（JE-6）。
+     * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * 解説書 10.5: 先頭行が {} の場合、カラム定義が 0 件の TableData が生成され、行データは 0 件となること<br>
+     * 解説書 10.5 の本旨は「rows 内の空マッピングはスキップされる」ことであり、
+     * カラム定義が 0 件になるのは副作用（{@code buildTableDataList_emptyRowEntrySkipped} が本旨を検証する）。<br>
+     * 修正後は dbInfo フォールバックにより全カラムが返る。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
-     * Then:  TableData が 1 件返り、カラム 0 件・行 0 件であること
+     * Then:  TableData が 1 件返り、dbInfo の全カラムが返り、行 0 件であること
      * </p>
      */
     @Test
@@ -418,7 +420,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
-        assertThat("カラム数が 0 件であること", result.get(0).getColumnNames().length, is(0));
+        assertThat("dbInfo の全カラムが返ること", result.get(0).getColumnNames().length, is(11));
         assertThat("行数が 0 件であること", result.get(0).size(), is(0));
     }
 
