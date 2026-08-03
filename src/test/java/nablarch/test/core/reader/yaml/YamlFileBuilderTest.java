@@ -137,7 +137,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: expected_files の末尾セクションデータが欠落しないこと（RS-07）。
+     * [YamlFileBuilder] buildFileList: expected_files の末尾セクションデータが欠落しないこと。
      *
      * <p>
      * Given: setup_files の後に expected_files が YAML 末尾に記述されている<br>
