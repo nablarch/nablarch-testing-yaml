@@ -134,17 +134,16 @@ public final class YamlMessageBuilder {
      * （変換ツール用）。各 {@link MockMessages} の {@link nablarch.test.core.file.DataFile#getPath() path} は
      * エントリの {@code id}（無指定は空文字）に一致する。
      * </p>
+     * <p>
+     * 本メソッドは変換ツール専用であり、グループ ID は角括弧なしの生値で照合する
+     * （{@link #buildSendSyncList} は角括弧付きの整形済み ID で照合する）。
+     * </p>
      *
      * @param yaml       YAML トップレベル Map
      * @param sectionKey セクションキー
      * @param groupId    グループ ID（生値で一致比較する）
      * @param basePath   インタープリタ用ベースパス
      * @return 本文（固定長ファイルの器）リスト（記述順。対象が無ければ空）
-     *
-     * <p>
-     * 本メソッドは変換ツール専用であり、グループ ID は角括弧なしの生値で照合する
-     * （{@link #buildSendSyncList} は角括弧付きの整形済み ID で照合する）。
-     * </p>
      */
     public List<FixedLengthFile> buildSendSyncBodies(Map<String, Object> yaml, String sectionKey,
                                                      String groupId, String basePath) {
