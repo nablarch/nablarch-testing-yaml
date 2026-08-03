@@ -338,7 +338,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #10: 不具合 #F — 空の EXPECTED_TABLE が常に PASS する
+### ~~#10: 不具合 #F — 空の EXPECTED_TABLE が常に PASS する~~
 
 **Purpose**: `expected_tables` に `rows: []` のエントリを書いたとき DB に行があってもアサーションが PASS する偽陰性を修正する。
 
