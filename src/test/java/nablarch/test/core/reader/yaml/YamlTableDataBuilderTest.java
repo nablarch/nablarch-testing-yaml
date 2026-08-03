@@ -402,9 +402,9 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * rows 内の空マッピングはスキップされるため、カラム定義は 0 件になる
+     * rows 内の空マッピングはすべてスキップされるため行データは 0 件となり、
+     * dbInfo フォールバックにより全カラムが補完される
      * （{@code buildTableDataList_emptyRowEntrySkipped} がスキップ自体を検証する）。<br>
-     * 修正後は dbInfo フォールバックにより全カラムが返る。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
      * Then:  TableData が 1 件返り、dbInfo の全カラムが返り、行 0 件であること
