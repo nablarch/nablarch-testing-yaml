@@ -170,8 +170,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                                                                String id, DataType dataType) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
-        String formattedId = formatGroupId(id == null ? new String[0] : new String[]{id});
-        return messageBuilder.buildSendSyncList(yaml, sectionKey, formattedId, path);
+        return messageBuilder.buildSendSyncList(yaml, sectionKey, id, path);
     }
 
     /**

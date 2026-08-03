@@ -673,7 +673,7 @@ public class YamlTestDataParserTest {
      *
      * <p>
      * Given: response_body_messages に group_id=grp1 のエントリ<br>
-     * When:  getSendSyncMessage(dir, resource, "grp1", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
+     * When:  getSendSyncMessage(dir, resource, "[grp1]", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
      * Then:  RequestTestingMessagePool のリストが返ること
      * </p>
      */
@@ -682,7 +682,7 @@ public class YamlTestDataParserTest {
         // Given / When
         List<RequestTestingMessagePool> result = sut.getSendSyncMessage(
                 DIR, "YamlTestDataParserTest/messageData",
-                "grp1", DataType.RESPONSE_BODY_MESSAGES);
+                "[grp1]", DataType.RESPONSE_BODY_MESSAGES);
 
         // Then
         assertNotNull(result);
@@ -961,12 +961,12 @@ public class YamlTestDataParserTest {
 
         // response_body_messages: getSendSyncMessage で grp1 エントリが取得できること
         List<RequestTestingMessagePool> respBody = sut.getSendSyncMessage(
-                DIR, resource, "grp1", DataType.RESPONSE_BODY_MESSAGES);
+                DIR, resource, "[grp1]", DataType.RESPONSE_BODY_MESSAGES);
         assertThat("response_body_messages: grp1 の 1 件が取得できること", respBody.size(), is(1));
 
         // response_header_messages: getSendSyncMessage で grp1 エントリが取得できること（GroupData 経路）
         List<RequestTestingMessagePool> respHeader = sut.getSendSyncMessage(
-                DIR, resource, "grp1", DataType.RESPONSE_HEADER_MESSAGES);
+                DIR, resource, "[grp1]", DataType.RESPONSE_HEADER_MESSAGES);
         assertThat("response_header_messages: grp1 の 1 件が取得できること", respHeader.size(), is(1));
 
         // response_header/body_messages: SingleData 経路（group_id なし）のエントリが取得できること
