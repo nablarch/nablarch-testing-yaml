@@ -308,12 +308,68 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #9: 不具合 #C — group_id 省略メッセージエントリが buildSendSyncList で取得できない
+
+**Purpose**: `YamlMessageBuilder.buildSendSyncList` の `rawGroupId != null` 条件により、`group_id` を持たないエントリがグループIDなし（`""`）で取得できない不具合を修正する。
+
+**Prerequisites**: #8
+
+**Steps**:
+
+- [ ] A. RED: `YamlMessageBuilderTest` に `buildSendSyncMessageList_noGroupId` を追加し、失敗することを確認
+  - テストデータは既存 `YamlMessageBuilderTest/` 配下に追記（新規ディレクトリ不要）
+- [ ] B. GREEN: `buildSendSyncList` を `YamlSection.groupMatches()` に置き換え、`groupMatches` を static import 追加
+  - `stripBrackets()` が未使用になる場合は削除
+  - `buildSendSyncBodies` に変換ツール専用旨の Javadoc を追記
+- [ ] C. `mvn test` 実行・全 PASS 確認
+- [ ] D. commit・push
+- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-09.md)
+- [ ] F. QA expert review (subagent)
+- [ ] G. Craft expert review — coding (subagent)
+- [ ] H. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- 追加した `buildSendSyncMessageList_noGroupId` テストが GREEN
+- `YamlMessageBuilderTest` の既存テストが全て通っている
+- `buildSendSyncList` から `FIELD_GROUP_ID` の直接比較が消えている
+- `stripBrackets()` が未使用なら削除されている
+- `buildSendSyncBodies` のロジックが変更されていない（Javadoc 追記のみ）
+
+---
+
+### #10: 不具合 #F — 空の EXPECTED_TABLE が常に PASS する
+
+**Purpose**: `expected_tables` に `rows: []` のエントリを書いたとき DB に行があってもアサーションが PASS する偽陰性を修正する。
+
+**Prerequisites**: #9
+
+**Steps**:
+
+- [ ] A. RED①: 偽陰性テスト — DB に 1 件以上あり `rows: []` で assertTableEquals が FAIL すること
+- [ ] B. RED②: `EXPECTED_COMPLETE_TABLE` NPE テスト — `rows: []` で getExpectedTableData が例外なく返りカラムが DB 全列
+- [ ] C. RED③: SETUP_TABLE 退行防止テスト — `rows: []` で setUpDb 後にテーブルが空になること
+- [ ] D. GREEN: `buildTableData()` をデフォルトコンストラクタ + setter 方式に変更、`fillDefaults && !dataColumns.isEmpty()` ガード追加
+- [ ] E. 既存テスト `buildTableDataList_allEmptyRowsReturnsTableDataWithZeroColumns` の期待値を「dbInfo 全列が返ること」に更新し、Javadoc から `(JE-6)` と解説書 10.5 参照を削除
+- [ ] F. `mvn test` 実行・全 PASS 確認
+- [ ] G. commit・push
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-10.md)
+- [ ] I. QA expert review (subagent)
+- [ ] J. Craft expert review — coding (subagent)
+- [ ] K. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- 追加した RED テスト①②③が全て GREEN
+- `buildTableDataList_allEmptyRowsReturnsTableDataWithZeroColumns` の期待値が更新され GREEN
+- `YamlTableDataBuilderTest` の他の既存テストが全て通っている
+- YAML スキーマが変更されていない
+- `nablarch-testing` 本体および converter が変更されていない
+
+---
+
 # State
 
-- **Status**: paused
-- **Date**: 2026-07-15
-- **Last completed**: task #8 — FK落とし穴2件を setup_tables/rows description に追記、mvn clean install BUILD SUCCESS（commits 2f20a91→09e0695→a6eafd6→7291e00）
-- **Next**: PR #1 をユーザーがレビュー・承認 → マージ
-- **Notes**: untracked paths（functional/ implementations/ jacoco.exec javac.*.args serdeBenchmark/ validateBenchmark/）はユーザー判断待ち
+{{state}}
 
 
