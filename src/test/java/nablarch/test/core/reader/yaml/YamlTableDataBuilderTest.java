@@ -353,7 +353,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: 同一ファイル内で同一 ID のエントリが 2 件ある場合、先着一致で最初の 1 件のみ返ること。
      *
      * <p>
-     * 解説書 5.5: 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます<br>
+     * 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます<br>
      * Given: list_maps に id=dupIdFirst が 2 エントリ（1件目 KEY1="first", 2件目 KEY1="second"）<br>
      * When:  buildListMapRows(yaml, "dupIdFirst", path) を呼ぶ<br>
      * Then:  1件目の KEY1="first" が返ること
@@ -376,7 +376,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows 内の空エントリ（{}）は読み飛ばされること。
      *
      * <p>
-     * 解説書 10.5: rows 内の要素が空マッピング（{}）の場合にスキップされます<br>
+     * rows 内の要素が空マッピング（{}）の場合にスキップされます<br>
      * Given: setup_tables の emptyRowMixed グループに 通常行・{} 行・通常行 の 3 エントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, path) を呼ぶ<br>
      * Then:  {} 行がスキップされ、2 行のみ返ること
@@ -402,8 +402,8 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * 解説書 10.5 の本旨は「rows 内の空マッピングはスキップされる」ことであり、
-     * カラム定義が 0 件になるのは副作用（{@code buildTableDataList_emptyRowEntrySkipped} が本旨を検証する）。<br>
+     * rows 内の空マッピングはスキップされるため、カラム定義は 0 件になる
+     * （{@code buildTableDataList_emptyRowEntrySkipped} がスキップ自体を検証する）。<br>
      * 修正後は dbInfo フォールバックにより全カラムが返る。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
@@ -428,7 +428,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
-     * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
+     * YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
      * Given: setup_tables の markerColInTable グループに "[NO]" カラムを含む行<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, path) を呼ぶ<br>
      * Then:  "[NO]" カラムが TableData のカラム名に含まれないこと
@@ -455,7 +455,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: expected_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
-     * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
+     * YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
      * Given: expected_tables の markerColInTable グループに "[NO]" カラムを含む行<br>
      * When:  buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, path) を呼ぶ<br>
      * Then:  "[NO]" カラムが TableData のカラム名に含まれないこと
@@ -481,7 +481,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: クォートあり "null" は Java null として取得されること。
      *
      * <p>
-     * 解説書 8.1: YAML の "null"（クォートあり）も Java null になります（NullInterpreter が変換）<br>
+     * YAML の "null"（クォートあり）も Java null になります（NullInterpreter が変換）<br>
      * Given: list_maps に QUOTED_NULL: "null"（クォートあり）<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
      * Then:  QUOTED_NULL の値が null であること
@@ -504,7 +504,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: " " はクォート除去後にスペース1文字になること。
      *
      * <p>
-     * 解説書 8.1: " "（スペースをダブルクォートで囲む）→ QuotationTrimmer が外側クォートを除去してスペース1文字<br>
+     * " "（スペースをダブルクォートで囲む）→ QuotationTrimmer が外側クォートを除去してスペース1文字<br>
      * Given: list_maps に SPACE_COL: " "<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
      * Then:  SPACE_COL の値がスペース1文字であること
@@ -527,7 +527,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "\\r" は CR（キャリッジリターン）文字に変換されること。
      *
      * <p>
-     * 解説書 8.1/8.3: "\\r" → LineSeparatorInterpreter が CR（0x0D）に変換（デフォルト設定）<br>
+     * "\\r" → LineSeparatorInterpreter が CR（0x0D）に変換（デフォルト設定）<br>
      * Given: list_maps に CR_COL: "\\r"<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
      * Then:  CR_COL の値が CR 文字（"\r"）であること
@@ -550,7 +550,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること（8.4）。
      *
      * <p>
-     * 解説書 8.4: DateTimeInterpreter は完全一致のみ変換する。部分文字列は変換されない<br>
+     * DateTimeInterpreter は完全一致のみ変換する。部分文字列は変換されない<br>
      * Given: list_maps に EXACT_COL="${systemTime}", PARTIAL_COL="prefix_${systemTime}"<br>
      * When:  buildListMapRows(yaml, "dateTimeTest", path) を呼ぶ<br>
      * Then:  EXACT_COL はシステム時刻文字列になり、PARTIAL_COL は変換されないこと
@@ -578,7 +578,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること（8.6）。
      *
      * <p>
-     * 解説書 8.6: BinaryFileInterpreter のパスは YAML ファイルのディレクトリからの相対パス<br>
+     * BinaryFileInterpreter のパスは YAML ファイルのディレクトリからの相対パス<br>
      * Given: list_maps に BIN_COL="${binaryFile:YamlTableDataBuilderTest/test.bin}"<br>
      * When:  buildListMapRows(yaml, "binaryFileTest", path) を呼ぶ<br>
      * Then:  BIN_COL が test.bin のバイト列 HexString（"414243"）になること
@@ -602,7 +602,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること（8.5）。
      *
      * <p>
-     * 解説書 8.5: BasicJapaneseCharacterInterpreter が ${文字種,文字数} を生成する<br>
+     * BasicJapaneseCharacterInterpreter が ${文字種,文字数} を生成する<br>
      * Given: list_maps に ALPHA_COL="${半角英字,10}", NUM_COL="${半角数字,5}"<br>
      * When:  buildListMapRows(yaml, "charGenTest", path) を呼ぶ<br>
      * Then:  ALPHA_COL は 10 文字の半角英字、NUM_COL は 5 文字の半角数字になること
@@ -630,7 +630,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること（8.1/8.2 G-1）。
      *
      * <p>
-     * 解説書 8.1/examples-special 8.2: `"\""` → YAML パース後は `"` 1文字。
+     * `"\""` → YAML パース後は `"` 1文字。
      * YAML 経路では QuotationTrimmer は使わないため、`"` がそのまま返ること<br>
      * Given: list_maps に DQ_COL: "\""<br>
      * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
@@ -655,7 +655,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること（8.2 QA-3）。
      *
      * <p>
-     * 解説書 8.2: シングルクォートで囲んだ '"' も YAML パース後は " 1文字。
+     * シングルクォートで囲んだ '"' も YAML パース後は " 1文字。
      * YAML 経路では QuotationTrimmer は使わないため、`"` がそのまま返ること<br>
      * Given: list_maps に DQ_COL: '"'（YAML シングルクォート記法）<br>
      * When:  buildListMapRows(yaml, "singleQuoteNotationTest", path) を呼ぶ<br>
@@ -680,7 +680,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
      *
      * <p>
-     * 解説書 8.1/8.4: DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
+     * DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
      * Given: list_maps に UPDATE_COL="${updateTime}", SET_UP_TIME_COL="${setUpTime}"、
      *        DateTimeInterpreter に setSetUpDateTime("2010-09-14 12:34:56.0") 設定済み<br>
      * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
@@ -716,7 +716,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: "[" で始まるが "]" で終わらないキーは除外されないこと。
      *
      * <p>
-     * 解説書 10.2: マーカーカラムは "[COL]" 形式（両端が角括弧）のみ除外される。
+     * マーカーカラムは "[COL]" 形式（両端が角括弧）のみ除外される。
      * "[OPEN" のように "[" で始まっても "]" で終わらないキーは通常カラムとして扱われること<br>
      * Given: list_maps の partialBracketColTest に "[OPEN" キーと "KEY1" キーを含む行<br>
      * When:  buildListMapRows(yaml, "partialBracketColTest", path) を呼ぶ<br>
@@ -743,7 +743,6 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * buildListMapRows (private) の rawRow.isEmpty() == true 分岐: 空マッピング行は空の TreeMap として結果に含まれる。<br>
-     * 解説書 10.x: list_maps の rows に {} が含まれると空 Map が結果に追加されること<br>
      * Given: list_maps の emptyRowListMap に 通常行・{} 行・通常行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "emptyRowListMap", path) を呼ぶ<br>
      * Then:  3 件返り、2件目が空 Map であること
@@ -768,7 +767,6 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: rows に Map でない要素（スカラー）が含まれる場合はスキップされること。
      *
      * <p>
-     * 解説書 10.x: list_maps の rows に Map でない要素が混在しても例外なくスキップされること<br>
      * Given: list_maps の nonMapRowTest に 通常行・スカラー文字列・通常行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "nonMapRowTest", path) を呼ぶ<br>
      * Then:  Map でない行はスキップされ、Map の行 2 件のみ返ること
@@ -800,7 +798,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと（8.4 QA-4）。
      *
      * <p>
-     * 解説書 8.4: setSetUpDateTime を呼ばずに "${setUpTime}" を使った場合、変換されずにそのまま残ること<br>
+     * setSetUpDateTime を呼ばずに "${setUpTime}" を使った場合、変換されずにそのまま残ること<br>
      * Given: @Before の sut（setSetUpDateTime 未設定）で list_maps に SET_UP_TIME_COL="${setUpTime}"<br>
      * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
      * Then:  SET_UP_TIME_COL の値が "${setUpTime}" のまま変換されないこと
@@ -824,7 +822,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること（4章 G-6）。
      *
      * <p>
-     * 解説書 4.1: testShots は予約 ID であり、通常の list_maps エントリと同様に取得できること<br>
+     * testShots は予約 ID であり、通常の list_maps エントリと同様に取得できること<br>
      * Given: list_maps に id=testShots で no/description/expectedStatusCode/setUpTable/expectedTable カラムを持つ2件のエントリ<br>
      * When:  buildListMapRows(yaml, "testShots", path) を呼ぶ<br>
      * Then:  2件取得でき、各カラム値が保持されていること

@@ -325,7 +325,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: records に複数のレコードレイアウトを記述した場合、全レコードが構築されること。
      *
      * <p>
-     * 解説書 6.5: 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます<br>
+     * 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます<br>
      * Given: setup_files の multiRecord グループに HEADER + DATA の 2 レコードを持つエントリ<br>
      * When:  buildFileList(yaml, "setup_files", "[multiRecord]", path) を呼ぶ<br>
      * Then:  DataFile の toDataRecords() が HEADER 行 + DATA 行の 2 件を返すこと
@@ -360,7 +360,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: records が空配列のエントリは空ファイルとして扱われること。
      *
      * <p>
-     * 解説書 6.6: 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します（records: []）<br>
+     * 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します（records: []）<br>
      * Given: setup_files の emptyFile グループに records: [] のエントリ<br>
      * When:  buildFileList(yaml, "setup_files", "[emptyFile]", path) を呼ぶ<br>
      * Then:  FixedLengthFile が 1 件返り、レコード定義が 0 件でディレクティブが設定されていること
@@ -411,7 +411,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること（9.3 QA-6）。
      *
      * <p>
-     * 解説書 9.3: field-separator は 1 文字のみ有効。2 文字以上の場合は IllegalArgumentException がスローされる<br>
+     * field-separator は 1 文字のみ有効。2 文字以上の場合は IllegalArgumentException がスローされる<br>
      * Given: expected_files の twoCharSeparator グループに field-separator: ",,"（2文字）<br>
      * When:  buildFileList 後に createLayout() を呼ぶ<br>
      * Then:  IllegalArgumentException がスローされること
@@ -490,7 +490,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
      *
      * <p>
-     * 解説書 9.3: field-separator の "\\t" 指定はタブ文字（0x09）として設定される<br>
+     * field-separator の "\\t" 指定はタブ文字（0x09）として設定される<br>
      * Given: setup_files の variable エントリで directives.field-separator = "\\t"<br>
      * When:  buildFileList(yaml, "expected_files", "[tabSeparator]", path) を呼ぶ<br>
      * Then:  createLayout().getDirective().get("field-separator") がタブ文字（"\t"）であること

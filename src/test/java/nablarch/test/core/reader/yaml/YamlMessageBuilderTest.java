@@ -177,7 +177,7 @@ public class YamlMessageBuilderTest {
      * [YamlMessageBuilder] buildMessagePool: expected_request_header_messages から取得できること（7.2 G-5）。
      *
      * <p>
-     * 解説書 7.2: expected_request_header_messages セクションから buildMessagePool で取得できること<br>
+     * expected_request_header_messages セクションから buildMessagePool で取得できること<br>
      * Given: expected_request_header_messages に id=req001（FW_HEADER レコード）<br>
      * When:  buildMessagePool(yaml, "expected_request_header_messages", "req001", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が返ること
@@ -200,7 +200,7 @@ public class YamlMessageBuilderTest {
      * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること（7.3 G-4）。
      *
      * <p>
-     * 解説書 7.1/7.3: sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
+     * sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
      * Given: messages に id="sendSyncTestData/REQ001/message"<br>
      * When:  buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が返り、FW ヘッダの requestId="REQ0000001" であること
@@ -481,7 +481,6 @@ public class YamlMessageBuilderTest {
      * 空 Map を FW ヘッダとして MessagePool が返ること（RS-20）。
      *
      * <p>
-     * 解説書: RS-20（fw_header マップ不在の代替フロー）<br>
      * Given: messages に id=bodyOnly001 の BODY レコードのみ（fw_header マップなし）<br>
      * When:  buildMessagePool(yaml, "messages", "bodyOnly001", path) を呼ぶ<br>
      * Then:  MessagePool が返り、fwHeader が空 Map であること

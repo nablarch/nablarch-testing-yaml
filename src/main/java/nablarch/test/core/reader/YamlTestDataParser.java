@@ -30,10 +30,12 @@ import java.util.Map;
  * {@link YamlLoader#load} が返す順序保持 Map を、データ種別ごとのビルダ
  * （{@link YamlTableDataBuilder}／{@link YamlFileBuilder}／{@link YamlMessageBuilder}）が走査し、
  * 構造の写し取りと値加工（特殊記法の解釈・デフォルト値補完・メッセージ長の {@code -} 注入等）を行って
- * 本体の器（{@link TableData}／{@link DataFile}／{@link MessagePool}）を直接組み立てる（設計書 判断 B）。
+ * 本体の器（{@link TableData}／{@link DataFile}／{@link MessagePool}）を直接組み立てる。
  * </p>
  * <p>
  * {@link TestDataReader} は使用しない（{@link #setTestDataReader} は何もしない）。
+ * {@link TestDataReader#readLine()} は 1 行を {@code List<String>} で返す行ベースの抽象であり、
+ * YAML の入れ子構造を表現できないため、行を経由せず器を直接組み立てる。
  * </p>
  *
  * @author kiyotis
