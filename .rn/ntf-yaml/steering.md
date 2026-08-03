@@ -308,7 +308,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #9: 不具合 #C — group_id 省略メッセージエントリが buildSendSyncList で取得できない
+### ~~#9: 不具合 #C — group_id 省略メッセージエントリが buildSendSyncList で取得できない~~
 
 **Purpose**: `YamlMessageBuilder.buildSendSyncList` の `rawGroupId != null` 条件により、`group_id` を持たないエントリがグループIDなし（`""`）で取得できない不具合を修正する。
 
@@ -316,17 +316,17 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. RED: `YamlMessageBuilderTest` に `buildSendSyncMessageList_noGroupId` を追加し、失敗することを確認
+- [x] A. RED: `YamlMessageBuilderTest` に `buildSendSyncMessageList_noGroupId` を追加し、失敗することを確認
   - テストデータは既存 `YamlMessageBuilderTest/` 配下に追記（新規ディレクトリ不要）
-- [ ] B. GREEN: `buildSendSyncList` を `YamlSection.groupMatches()` に置き換え、`groupMatches` を static import 追加
+- [x] B. GREEN: `buildSendSyncList` を `YamlSection.groupMatches()` に置き換え、`groupMatches` を static import 追加
   - `stripBrackets()` が未使用になる場合は削除
   - `buildSendSyncBodies` に変換ツール専用旨の Javadoc を追記
-- [ ] C. `mvn test` 実行・全 PASS 確認
-- [ ] D. commit・push
-- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-09.md)
-- [ ] F. QA expert review (subagent)
-- [ ] G. Craft expert review — coding (subagent)
-- [ ] H. Verification expert review — test (subagent)
+- [x] C. `mvn test` 実行・全 PASS 確認
+- [x] D. commit・push
+- [x] E. self-check (OK/NG per completion criterion, record in checks/task-09.md)
+- [x] F. QA expert review (subagent)
+- [x] G. Craft expert review — coding (subagent)
+- [x] H. Verification expert review — test (subagent)
 
 **Completion criteria**:
 
