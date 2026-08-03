@@ -411,7 +411,7 @@ public class YamlTableDataBuilderTest {
      * </p>
      */
     @Test
-    public void buildTableDataList_allEmptyRowsReturnsTableDataWithZeroColumns() {
+    public void buildTableDataList_allEmptyRowsReturnsTableDataWithAllDbColumns() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 

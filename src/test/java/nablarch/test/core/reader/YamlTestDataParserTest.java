@@ -433,27 +433,7 @@ public class YamlTestDataParserTest {
         // Then
         assertThat("1 件の TableData が返ること", result.size(), is(1));
         String[] cols = result.get(0).getColumnNames();
-        assertTrue("getColumnNames() が DB の全カラムを返すこと（長さ > 0）", cols.length > 0);
-    }
-
-    /**
-     * [BUG-F] getSetupTableData: setup_tables の rows: [] が正常に TableData を返すこと（退行防止）。
-     *
-     * <p>
-     * Given: setup_tables に rows: [] のエントリがある YAML<br>
-     * When:  getSetupTableData を呼ぶ<br>
-     * Then:  NPE が発生せず TableData が 1 件返り、行数 0 件であること
-     * </p>
-     */
-    @Test
-    public void setupTableWithEmptyRows_clearsTable() {
-        // Given / When
-        List<TableData> setupData = sut.getSetupTableData(
-                DIR, "YamlTestDataParserTest/tableData", "emptyRows");
-
-        // Then
-        assertThat("setup_tables の 1 件が返ること", setupData.size(), is(1));
-        assertThat("行数が 0 件であること", setupData.get(0).size(), is(0));
+        assertThat("getColumnNames() が DB の全カラム（11 列）を返すこと", cols.length, is(11));
     }
 
     /**

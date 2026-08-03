@@ -129,8 +129,8 @@ public final class YamlTableDataBuilder {
             }
             td.addRow(values);
         }
-        // 列名未設定のとき fillDefaultValues() は columnNames を直接参照して NPE になる。
-        // 0 行では行埋めが空回りし、列名は getColumnNames() のフォールバックで同じ結果になるためスキップしてよい。
+        // fillDefaultValues() は columnNames フィールドを直接参照する（getColumnNames() 経由ではない）ため、
+        // null のまま呼ぶと NPE になる。0 行テーブルは埋めるべき行がなく getColumnNames() のフォールバックと等価。
         if (fillDefaults && !dataColumns.isEmpty()) {
             td.fillDefaultValues();
         }
