@@ -370,6 +370,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-{{state}}
+- **Status**: paused
+- **Date**: 2026-08-03
+- **Last completed**: #10 不具合 #F — 空 EXPECTED_TABLE 偽陰性修正
+- **Next**: なし（#1–#10 すべて完了）。PR #1 ユーザーレビュー待ち
+- **Notes**: branch `feature/ntf-yaml`, PR #1 open。全タスク完了済み。untracked 残留: `META-INF/`, `entity.list.txt`, `nablarch/` はセッション開始前からの既存ファイル（本体参照用・ビルド成果物）でユーザー管理対象。
 
 
