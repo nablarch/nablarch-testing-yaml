@@ -1,3 +1,5 @@
+Rn version: 0.8.0
+
 # Goal
 
 nablarch-testing の YAML 読み込み機構（src/main 12件）とその単体テスト（src/test 52件）を
@@ -130,15 +132,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 単体テスト java 9件・テストデータ 43件すべてが `src/test` の対応パスに配置されている
 - `mvn test` 全テスト PASS
 - テスト java 9件が本体現ブランチと package/import を除き完全一致
-
-# Decisions
-
-## D-1: ブランチを develop から切り develop へマージ
-- **Issue**: マージ先ブランチの選択
-- **Conclusion**: develop へ PR・マージ
-- **Rationale**: 作業指示に従い develop を統合先とする
-- **Evidence**: cc1-yaml-build.md「develop から作業ブランチを作成」
-- **Sources**: .rn/ntf-yaml/tasks/cc1-yaml-build.md
 
 ### ~~#4: converter 専用 Adapter 群の削除~~
 
@@ -370,10 +363,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-03
-- **Last completed**: #10 不具合 #F — 空 EXPECTED_TABLE 偽陰性修正
-- **Next**: なし（#1–#10 すべて完了）。PR #1 ユーザーレビュー待ち
-- **Notes**: branch `feature/ntf-yaml`, PR #1 open。全タスク完了済み。untracked 残留: `META-INF/`, `entity.list.txt`, `nablarch/` はセッション開始前からの既存ファイル（本体参照用・ビルド成果物）でユーザー管理対象。
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 
