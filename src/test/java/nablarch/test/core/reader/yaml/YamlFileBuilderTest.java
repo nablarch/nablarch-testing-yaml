@@ -142,7 +142,7 @@ public class YamlFileBuilderTest {
      * <p>
      * Given: setup_files の後に expected_files が YAML 末尾に記述されている<br>
      * When:  buildFileList(yaml, "expected_files", "", path) を呼ぶ<br>
-     * Then:  末尾セクションのデータが欠落せず 2 件返ること（RS-07）
+     * Then:  末尾セクションのデータが欠落せず 2 件返ること
      * </p>
      */
     @Test
@@ -207,11 +207,11 @@ public class YamlFileBuilderTest {
     }
 
     // ========================================================================
-    // ディレクティブが正しく設定されること（QA-2）
+    // ディレクティブが正しく設定されること
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: directives が DataFile に正しく設定されること（QA-2）。
+     * [YamlFileBuilder] buildFileList: directives が DataFile に正しく設定されること。
      *
      * <p>
      * Given: setup_files の fixed エントリに text-encoding: Windows-31J が指定されている<br>
@@ -408,7 +408,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること（9.3 QA-6）。
+     * [YamlFileBuilder] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること。
      *
      * <p>
      * field-separator は 1 文字のみ有効。2 文字以上の場合は IllegalArgumentException がスローされる<br>
@@ -487,7 +487,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
+     * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること。
      *
      * <p>
      * field-separator の "\\t" 指定はタブ文字（0x09）として設定される<br>

@@ -125,12 +125,12 @@ public final class YamlSection {
     }
 
     /**
-     * YAML のテストデータ値を文字列に変換する（RS-03〜RS-05）。
+     * YAML のテストデータ値を文字列に変換する。
      *
      * <ul>
-     * <li>null → null（RS-03）</li>
-     * <li>Boolean → "true"/"false"（RS-04）</li>
-     * <li>数値 → 数字文字列（RS-05）</li>
+     * <li>null → null</li>
+     * <li>Boolean → "true"/"false"</li>
+     * <li>数値 → 数字文字列</li>
      * <li>その他 → {@code toString()}</li>
      * </ul>
      *

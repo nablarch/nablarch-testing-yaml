@@ -34,9 +34,8 @@ import static org.junit.Assert.*;
  * {@link YamlTestDataParser} のテストクラス。
  *
  * <p>
- * 仕様ID RS-01〜RS-08 を網羅する。
- * RS-02（{@code readLine()} が終端で null を返す）は {@link TestDataReader} 実装の仕様であり、
- * {@code YamlTestDataParser} は {@link TestDataReader} を使用しないため非適用。
+ * {@link TestDataReader#readLine()} が終端で null を返す仕様は {@link TestDataReader} 実装側のものであり、
+ * {@code YamlTestDataParser} は {@link TestDataReader} を使用しないため対象外。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
@@ -76,11 +75,11 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-01: {dataName}.yaml ファイルを検索する
+    // {dataName}.yaml ファイルを検索する
     // ========================================================================
 
     /**
-     * [RS-01] getSetupTableData: .yaml ファイルを path/resourceName.yaml として開けること。
+     * getSetupTableData: .yaml ファイルを path/resourceName.yaml として開けること。
      *
      * <p>
      * Given: YAML ファイルが path/resourceName.yaml として配置されている<br>
@@ -101,11 +100,11 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-08: isResourceExisting
+    // isResourceExisting
     // ========================================================================
 
     /**
-     * [RS-08] isResourceExisting: YAML ファイルが存在する場合は true を返すこと。
+     * isResourceExisting: YAML ファイルが存在する場合は true を返すこと。
      *
      * <p>
      * Given: YamlTestDataParserTest/existingForTest.yaml が配置されている<br>
@@ -120,7 +119,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-08] isResourceExisting: YAML ファイルが存在しない場合は false を返すこと。
+     * isResourceExisting: YAML ファイルが存在しない場合は false を返すこと。
      *
      * <p>
      * Given: 存在しないファイル名<br>
@@ -135,16 +134,16 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-07: null 返却後の最終セクションデータ欠落防止
+    // null 返却後の最終セクションデータ欠落防止
     // ========================================================================
 
     /**
-     * [RS-07] getExpectedFile: YAML 末尾セクション（expected_files）のデータが欠落しないこと。
+     * getExpectedFile: YAML 末尾セクション（expected_files）のデータが欠落しないこと。
      *
      * <p>
      * Given: setup_files に続いて expected_files が YAML ファイル末尾に記述されている<br>
      * When:  getExpectedFile を呼ぶ<br>
-     * Then:  末尾セクション（expected_files）のデータが欠落せずに取得できること（RS-07）
+     * Then:  末尾セクション（expected_files）のデータが欠落せずに取得できること
      * </p>
      */
     @Test
@@ -159,13 +158,13 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-03: YAML ネイティブ null は Java null
-    // RS-04: YAML ネイティブ boolean は文字列化
-    // RS-05: YAML ネイティブ integer/float は文字列化
+    // YAML ネイティブ null は Java null
+    // YAML ネイティブ boolean は文字列化
+    // YAML ネイティブ integer/float は文字列化
     // ========================================================================
 
     /**
-     * [RS-03] getListMap: YAML ネイティブ null は Java null として取得されること。
+     * getListMap: YAML ネイティブ null は Java null として取得されること。
      *
      * <p>
      * Given: NULL_COL の値が YAML ネイティブ null（アンクォート）<br>
@@ -185,7 +184,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-04] getListMap: YAML ネイティブ boolean は文字列 "true"/"false" として取得されること。
+     * getListMap: YAML ネイティブ boolean は文字列 "true"/"false" として取得されること。
      *
      * <p>
      * Given: BOOL_TRUE が YAML ネイティブ boolean true、BOOL_FALSE が false（クォートなし）<br>
@@ -206,7 +205,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-05] getListMap: YAML ネイティブ integer/float は文字列として取得されること。
+     * getListMap: YAML ネイティブ integer/float は文字列として取得されること。
      *
      * <p>
      * Given: INT_COL が YAML ネイティブ整数 42、FLOAT_COL が 3.14（クォートなし）<br>
@@ -227,7 +226,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-05] getListMap: YAML 科学的記数法（1e10）は文字列として取得されること。
+     * getListMap: YAML 科学的記数法（1e10）は文字列として取得されること。
      *
      * <p>
      * Given: FLOAT_SCIENTIFIC が YAML ネイティブ 1e10（SnakeYAML が Double 1.0E10 として解釈）<br>
@@ -247,16 +246,16 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-06: YAML ネイティブ null は Java null（末尾キー省略含む）
+    // YAML ネイティブ null は Java null（末尾キー省略含む）
     // ========================================================================
 
     /**
-     * [RS-06] getListMap: YAML ネイティブ null（明示記述）は Java null として取得されること。
+     * getListMap: YAML ネイティブ null（明示記述）は Java null として取得されること。
      *
      * <p>
      * Given: rows の各行に COL2/COL3: null が明示的に含まれる YAML データ<br>
      * When:  getListMap を呼ぶ<br>
-     * Then:  null 値のカラムが Java null として返ること（RS-03 仕様による）
+     * Then:  null 値のカラムが Java null として返ること
      * </p>
      */
     @Test
@@ -271,7 +270,7 @@ public class YamlTestDataParserTest {
         Map<String, String> row0 = result.get(0);
         assertThat(row0.get("COL1"), is("val1"));
         assertThat(row0.get("COL2"), is("val2"));
-        // COL3: null → SnakeYAML が Java null に変換し、objectToString() がそのまま null を返す（RS-03）
+        // COL3: null → SnakeYAML が Java null に変換し、objectToString() がそのまま null を返す
         assertNull(row0.get("COL3"));
 
         // 2 行目の確認
@@ -282,7 +281,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-06] getListMap: YAML 後続行で末尾キーを省略した場合、省略キーの値は null として取得されること。
+     * getListMap: YAML 後続行で末尾キーを省略した場合、省略キーの値は null として取得されること。
      *
      * <p>
      * Given: 2 行目に COL3 キーが省略されている list_maps エントリ<br>
@@ -307,7 +306,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSetupTableData: グループ ID 指定で対象グループのみ取得されること。
+     * getSetupTableData: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
      * Given: setup_tables に groupA / groupB のエントリがある<br>
@@ -326,7 +325,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getSetupTableData: 存在しないグループ ID を指定した場合に空リストが返ること。
+     * getSetupTableData: 存在しないグループ ID を指定した場合に空リストが返ること。
      *
      * <p>
      * Given: 存在しないグループ ID<br>
@@ -344,7 +343,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedTableData: グループ ID 付きで取得できること。
+     * getExpectedTableData: グループ ID 付きで取得できること。
      *
      * <p>
      * Given: expected_tables に groupA のエントリがある<br>
@@ -363,7 +362,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedTableData: グループ ID なしで全件取得できること。
+     * getExpectedTableData: グループ ID なしで全件取得できること。
      *
      * <p>
      * Given: expected_tables にグループ ID なしのエントリ<br>
@@ -437,7 +436,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedTableData: ファイルが存在しない場合は IllegalStateException がスローされること。
+     * getExpectedTableData: ファイルが存在しない場合は IllegalStateException がスローされること。
      *
      * <p>
      * Given: 存在しない YAML ファイルのリソース名<br>
@@ -456,7 +455,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getListMap: 指定 ID のデータが取得できること。
+     * getListMap: 指定 ID のデータが取得できること。
      *
      * <p>
      * Given: list_maps に id=testListMap が 2 行<br>
@@ -482,7 +481,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSetupFile: 固定長ファイルと可変長ファイルが取得できること。
+     * getSetupFile: 固定長ファイルと可変長ファイルが取得できること。
      *
      * <p>
      * Given: setup_files に fixed と variable の 2 エントリ<br>
@@ -502,7 +501,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getSetupFile: 取得した DataFile の path が正しく設定されていること。
+     * getSetupFile: 取得した DataFile の path が正しく設定されていること。
      *
      * <p>
      * Given: setup_files に path=dummy/setup_fixed.dat のエントリ<br>
@@ -521,7 +520,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getSetupFile: グループ ID 指定で対象グループのみ取得されること。
+     * getSetupFile: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
      * Given: setup_files に grp1 のエントリがある<br>
@@ -540,7 +539,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedFile: 固定長ファイルと可変長ファイルが取得できること。
+     * getExpectedFile: 固定長ファイルと可変長ファイルが取得できること。
      *
      * <p>
      * Given: expected_files に fixed と variable の 2 エントリ<br>
@@ -560,7 +559,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedFile: グループ ID 指定で対象グループのみ取得されること。
+     * getExpectedFile: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
      * Given: setup_files と同構造で expected_files にも grp1 のエントリを追加したテストデータ<br>
@@ -579,7 +578,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getExpectedFile: 取得した DataFile の path が正しく設定されていること。
+     * getExpectedFile: 取得した DataFile の path が正しく設定されていること。
      *
      * <p>
      * Given: expected_files に path=dummy/expected_fixed.dat のエントリ<br>
@@ -602,7 +601,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getMessage: メッセージが取得でき、FW ヘッダ値（requestId・userId）が設定されていること。
+     * getMessage: メッセージが取得でき、FW ヘッダ値（requestId・userId）が設定されていること。
      *
      * <p>
      * Given: messages の FW_HEADER レコードに requestId="0000000001", userId="testUser01" が含まれる<br>
@@ -637,7 +636,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getMessageWithoutCache(EXPECTED_REQUEST_BODY_MESSAGES): メッセージが取得できること。
+     * getMessageWithoutCache(EXPECTED_REQUEST_BODY_MESSAGES): メッセージが取得できること。
      *
      * <p>
      * Given: expected_request_body_messages に id=req001 と SEARCH_KEY フィールドがある<br>
@@ -658,7 +657,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getMessageWithoutCache(EXPECTED_REQUEST_HEADER_MESSAGES): メッセージが取得できること。
+     * getMessageWithoutCache(EXPECTED_REQUEST_HEADER_MESSAGES): メッセージが取得できること。
      *
      * <p>
      * Given: expected_request_header_messages に id=req001 と requestId/userId フィールドがある<br>
@@ -679,7 +678,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getMessageWithoutCache(RESPONSE_BODY_MESSAGES): メッセージが取得できること。
+     * getMessageWithoutCache(RESPONSE_BODY_MESSAGES): メッセージが取得できること。
      *
      * <p>
      * Given: response_body_messages に group_id=grp1, id=resp001, RESULT_CODE="0000" のエントリ<br>
@@ -700,7 +699,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getMessageWithoutCache(RESPONSE_HEADER_MESSAGES): メッセージが取得できること。
+     * getMessageWithoutCache(RESPONSE_HEADER_MESSAGES): メッセージが取得できること。
      *
      * <p>
      * Given: response_header_messages に group_id=grp1, id=resp001, requestId="0000000001" のエントリ<br>
@@ -725,7 +724,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSendSyncMessage: グループ ID 付きのメッセージリストが取得できること。
+     * getSendSyncMessage: グループ ID 付きのメッセージリストが取得できること。
      *
      * <p>
      * Given: response_body_messages に group_id=grp1 のエントリ<br>
@@ -746,7 +745,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getSendSyncMessage: 存在しないグループ ID を指定した場合は null が返ること。
+     * getSendSyncMessage: 存在しないグループ ID を指定した場合は null が返ること。
      *
      * <p>
      * Given: 存在しないグループ ID "noSuchGroup"<br>
@@ -770,7 +769,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSetupTableData: YAML ファイルが存在しない場合は空リストを返すこと。
+     * getSetupTableData: YAML ファイルが存在しない場合は空リストを返すこと。
      *
      * <p>
      * Given: 存在しない YAML ファイルのリソース名<br>
@@ -792,7 +791,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSetupTableData: rows が空（rows: []）のエントリは 0 行の TableData として返ること。
+     * getSetupTableData: rows が空（rows: []）のエントリは 0 行の TableData として返ること。
      *
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
@@ -815,7 +814,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getListMap: 存在しない ID を指定した場合は空リストが返ること。
+     * getListMap: 存在しない ID を指定した場合は空リストが返ること。
      *
      * <p>
      * Given: list_maps に存在しない id<br>
@@ -837,7 +836,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getListMap: マーカーカラム（[COL] 形式）は結果の Map から除外されること。
+     * getListMap: マーカーカラム（[COL] 形式）は結果の Map から除外されること。
      *
      * <p>
      * Given: list_maps に "[NO]" キーを含む行<br>
@@ -863,7 +862,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getMessage: 存在しない ID を指定した場合は null が返ること。
+     * getMessage: 存在しない ID を指定した場合は null が返ること。
      *
      * <p>
      * Given: messages に存在しない id<br>
@@ -881,7 +880,7 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-01] getMessageWithoutCache: 存在しない ID を指定した場合は null が返ること。
+     * getMessageWithoutCache: 存在しない ID を指定した場合は null が返ること。
      *
      * <p>
      * Given: expected_request_body_messages に存在しない id<br>
@@ -905,7 +904,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] setTestDataReader: 何もしない（INFO ログを出力して無視）。
+     * setTestDataReader: 何もしない（INFO ログを出力して無視）。
      *
      * <p>
      * Given: YamlTestDataParser インスタンス<br>
@@ -1040,7 +1039,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getExpectedTableData: expected_complete_tables では fillDefaultValues が呼ばれること。
+     * getExpectedTableData: expected_complete_tables では fillDefaultValues が呼ばれること。
      *
      * <p>
      * Given: expected_complete_tables に PK_COL1/PK_COL2 のみのエントリ（他カラム省略）<br>

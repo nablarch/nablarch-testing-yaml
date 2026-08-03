@@ -547,7 +547,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること（8.4）。
+     * [YamlTableDataBuilder] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること。
      *
      * <p>
      * DateTimeInterpreter は完全一致のみ変換する。部分文字列は変換されない<br>
@@ -575,7 +575,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること（8.6）。
+     * [YamlTableDataBuilder] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること。
      *
      * <p>
      * BinaryFileInterpreter のパスは YAML ファイルのディレクトリからの相対パス<br>
@@ -599,7 +599,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること（8.5）。
+     * [YamlTableDataBuilder] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること。
      *
      * <p>
      * BasicJapaneseCharacterInterpreter が ${文字種,文字数} を生成する<br>
@@ -627,7 +627,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること（8.1/8.2 G-1）。
+     * [YamlTableDataBuilder] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること。
      *
      * <p>
      * `"\""` → YAML パース後は `"` 1文字。
@@ -652,7 +652,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること（8.2 QA-3）。
+     * [YamlTableDataBuilder] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること。
      *
      * <p>
      * シングルクォートで囲んだ '"' も YAML パース後は " 1文字。
@@ -677,7 +677,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
+     * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること。
      *
      * <p>
      * DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
@@ -795,7 +795,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと（8.4 QA-4）。
+     * [YamlTableDataBuilder] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと。
      *
      * <p>
      * setSetUpDateTime を呼ばずに "${setUpTime}" を使った場合、変換されずにそのまま残ること<br>
@@ -819,7 +819,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること（4章 G-6）。
+     * [YamlTableDataBuilder] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること。
      *
      * <p>
      * testShots は予約 ID であり、通常の list_maps エントリと同様に取得できること<br>

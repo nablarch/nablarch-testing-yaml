@@ -174,7 +174,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: expected_request_header_messages から取得できること（7.2 G-5）。
+     * [YamlMessageBuilder] buildMessagePool: expected_request_header_messages から取得できること。
      *
      * <p>
      * expected_request_header_messages セクションから buildMessagePool で取得できること<br>
@@ -197,7 +197,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること（7.3 G-4）。
+     * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること。
      *
      * <p>
      * sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
@@ -320,12 +320,12 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: requestId が MessagePool に設定されること（QA-3）。
+     * [YamlMessageBuilder] buildSendSyncMessageList: requestId が MessagePool に設定されること。
      *
      * <p>
      * Given: response_body_messages に id=sync001, group_id=grp1 のエントリ<br>
      * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
-     * Then:  result.get(0).getRequestId() が "sync001" を返すこと（QA-3）
+     * Then:  result.get(0).getRequestId() が "sync001" を返すこと
      * </p>
      */
     @Test
@@ -473,12 +473,12 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // RS-20: FW_HEADER フラグメントが存在しない場合は空 Map を FW ヘッダとして使用すること
+    // FW_HEADER フラグメントが存在しない場合は空 Map を FW ヘッダとして使用すること
     // ========================================================================
 
     /**
      * [YamlMessageBuilder] buildMessagePool: fw_header: マップがない場合、
-     * 空 Map を FW ヘッダとして MessagePool が返ること（RS-20）。
+     * 空 Map を FW ヘッダとして MessagePool が返ること。
      *
      * <p>
      * Given: messages に id=bodyOnly001 の BODY レコードのみ（fw_header マップなし）<br>
@@ -648,7 +648,7 @@ public class YamlMessageBuilderTest {
 
 
     // ========================================================================
-    // fwHeaderFields カスタム設定（QA-4）
+    // fwHeaderFields カスタム設定
     // ========================================================================
 
     /**

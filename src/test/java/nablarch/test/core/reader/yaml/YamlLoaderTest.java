@@ -233,11 +233,11 @@ public class YamlLoaderTest {
     }
 
     // ========================================================================
-    // load: LRU キャッシュ上限超過で最古エントリが追い出されること（QA-5）
+    // load: LRU キャッシュ上限超過で最古エントリが追い出されること
     // ========================================================================
 
     /**
-     * [YamlLoader] load: LRU キャッシュ上限（8件）を超えると最初にロードしたエントリが追い出されること（QA-5）。
+     * [YamlLoader] load: LRU キャッシュ上限（8件）を超えると最初にロードしたエントリが追い出されること。
      *
      * <p>
      * Given: lru1.yaml〜lru9.yaml（9ファイル）。キャッシュ上限は 8<br>
@@ -262,7 +262,7 @@ public class YamlLoaderTest {
 
         // Then: lru1 は追い出されているため再ロードすると別インスタンス
         Map<String, Object> reloaded = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
-        assertThat("lru1 はキャッシュから追い出され、別インスタンスになること（QA-5）",
+        assertThat("lru1 はキャッシュから追い出され、別インスタンスになること",
                 first == reloaded, is(false));
     }
 
