@@ -256,7 +256,7 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * Given: response_body_messages に group_id=grp1 のエントリ<br>
-     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "grp1", path) を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool のリストが返ること
      * </p>
      */
@@ -267,7 +267,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then
         assertNotNull(result);
@@ -297,11 +297,34 @@ public class YamlMessageBuilderTest {
     }
 
     /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: group_id を持たないエントリをグループID "" で取得して1件返ること。
+     *
+     * <p>
+     * Given: response_body_messages に group_id を持たない resp001 エントリが存在する<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が 1 件返ること（group_id 省略 = グループなし）
+     * </p>
+     */
+    @Test
+    public void buildSendSyncMessageList_noGroupId() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
+                yaml, "response_body_messages", "", DIR);
+
+        // Then
+        assertNotNull("group_id 省略エントリがグループなし \"\" で取得できること", result);
+        assertThat("1 件返ること", result.size(), is(1));
+    }
+
+    /**
      * [YamlMessageBuilder] buildSendSyncMessageList: requestId が MessagePool に設定されること（QA-3）。
      *
      * <p>
      * Given: response_body_messages に id=sync001, group_id=grp1 のエントリ<br>
-     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "grp1", path) を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
      * Then:  result.get(0).getRequestId() が "sync001" を返すこと（QA-3）
      * </p>
      */
@@ -312,7 +335,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then
         assertNotNull(result);
@@ -359,7 +382,7 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * Given: response_body_messages の grp1 エントリに text-encoding: UTF-8 が指定されている<br>
-     * When:  buildSendSyncMessageList を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
      * Then:  result.get(0).createLayout().getDirective("text-encoding") が "UTF-8" を返すこと
      * </p>
      */
@@ -370,7 +393,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then: directives が MockMessages に設定されていること（source フィールド経由で確認）
         assertNotNull(result);
@@ -560,7 +583,7 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * Given: response_body_messages に group_id=grp2 のエントリが id フィールドなしで定義されている<br>
-     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "grp2", path) を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp2]", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が 1 件返り、getRequestId() が null であること
      * </p>
      */
@@ -584,7 +607,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp2", DIR);
+                yaml, "response_body_messages", "[grp2]", DIR);
 
         // Then
         assertNotNull(result);
@@ -861,7 +884,7 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * Given: response_body_messages に group_id=noLengthGrp のエントリが length なしフィールドで定義されている<br>
-     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "noLengthGrp", path) を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[noLengthGrp]", path) を呼ぶ<br>
      * Then:  NullPointerException が発生せず、RequestTestingMessagePool が 1 件返ること
      * </p>
      */
@@ -872,7 +895,7 @@ public class YamlMessageBuilderTest {
 
         // When: length なしフィールドの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "noLengthGrp", DIR);
+                yaml, "response_body_messages", "[noLengthGrp]", DIR);
 
         // Then
         assertNotNull("length なしフィールドでも NPE が発生せず結果が返ること", result);
@@ -886,7 +909,7 @@ public class YamlMessageBuilderTest {
      * <p>
      * Given: response_body_messages に group_id=mixedLengthGrp のエントリが
      *        length ありフィールド（FIXED_FIELD）と length なしフィールド（NO_LENGTH_FIELD）を持つ<br>
-     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "mixedLengthGrp", path) を呼ぶ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[mixedLengthGrp]", path) を呼ぶ<br>
      * Then:  NullPointerException も NumberFormatException も発生せず、RequestTestingMessagePool が 1 件返ること
      * </p>
      */
@@ -897,7 +920,7 @@ public class YamlMessageBuilderTest {
 
         // When: 一部 length あり・一部なしの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
-                yaml, "response_body_messages", "mixedLengthGrp", DIR);
+                yaml, "response_body_messages", "[mixedLengthGrp]", DIR);
 
         // Then
         assertNotNull("一部 length なしフィールドでも例外が発生せず結果が返ること", result);
@@ -935,14 +958,14 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     // ========================================================================
-    // buildSendSyncList: stripBrackets の null / 角括弧付き分岐カバレッジ
+    // buildSendSyncList: null / 角括弧付き / 不完全な括弧の分岐カバレッジ
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に null を渡したとき null が返ること（stripBrackets null 分岐）。
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に null を渡したとき null が返ること。
      *
      * <p>
-     * stripBrackets(null) → null を返し、rawGroupId.equals(null) が呼ばれないため全エントリがスキップされ null が返る。<br>
+     * null を渡すと全エントリが groupMatches で不一致となり null が返る。<br>
      * Given: response_body_messages にエントリが存在する<br>
      * When:  buildSendSyncMessageList(yaml, "response_body_messages", null, path) を呼ぶ<br>
      * Then:  null が返ること
@@ -953,7 +976,7 @@ public class YamlMessageBuilderTest {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
-        // When: groupId=null → stripBrackets は null を返し、比較がスキップされ結果は null
+        // When: groupId=null → groupMatches で全エントリが不一致 → null
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", null, DIR);
 
@@ -962,10 +985,10 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に "[grp1]" を渡したとき stripBrackets が角括弧を除去してマッチすること。
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId に "[grp1]" を渡したとき groupMatches が YAML の group_id=grp1 にマッチすること。
      *
      * <p>
-     * stripBrackets("[grp1]") → "grp1" となり、YAML の group_id=grp1 にマッチする。<br>
+     * groupMatches("grp1", "[grp1]") → "[grp1]".equals("[grp1]") = true でマッチする。<br>
      * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
      * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が 1 件返ること
@@ -976,7 +999,7 @@ public class YamlMessageBuilderTest {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
-        // When: "[grp1]" → stripBrackets → "grp1" → YAML の group_id=grp1 にマッチ
+        // When: "[grp1]" → groupMatches("grp1", "[grp1]") = true → YAML の group_id=grp1 にマッチ
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "[grp1]", DIR);
 
@@ -986,13 +1009,13 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: groupId が "[" で始まるが "]" で終わらない場合は角括弧が除去されずそのまま使われ null が返ること（stripBrackets partial-bracket 分岐）。
+     * [YamlMessageBuilder] buildSendSyncMessageList: groupId が "[" で始まるが "]" で終わらない場合は groupMatches で不一致となり null が返ること。
      *
      * <p>
-     * stripBrackets の条件 startsWith("[") &amp;&amp; endsWith("]") が false になる分岐（startsWith true / endsWith false）を踏む。<br>
+     * groupMatches("grp1", "[grp1") → "[grp1]".equals("[grp1") = false で不一致になる。<br>
      * Given: response_body_messages に group_id=grp1 のエントリが定義されている<br>
      * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1", path) を呼ぶ<br>
-     * Then:  "[grp1" はそのまま使われ、grp1 とはマッチしないため null が返ること
+     * Then:  "[grp1" はどのエントリともマッチしないため null が返ること
      * </p>
      */
     @Test
@@ -1000,7 +1023,7 @@ public class YamlMessageBuilderTest {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
-        // When: "[grp1" は startsWith("[")=true かつ endsWith("]")=false → stripBrackets はそのまま返す → 不一致
+        // When: "[grp1" → groupMatches("grp1", "[grp1") = "[grp1]".equals("[grp1") = false → 不一致
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "[grp1", DIR);
 

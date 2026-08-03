@@ -19,6 +19,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORDS;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
+import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
 import static nablarch.test.core.reader.yaml.YamlSection.toStr;
 
 /**
@@ -100,47 +101,27 @@ public final class YamlMessageBuilder {
      *
      * @param yaml       YAML トップレベル Map
      * @param sectionKey セクションキー
-     * @param groupId    グループ ID（生値で一致比較する）
+     * @param groupId    グループ ID（整形済み形式 {@code "[xxx]"} または {@code ""}）
      * @param basePath   インタープリタ用ベースパス
      * @return {@link RequestTestingMessagePool} リスト、または存在しない場合 null
      */
-    /**
-     * 角括弧付きグループ ID（例: {@code "[res_case1]"}）から角括弧を取り除く。
-     * 角括弧が無い場合はそのまま返す。
-     *
-     * @param groupId グループ ID
-     * @return 角括弧を取り除いたグループ ID
-     */
-    private static String stripBrackets(String groupId) {
-        if (groupId == null) {
-            return null;
-        }
-        if (groupId.startsWith("[") && groupId.endsWith("]")) {
-            return groupId.substring(1, groupId.length() - 1);
-        }
-        return groupId;
-    }
-
     public List<RequestTestingMessagePool> buildSendSyncList(Map<String, Object> yaml, String sectionKey,
                                                              String groupId, String basePath) {
         List<TestDataInterpreter> interps = interpreterResolver.resolve(basePath);
-        // 呼び出し側は groupId を "[xxx]" の形式（角括弧付き）で渡すが、YAML の group_id は
-        // 角括弧なしの素の値（例: "res_case1"）で保持する。照合のため角括弧を取り除く。
-        String normalizedGroupId = stripBrackets(groupId);
         List<RequestTestingMessagePool> result = new ArrayList<RequestTestingMessagePool>();
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
-            String rawGroupId = toStr(map.get(FIELD_GROUP_ID));
-            if (rawGroupId != null && rawGroupId.equals(normalizedGroupId)) {
-                String id = toStr(map.get(FIELD_ID));
-                MockMessages file = buildSendSyncFile(id, map, interps);
-                RequestTestingMessagePool pool =
-                        new RequestTestingMessagePool(file, Collections.<String, String>emptyMap());
-                if (id != null) {
-                    pool.setRequestId(id);
-                }
-                result.add(pool);
+            if (!groupMatches(toStr(map.get(FIELD_GROUP_ID)), groupId)) {
+                continue;
             }
+            String id = toStr(map.get(FIELD_ID));
+            MockMessages file = buildSendSyncFile(id, map, interps);
+            RequestTestingMessagePool pool =
+                    new RequestTestingMessagePool(file, Collections.<String, String>emptyMap());
+            if (id != null) {
+                pool.setRequestId(id);
+            }
+            result.add(pool);
         }
         return result.isEmpty() ? null : result;
     }
@@ -159,6 +140,11 @@ public final class YamlMessageBuilder {
      * @param groupId    グループ ID（生値で一致比較する）
      * @param basePath   インタープリタ用ベースパス
      * @return 本文（固定長ファイルの器）リスト（記述順。対象が無ければ空）
+     *
+     * <p>
+     * 本メソッドは変換ツール専用であり、グループ ID は角括弧なしの生値で照合する
+     * （{@link #buildSendSyncList} は角括弧付きの整形済み ID で照合する）。
+     * </p>
      */
     public List<FixedLengthFile> buildSendSyncBodies(Map<String, Object> yaml, String sectionKey,
                                                      String groupId, String basePath) {
