@@ -88,7 +88,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs01_getSetupTableDataLoadsYamlFile() {
+    public void getSetupTableDataLoadsYamlFile() {
         // Given / When
         List<TableData> result = sut.getSetupTableData(DIR, "YamlTestDataParserTest/tableData");
 
@@ -113,7 +113,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs08_isResourceExistingReturnsTrueWhenFileExists() {
+    public void isResourceExistingReturnsTrueWhenFileExists() {
         // Given / When / Then
         assertTrue(sut.isResourceExisting(DIR, "YamlTestDataParserTest/existingForTest"));
     }
@@ -128,7 +128,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs08_isResourceExistingReturnsFalseWhenFileNotExists() {
+    public void isResourceExistingReturnsFalseWhenFileNotExists() {
         // Given / When / Then
         assertFalse(sut.isResourceExisting(DIR, "YamlTestDataParserTest/noSuchFile"));
     }
@@ -147,7 +147,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs07_lastSectionDataNotLostAtEndOfFile() {
+    public void lastSectionDataNotLostAtEndOfFile() {
         // Given / When
         List<DataFile> result = sut.getExpectedFile(DIR, "YamlTestDataParserTest/fileData");
 
@@ -173,7 +173,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs03_yamlNativeNullIsJavaNull() {
+    public void yamlNativeNullIsJavaNull() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/nativeTypes", "nativeTypeTest");
 
@@ -193,7 +193,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs04_yamlNativeBooleanIsStringified() {
+    public void yamlNativeBooleanIsStringified() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/nativeTypes", "nativeTypeTest");
 
@@ -214,7 +214,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs05_yamlNativeNumberIsStringified() {
+    public void yamlNativeNumberIsStringified() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/nativeTypes", "nativeTypeTest");
 
@@ -235,7 +235,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs05_yamlScientificNotationIsStringified() {
+    public void yamlScientificNotationIsStringified() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/nativeTypes", "nativeTypeTest");
 
@@ -259,7 +259,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs06_trailingNativeNullIsJavaNull() {
+    public void trailingNativeNullIsJavaNull() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/trailingNulls", "trailingNullTest");
 
@@ -290,7 +290,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void rs06_trailingKeyOmittedIsNull() {
+    public void trailingKeyOmittedIsNull() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/trailingNulls", "trailingKeyOmitTest");
 
