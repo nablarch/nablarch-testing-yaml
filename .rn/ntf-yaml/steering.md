@@ -363,6 +363,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!-- Last completed | Next | Notes -->
+- **Status**: paused
+- **Date**: 2026-08-05
+- **Last completed**: feature/javadoc-cleanup を feature/ntf-yaml へ fast-forward merge・push 済み、ブランチ削除済み
+- **Next**: #10（空 EXPECTED_TABLE 偽陰性修正）
+- **Notes**: untracked 残留: `META-INF/`、`entity.list.txt`、`nablarch/` はユーザー管理対象（本体参照用・ビルド成果物）。テストメソッド名 `rs01_`〜`rs08_` の仕様 ID はスコープ外として未処理。
 
 
