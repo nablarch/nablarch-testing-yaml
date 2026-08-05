@@ -138,7 +138,7 @@ public class YamlTableDataBuilderTest {
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, path) を呼ぶ<br>
-     * Then:  サイズ 1 のリストが返り、その TableData の行数が 0 であること
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
      * </p>
      */
     @Test
@@ -150,10 +150,10 @@ public class YamlTableDataBuilderTest {
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
 
         // Then: rows:[] エントリは 0 行の TableData として返る（Excel 経路の振る舞いに合わせる）
-        assertThat(result.size(), is(1));
+        assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
         assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
         assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
-        assertThat(result.get(0).size(), is(0));
+        assertThat("行数が 0 であること", result.get(0).size(), is(0));
     }
 
     /**
