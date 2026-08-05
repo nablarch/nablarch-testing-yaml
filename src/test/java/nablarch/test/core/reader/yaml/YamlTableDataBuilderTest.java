@@ -849,6 +849,81 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildTableDataList: rows: [] の expected_tables エントリが dbInfo の全カラムを返し行数 0 であること。
+     *
+     * <p>
+     * Given: expected_tables に rows: [] のエントリ（newGroup_emptyExpected グループ）<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[newGroup_emptyExpected]", false, path) を呼ぶ<br>
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_emptyExpectedTableReturnsTableDataWithAllDbColumns() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[newGroup_emptyExpected]", false, DIR);
+
+        // Then
+        assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
+        assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
+        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("行数が 0 であること", result.get(0).size(), is(0));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: rows: [] の expected_complete_tables エントリが dbInfo の全カラムを返し行数 0 であること。
+     *
+     * <p>
+     * Given: expected_complete_tables に rows: [] のエントリ（newGroup_emptyComplete グループ）<br>
+     * When:  buildTableDataList(yaml, "expected_complete_tables", "[newGroup_emptyComplete]", true, path) を呼ぶ<br>
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
+     *        （fillDefaults=true でも rows:[] の場合は NPE なく動作すること）
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_emptyExpectedCompleteTableReturnsAllDbColumns() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "[newGroup_emptyComplete]", true, DIR);
+
+        // Then
+        assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
+        assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
+        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("行数が 0 であること", result.get(0).size(), is(0));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: rows: [] の setup_tables エントリが 0 行の TableData として返ること（退行防止）。
+     *
+     * <p>
+     * {@code buildTableDataList_emptyRowsExcluded} が「0 行で返る」ことを確認するが、
+     * このテストは「dbInfo フォールバックにより全カラムが補完されること」という仕様を明示する<br>
+     * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, path) を呼ぶ<br>
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_emptySetupTableReturnsZeroRowsForClearing() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
+
+        // Then
+        assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
+        assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
+        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("行数が 0 であること", result.get(0).size(), is(0));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>

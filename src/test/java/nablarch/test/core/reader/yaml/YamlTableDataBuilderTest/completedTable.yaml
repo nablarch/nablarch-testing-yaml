@@ -3,3 +3,7 @@ expected_complete_tables:
     rows:
       - PK_COL1: "0000000099"
         PK_COL2: "ZZ"
+
+  - group_id: newGroup_emptyComplete
+    table: TEST_TABLE
+    rows: []

@@ -137,3 +137,7 @@ expected_tables:
         VARCHAR2_COL: "test"
         NUMBER_COL: "1"
         NUMBER_COL2: "1.1"
+
+  - group_id: newGroup_emptyExpected
+    table: TEST_TABLE
+    rows: []
