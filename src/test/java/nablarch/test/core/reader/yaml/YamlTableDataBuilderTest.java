@@ -151,6 +151,8 @@ public class YamlTableDataBuilderTest {
 
         // Then: rows:[] エントリは 0 行の TableData として返る（Excel 経路の振る舞いに合わせる）
         assertThat(result.size(), is(1));
+        assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
+        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
         assertThat(result.get(0).size(), is(0));
     }
 
@@ -883,38 +885,12 @@ public class YamlTableDataBuilderTest {
      * </p>
      */
     @Test
-    public void buildTableDataList_emptyExpectedCompleteTableReturnsAllDbColumns() {
+    public void buildTableDataList_emptyExpectedCompleteTableReturnsTableDataWithAllDbColumns() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "[newGroup_emptyComplete]", true, DIR);
-
-        // Then
-        assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
-        assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
-        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
-        assertThat("行数が 0 であること", result.get(0).size(), is(0));
-    }
-
-    /**
-     * [YamlTableDataBuilder] buildTableDataList: rows: [] の setup_tables エントリが 0 行の TableData として返ること（退行防止）。
-     *
-     * <p>
-     * {@code buildTableDataList_emptyRowsExcluded} が「0 行で返る」ことを確認するが、
-     * このテストは「dbInfo フォールバックにより全カラムが補完されること」という仕様を明示する<br>
-     * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
-     * When:  buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, path) を呼ぶ<br>
-     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
-     * </p>
-     */
-    @Test
-    public void buildTableDataList_emptySetupTableReturnsZeroRowsForClearing() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
-
-        // When
-        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
 
         // Then
         assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
