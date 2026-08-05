@@ -363,10 +363,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-03
-- **Last completed**: Javadoc 外部参照除去（branch `feature/javadoc-cleanup`、全 push 済み）
-- **Next**: なし（ユーザーレビュー待ち）
-- **Notes**: branch `feature/javadoc-cleanup`（dedfe79）。untracked 残留: `META-INF/`、`entity.list.txt`、`nablarch/` はユーザー管理対象（本体参照用・ビルド成果物）。後続候補: テストメソッド名 `rs01_`〜`rs08_` の仕様 ID 残存（スコープ外として未処理）。
+<!-- Last completed | Next | Notes -->
 
 
