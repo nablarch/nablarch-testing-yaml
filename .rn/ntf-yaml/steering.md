@@ -363,11 +363,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-<!--
-Status: active
-Last completed: (none this session)
-Next: method-rename (YamlTestDataParserTest rsXX_ prefix removal)
-Notes:
--->
+- **Status**: paused
+- **Date**: 2026-08-05
+- **Last completed**: #10（空 EXPECTED_TABLE テスト追加 + method-rename タスク完了）
+- **Next**: なし（#1〜#10 + method-rename 全完了）— 評価サインオフタスクが未設定のため、次は Evaluation sign-off を追加してセッションをクローズするか、ユーザー判断
+- **Notes**: untracked 残留: `META-INF/`、`entity.list.txt`、`nablarch/` はユーザー管理対象（本体参照用・ビルド成果物）。全タスク完了済み。PR #1 は feature/ntf-yaml ブランチ、push 済み HEAD: 9f64bfb。
 
 
