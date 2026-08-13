@@ -332,7 +332,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### ~~#10: 不具合 #F — 空の EXPECTED_TABLE が常に PASS する~~
+### ~~#10: 不具合 #F — 空の EXPECTED_TABLE が常に PASS する~~（**#11 で差し戻し済み・不具合 #F は未解決**）
 
 **Purpose**: `expected_tables` に `rows: []` のエントリを書いたとき DB に行があってもアサーションが PASS する偽陰性を修正する。
 
@@ -362,12 +362,46 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### ~~#11: #10 の差し戻しと本体課題としての報告~~
+
+**Purpose**: #10 の修正が converter（DB を持たない読み込み経路）を壊したため差し戻し、事象を NTF 本体の課題としてチームへ報告する。
+
+**Prerequisites**: #10
+
+**Steps**:
+
+- [x] A. `buildTableData()` を差し戻し（長さ 0 の列名で `TableData` を生成／`fillDefaults` のガードも撤去）
+- [x] B. FAIL する 4 件を `@Ignore` + FIXME で保留（削除しない）
+  - `YamlTestDataParserTest#emptyExpectedTable_failsWhenDbHasRows`
+  - `YamlTableDataBuilderTest#buildTableDataList_emptyRowsExcluded`
+  - `YamlTableDataBuilderTest#buildTableDataList_allEmptyRowsReturnsTableDataWithAllDbColumns`
+  - `YamlTableDataBuilderTest#buildTableDataList_emptyExpectedTableReturnsTableDataWithAllDbColumns`
+- [x] C. `mvn clean test` 全 PASS 確認（164 件 / Skipped 4）
+- [x] D. commit・push（SHA: 190cc9a）
+- [x] E. `mvn clean install` 実行・成功確認（`.m2` 更新）
+- [x] F. converter で回帰確認（428 件 PASS・BUILD SUCCESS）
+- [x] G. 事象の裏取り（実測）
+  - Excel 経路でもカラム名 0 件が発生することを実 xlsx で確認（識別子行がシート末尾／空行をヘッダ位置に置く／ヘッダがマーカーのみ）
+  - 準備データ（`setup_tables`）はカラム名 0 件でも 0 件初期化が成立することを実 DB で確認
+  - 解説書（`nablarch-document` main / `ntf-yaml-support`）にカラム名必須の記載が無いこと、記載例はすべてカラム名の行を書いていることを確認
+- [x] H. チーム報告書を作成（`.rn/ntf-yaml/report-empty-expected-table.md`。本体 main の該当行 URL 付き）
+
+**Completion criteria**:
+
+- `YamlTableDataBuilder` が #10 以前の形（長さ 0 の列名）に戻っている
+- FAIL する 4 件が削除されず `@Ignore` + FIXME で残っている
+- `mvn clean test` が BUILD SUCCESS（Skipped 4）
+- converter が `Tests run: 428, Failures: 0, Errors: 0` / BUILD SUCCESS
+- 報告書に本体 `main` ブランチの該当行 URL が記載されている
+
+---
+
 # State
 
 - **Status**: paused
 - **Date**: 2026-08-13
-- **Last completed**: #10（空 EXPECTED_TABLE テスト追加 + method-rename タスク完了）
-- **Next**: なし（#1〜#10 + method-rename 全完了）— 評価サインオフタスクが未設定のため、次は Evaluation sign-off を追加してセッションをクローズするか、ユーザー判断
-- **Notes**: ブランチ `feature/ntf-yaml`（PR #1）。JDK 17 で `mvn clean install` 実行済み・164件 PASS・BUILD SUCCESS（`.m2` の成果物は JDK 17 ビルド）。未決: 既定 java を temurin-17 に固定するかユーザー判断待ち。user-deferred untracked（ユーザー管理対象・本体参照用）: `?? META-INF/` / `?? entity.list.txt` / `?? nablarch/`。
+- **Last completed**: #11（#10 の差し戻し・`@Ignore` 保留・チーム報告書作成）
+- **Next**: なし（#1〜#11 全完了）— 不具合 #F は未解決。報告書 `.rn/ntf-yaml/report-empty-expected-table.md` の対応案 A/B/C をチームが判断し、本体 `TableData#loadData` 側で対応する。方針決定後に `@Ignore` の 4 件を復活させる
+- **Notes**: ブランチ `feature/ntf-yaml`（PR #1）。JDK 17 で `mvn clean install` 実行済み・164件 PASS（Skipped 4）・`.m2` 更新済み。converter は 428 件 PASS。未決: 既定 java を temurin-17 に固定するかユーザー判断待ち。user-deferred untracked（ユーザー管理対象・本体参照用）: `?? META-INF/` / `?? entity.list.txt` / `?? nablarch/`。
 
 
