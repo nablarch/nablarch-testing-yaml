@@ -398,10 +398,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-13
-- **Last completed**: #11（#10 の差し戻し・`@Ignore` 保留・チーム報告書作成）
-- **Next**: なし（#1〜#11 全完了）— 不具合 #F は未解決。報告書 `.rn/ntf-yaml/report-empty-expected-table.md` の対応案 A/B/C をチームが判断し、本体 `TableData#loadData` 側で対応する。方針決定後に `@Ignore` の 4 件を復活させる
-- **Notes**: ブランチ `feature/ntf-yaml`（PR #1）。JDK 17 で `mvn clean install` 実行済み・164件 PASS（Skipped 4）・`.m2` 更新済み。converter は 428 件 PASS。未決: 既定 java を temurin-17 に固定するかユーザー判断待ち。user-deferred untracked（ユーザー管理対象・本体参照用）: `?? META-INF/` / `?? entity.list.txt` / `?? nablarch/`。
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 
