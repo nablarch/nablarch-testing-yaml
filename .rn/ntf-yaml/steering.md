@@ -27,7 +27,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 実装の変更は一切しない（物理コピー・package/import 機械的調整・pom 設定のみ許可）
 - 本体（nablarch-testing）には書き込まない
 - 変更が必要と判断したら **止めてユーザーに確認**（テスト PASS のために実装をいじるのは禁止）
-- mvn コマンド（compile / test / install 全て）は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn ...` で実行する（Nablarch v6 は Java 17 ターゲット）
+- mvn コマンド（compile / test / install 全て）は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn ...` で実行する（Nablarch v6 は Java 17 ターゲット。既定 java は 21 なので指定必須。親 POM は `--release` でなく `source`/`target` 指定のため 21 でビルドすると 21 専用 API が通ってしまう）
+- mvn は必ず `clean` を付ける（`jacoco:restore-instrumented-classes` は prepare-package で走るため、`clean` なしの `mvn test` / `mvn install` は instrument 済みクラスが `target/classes` に残り「Cannot process instrumented class」で失敗する）
 - javadoc 生成時に「モジュールが使用されていますが…java 8 api」の WARNING 1個が出るが、`maven-javadoc-plugin 2.10.4`（親 POM 固定）と Java 9+ モジュールシステムの非互換によるもので許容済み
 
 # Tasks
@@ -364,9 +365,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 - **Status**: paused
-- **Date**: 2026-08-05
+- **Date**: 2026-08-13
 - **Last completed**: #10（空 EXPECTED_TABLE テスト追加 + method-rename タスク完了）
 - **Next**: なし（#1〜#10 + method-rename 全完了）— 評価サインオフタスクが未設定のため、次は Evaluation sign-off を追加してセッションをクローズするか、ユーザー判断
-- **Notes**: untracked 残留: `META-INF/`、`entity.list.txt`、`nablarch/` はユーザー管理対象（本体参照用・ビルド成果物）。全タスク完了済み。PR #1 は feature/ntf-yaml ブランチ、push 済み HEAD: 9f64bfb。
+- **Notes**: ブランチ `feature/ntf-yaml`（PR #1）。JDK 17 で `mvn clean install` 実行済み・164件 PASS・BUILD SUCCESS（`.m2` の成果物は JDK 17 ビルド）。未決: 既定 java を temurin-17 に固定するかユーザー判断待ち。user-deferred untracked（ユーザー管理対象・本体参照用）: `?? META-INF/` / `?? entity.list.txt` / `?? nablarch/`。
 
 
