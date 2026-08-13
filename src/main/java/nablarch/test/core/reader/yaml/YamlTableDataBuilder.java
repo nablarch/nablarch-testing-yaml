@@ -107,17 +107,12 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        TableData td;
-        if (dataColumns.isEmpty()) {
-            // 列名を未設定（null）にして TableData.getColumnNames() の dbInfo フォールバックを効かせる。
-            // 長さ 0 の配列を渡すと loadData() が DB を読まず、空テーブルの検証が素通りする。
-            td = new TableData();
-            td.setTableName(tableName);
-            td.setDbInfo(dbInfo);
-            td.setDefaultValues(defaultValues);
-        } else {
-            td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
-        }
+        // FIXME: dataColumns が空（rows: []）のとき、YAML にはカラム名を書く場所が無いため
+        // 長さ 0 の列名で TableData を生成する。この TableData を期待値に使うと
+        // TableData#loadData() が DB を読まずに 0 行を返し、検証が素通りする（偽陰性）。
+        // 暫定で列名を未設定にして DbInfo フォールバックへ載せていたが、DB を持たない
+        // 読み込み経路（変換ツール）を壊すため差し戻した。本体側の対応後に再検討する。
+        TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
         for (List<String> rawRow : rawRows) {
             if (rawRow.isEmpty()) {
                 // 空マッピング（{}）行はデータ行として扱わない。
@@ -129,9 +124,7 @@ public final class YamlTableDataBuilder {
             }
             td.addRow(values);
         }
-        // fillDefaultValues() は columnNames フィールドを直接参照する（getColumnNames() 経由ではない）ため、
-        // null のまま呼ぶと NPE になる。0 行テーブルは埋めるべき行がなく getColumnNames() のフォールバックと等価。
-        if (fillDefaults && !dataColumns.isEmpty()) {
+        if (fillDefaults) {
             td.fillDefaultValues();
         }
         return td;
