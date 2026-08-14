@@ -148,8 +148,12 @@ public final class YamlFileBuilder {
      * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
      * 各値行に連番（1 始まりの行インデックス）を {@link DataFileFragment#FIRST_FIELD_NO} として付与する。
      * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
-     * {@code FIRST_FIELD_NO} に隔離して保持し、{@code RequestTestingMessagingProvider} が
-     * 要求/応答電文の照合に使うため、YAML 経路でも連番を補う必要がある。</p>
+     * 値から切り離して {@code FIRST_FIELD_NO} に隔離して保持する。YAML には No 列が存在しないため、
+     * 同じ形の器を作れるよう YAML 経路でも連番を補う。
+     * この連番は電文の照合には使われない。消費側（{@code RequestTestingMessagingProvider}／
+     * {@code RequestTestingMessagingClient}）は突合前に {@code FIRST_FIELD_NO} を
+     * {@code remove()} し、期待電文と実電文はリストの位置（インデックス）で対応付ける。
+     * 取り出した連番は失敗時メッセージ（{@code test no=[...]}）にのみ使われる。</p>
      *
      * @param file    ファイル
      * @param records 生のレコードレイアウト Map 群（YAML 順）

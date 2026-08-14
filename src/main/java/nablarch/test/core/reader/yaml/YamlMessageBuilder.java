@@ -170,7 +170,9 @@ public final class YamlMessageBuilder {
     private static MockMessages buildSendSyncFile(String id, Map<String, Object> map,
                                                   List<TestDataInterpreter> interps) {
         MockMessages file = new MockMessages(id != null ? id : "");
-        // 送信同期メッセージは値行の連番（FIRST_FIELD_NO）を要求/応答電文の照合に使うため withId=true。
+        // 送信同期メッセージは本体パーサが値行先頭の No 列を FIRST_FIELD_NO に隔離するため、
+        // YAML 経路でも同じ形の器になるよう withId=true で連番を補う
+        // （連番は照合には使われず、失敗時メッセージの test no=[...] にのみ使われる）。
         return buildSendSyncBodyFile(file, map, interps);
     }
 

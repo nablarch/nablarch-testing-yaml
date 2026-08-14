@@ -108,6 +108,29 @@ setup_files:
       text-encoding: MS932
     records: []
 
+  # 通常ファイル経路では record_type の値がそのままレコード種別名になる（メッセージ系は "default" 固定）。
+  # "FW_HEADER" は予約値ではないため、この経路では普通の文字列として扱われる。
+  - group_id: fwHeaderRecordTypeInFile
+    path: input/fw_header_record_type.dat
+    type: fixed
+    directives:
+      text-encoding: MS932
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: HEAD_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["HEADKEY001"]
+      - record_type: DATA
+        fields:
+          - name: BODY_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["BODYKEY001"]
+
 expected_files:
   - path: dummy/expected_fixed.dat
     type: fixed

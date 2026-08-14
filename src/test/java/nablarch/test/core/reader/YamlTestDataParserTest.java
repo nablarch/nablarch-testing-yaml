@@ -8,6 +8,7 @@ import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
@@ -782,6 +783,120 @@ public class YamlTestDataParserTest {
 
         // Then
         assertNull(result);
+    }
+
+    // ========================================================================
+    // record_type の値 "FW_HEADER" が特別扱いされないこと（公開 API 経路）
+    // ========================================================================
+
+    /**
+     * getMessage: messages の records に record_type: FW_HEADER のレコードがあっても読み飛ばされず
+     * フラグメントになり、FW 制御ヘッダは fw_header: マップから別途取得されること。
+     *
+     * <p>
+     * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する<br>
+     * Given: messages の id=fwHeaderRecordType001 が fw_header: マップ（requestId/userId）と
+     *        record_type が "FW_HEADER"・"BODY" の 2 レコード（各 10 バイト）を持つ<br>
+     * When:  getMessage(dir, resource, "fwHeaderRecordType001") を呼ぶ<br>
+     * Then:  2 レコードとも電文本文になり（record_type は "default" に固定）、
+     *        fw_header: の値は本文に混ざらず FW 制御ヘッダとして取得できること
+     * </p>
+     */
+    @Test
+    public void getMessage_fwHeaderRecordTypeIsNotSkipped() throws Exception {
+        // Given / When
+        MessagePool result = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "fwHeaderRecordType001");
+
+        // Then: record_type: FW_HEADER のレコードも読み飛ばされず電文本文になること
+        assertNotNull(result);
+        List<DataRecord> messages = ((RequestTestingMessagePool) result).getExpectedMessageList();
+        assertThat("FW_HEADER レコードも読み飛ばされず 2 件の電文本文になること", messages.size(), is(2));
+        assertThat("メッセージ系はレコード種別が \"default\" に固定されること",
+                messages.get(0).getRecordType(), is("default"));
+        assertThat(messages.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
+        assertThat(messages.get(1).getString("SEARCH_KEY"), is("SEARCHKEY1"));
+
+        // Then: fw_header: に書いた項目は本文フラグメントにならないこと
+        assertThat("fw_header: の requestId は本文に混ざらないこと",
+                messages.get(0).containsKey("requestId"), is(false));
+        assertThat("fw_header: の requestId は本文に混ざらないこと",
+                messages.get(1).containsKey("requestId"), is(false));
+
+        // Then: FW 制御ヘッダは fw_header: マップから取得できること
+        // （MessagePool#getFwHeader はパッケージプライベートのためリフレクションで取得する）
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("fw_header: の requestId が FW 制御ヘッダとして取得できること",
+                fwHeader.get("requestId"), is("0000000002"));
+        assertThat("fw_header: の userId が FW 制御ヘッダとして取得できること",
+                fwHeader.get("userId"), is("testUser02"));
+    }
+
+    /**
+     * getSendSyncMessage: 送信同期経路でも record_type: FW_HEADER のレコードが読み飛ばされず
+     * フラグメントになり、値行に連番が付与されること。
+     *
+     * <p>
+     * Given: response_body_messages の group_id=fwHeaderSync に record_type が "FW_HEADER"（値行1行）と
+     *        "BODY"（値行2行）の 2 レコード（各 10 バイト）がある<br>
+     * When:  getSendSyncMessage(dir, resource, "[fwHeaderSync]", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
+     * Then:  FW_HEADER レコードの値行を含む 3 件が電文本文になり、
+     *        連番（FIRST_FIELD_NO）がフラグメントごとに 1 始まりで付与されていること
+     * </p>
+     */
+    @Test
+    public void getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped() {
+        // Given / When
+        List<RequestTestingMessagePool> result = sut.getSendSyncMessage(
+                DIR, "YamlTestDataParserTest/messageData",
+                "[fwHeaderSync]", DataType.RESPONSE_BODY_MESSAGES);
+
+        // Then
+        assertNotNull(result);
+        assertThat("エントリが 1 件返ること", result.size(), is(1));
+        List<DataRecord> messages = result.get(0).getExpectedMessageList();
+        assertThat("FW_HEADER レコードの値行も読み飛ばされず計 3 件になること", messages.size(), is(3));
+        assertThat(messages.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
+        assertThat(messages.get(1).getString("BODY_KEY"), is("BODYKEY001"));
+        assertThat(messages.get(2).getString("BODY_KEY"), is("BODYKEY002"));
+
+        // Then: 連番はフラグメント単位で 1 始まり（現行挙動）
+        assertThat("FW_HEADER レコードの値行にも連番が付与されること",
+                messages.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
+        assertThat("BODY レコードの 1 行目の連番が \"1\" であること",
+                messages.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
+        assertThat("BODY レコードの 2 行目の連番が \"2\" にインクリメントされること",
+                messages.get(2).getString(DataFileFragment.FIRST_FIELD_NO), is("2"));
+    }
+
+    /**
+     * getMessage: 旧形式（FW 制御ヘッダを record_type: FW_HEADER のレコードで表す書き方）が
+     * messages に残っている場合、固定長ファイルのレコード長不一致として IllegalStateException になること。
+     *
+     * <p>
+     * 現仕様では FW 制御ヘッダは {@code fw_header:} マップで記述し、{@code record_type} に予約値はない。
+     * 旧形式の FW_HEADER レコードは読み飛ばされず本文レコードとして扱われるため、
+     * ヘッダ（25 バイト）と本文（10 バイト）のレコード長が食い違い、
+     * {@code FixedLengthFile#createLayout()} が例外を投げる。この帰結を固定する<br>
+     * Given: messages の id=legacyFwHeaderRecord001 に旧形式の FW_HEADER レコード（25 バイト）と
+     *        BODY レコード（10 バイト）がある<br>
+     * When:  getMessage(dir, resource, "legacyFwHeaderRecord001") を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに "record-length differs." が含まれること
+     * </p>
+     */
+    @Test
+    public void getMessage_legacyFwHeaderRecordCausesRecordLengthMismatch() {
+        // Given / When
+        try {
+            sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "legacyFwHeaderRecord001");
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("レコード長不一致であることがメッセージに含まれること",
+                    e.getMessage(), containsString("record-length differs."));
+        }
     }
 
     // ========================================================================

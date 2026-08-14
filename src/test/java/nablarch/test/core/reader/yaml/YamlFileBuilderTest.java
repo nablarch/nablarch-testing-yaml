@@ -42,9 +42,11 @@ import static org.junit.Assert.fail;
  * <p>
  * あわせて、メッセージ系のレコードレイアウト組み立てメソッド
  * （{@link YamlFileBuilder#buildFragmentsForMessage}／{@link YamlFileBuilder#buildFragmentsForSendSync}）
- * も本クラスで検証する。これらは {@link YamlFileBuilder} が公開する API であり、SUT が本クラスの
- * 対象クラスと一致するためである（{@link YamlMessageBuilder} 経由の結合検証は
- * {@code YamlMessageBuilderTest} が担う）。
+ * も本クラスで検証する。これらは package-private であり、同一パッケージに属する本クラスからのみ
+ * 直接呼び出せる。ここでは分岐単位の挙動（{@code record_type} の固定・長さ未指定フィールドの動的計算・
+ * 値行への連番付与）を細かく固定する。利用者が実際に通る公開 API 経路
+ * （{@code YamlTestDataParser#getMessage} 等）での担保は {@code YamlTestDataParserTest} が、
+ * {@link YamlMessageBuilder} 経由の結合検証は {@code YamlMessageBuilderTest} が担う。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
@@ -342,7 +344,7 @@ public class YamlFileBuilderTest {
      * </p>
      */
     @Test
-    public void buildFileList_multipleRecordLayouts() throws Exception {
+    public void buildFileList_multipleRecordLayouts() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
@@ -543,8 +545,8 @@ public class YamlFileBuilderTest {
     public void buildFragmentsForMessage_fwHeaderRecordTypeIsNotSkipped() {
         // Given
         List<Object> records = Arrays.<Object>asList(
-                messageRecord("FW_HEADER", "requestId", "0000000001"),
-                messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
+                messageRecord("FW_HEADER", "requestId", 10, "0000000001"),
+                messageRecord("BODY", "SEARCH_KEY", 10, "SEARCHKEY1"));
         FixedLengthFile file = new FixedLengthFile("dummy/message.dat");
         file.setDirective("text-encoding", "MS932");
 
@@ -624,8 +626,8 @@ public class YamlFileBuilderTest {
     public void buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped() {
         // Given
         List<Object> records = Arrays.<Object>asList(
-                messageRecord("FW_HEADER", "requestId", "0000000001"),
-                messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
+                messageRecord("FW_HEADER", "requestId", 10, "0000000001"),
+                messageRecord("BODY", "SEARCH_KEY", 10, "SEARCHKEY1"));
         MockMessages file = new MockMessages("dummy/sendSync.dat");
         file.setDirective("text-encoding", "MS932");
 
@@ -648,16 +650,126 @@ public class YamlFileBuilderTest {
                 dataRecords.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
     }
 
-    /** メッセージ系のレコードレイアウト（1 フィールド・1 値行）を組み立てる。 */
-    private static Map<String, Object> messageRecord(String recordType, String fieldName, String value) {
+    /**
+     * [YamlFileBuilder] buildFragmentsForSendSync: 値行が複数ある場合、連番が 1 始まりで
+     * 1 行ごとにインクリメントされること。
+     *
+     * <p>
+     * 連番は本体パーサ（{@code SendSyncMessageParser}）が YAML にはない No 列から取り出す値に相当する。
+     * YAML 経路では行インデックスで補うため、全行が同じ値にならないことを固定する<br>
+     * Given: records に値行を 3 行持つレコードが 1 件<br>
+     * When:  buildFragmentsForSendSync を呼ぶ<br>
+     * Then:  各値行の FIRST_FIELD_NO が記述順に "1", "2", "3" となること
+     * </p>
+     */
+    @Test
+    public void buildFragmentsForSendSync_rowNoIsIncrementedPerRow() {
+        // Given: 値行 3 行（値は連番の検証と独立させるため互いに異なる値にする）
+        List<Object> records = Arrays.<Object>asList(
+                messageRecord("BODY", "PAYLOAD", 10, Arrays.asList("PAYLOAD_01", "PAYLOAD_02", "PAYLOAD_03")));
+        MockMessages file = new MockMessages("dummy/sendSync.dat");
+        file.setDirective("text-encoding", "MS932");
+
+        // When
+        YamlFileBuilder.buildFragmentsForSendSync(file, records, Collections.<TestDataInterpreter>emptyList());
+
+        // Then
+        List<DataRecord> dataRecords = file.toDataRecords();
+        assertThat("値行 3 行が電文本文になること", dataRecords.size(), is(3));
+        assertThat("1 行目の連番が \"1\" であること",
+                dataRecords.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
+        assertThat("2 行目の連番が \"2\" にインクリメントされること",
+                dataRecords.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("2"));
+        assertThat("3 行目の連番が \"3\" にインクリメントされること",
+                dataRecords.get(2).getString(DataFileFragment.FIRST_FIELD_NO), is("3"));
+
+        // Then: 連番は値行の中身とは独立していること（行の対応がずれていないことの確認）
+        assertThat(dataRecords.get(0).getString("PAYLOAD"), is("PAYLOAD_01"));
+        assertThat(dataRecords.get(1).getString("PAYLOAD"), is("PAYLOAD_02"));
+        assertThat(dataRecords.get(2).getString("PAYLOAD"), is("PAYLOAD_03"));
+    }
+
+    // ========================================================================
+    // 通常ファイル経路では record_type の値がそのままレコード種別名になること
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: 通常ファイル経路では record_type の値 "FW_HEADER" が
+     * そのままレコード種別名として採用されること。
+     *
+     * <p>
+     * メッセージ系（{@code buildFragmentsForMessage}／{@code buildFragmentsForSendSync}）は
+     * record_type を常に "default" に固定するが、通常ファイル経路（{@code setup_files}／
+     * {@code expected_files}）は記述された値をそのまま使う。"FW_HEADER" もこの経路では
+     * 予約値ではなく普通の文字列として扱われる、という非対称を固定する<br>
+     * Given: setup_files の fwHeaderRecordTypeInFile グループに record_type が "FW_HEADER" と
+     *        "DATA" の 2 レコード（レコード長はいずれも 10 バイト）<br>
+     * When:  buildFileList(yaml, "setup_files", "[fwHeaderRecordTypeInFile]", path) を呼ぶ<br>
+     * Then:  レコード種別が "default" に潰されず "FW_HEADER" / "DATA" のまま採用され、
+     *        両レコードとも読み飛ばされずデータ行になること
+     * </p>
+     */
+    @Test
+    public void buildFileList_fwHeaderRecordTypeIsUsedAsIsInFileRoute() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[fwHeaderRecordTypeInFile]", DIR);
+
+        // Then: record_type の値がそのままレコード種別名になること
+        assertThat(result.size(), is(1));
+        List<RecordDefinition> records = result.get(0).createLayout().getRecords();
+        assertThat("2 フラグメントが生成されること", records.size(), is(2));
+        assertThat("通常ファイル経路では \"FW_HEADER\" がそのままレコード種別名になること",
+                records.get(0).getTypeName(), is("FW_HEADER"));
+        assertThat("2つ目のレコード種別が DATA であること", records.get(1).getTypeName(), is("DATA"));
+
+        // Then: FW_HEADER レコードも読み飛ばされずデータ行になること
+        List<DataRecord> dataRecords = result.get(0).toDataRecords();
+        assertThat("FW_HEADER 行 + DATA 行の 2 件が返ること", dataRecords.size(), is(2));
+        assertThat(dataRecords.get(0).getRecordType(), is("FW_HEADER"));
+        assertThat(dataRecords.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
+        assertThat(dataRecords.get(1).getRecordType(), is("DATA"));
+        assertThat(dataRecords.get(1).getString("BODY_KEY"), is("BODYKEY001"));
+    }
+
+    /**
+     * メッセージ系のレコードレイアウト（1 フィールド・1 値行）を組み立てる。
+     *
+     * @param recordType record_type に設定する値
+     * @param fieldName  フィールド名
+     * @param length     フィールド長（バイト）。固定長ファイルは全レコードのレコード長が一致している
+     *                   必要があるため、複数レコードを組み立てる場合は同じ値を渡すこと
+     * @param value      値行の値
+     */
+    private static Map<String, Object> messageRecord(String recordType, String fieldName,
+                                                     int length, String value) {
+        return messageRecord(recordType, fieldName, length, Arrays.asList(value));
+    }
+
+    /**
+     * メッセージ系のレコードレイアウト（1 フィールド・複数値行）を組み立てる。
+     *
+     * @param recordType record_type に設定する値
+     * @param fieldName  フィールド名
+     * @param length     フィールド長（バイト）
+     * @param values     値行の値（1 要素につき値行 1 行）
+     */
+    private static Map<String, Object> messageRecord(String recordType, String fieldName,
+                                                     int length, List<String> values) {
         Map<String, Object> fieldDef = new LinkedHashMap<>();
         fieldDef.put("name", fieldName);
         fieldDef.put("type", "半角");
-        fieldDef.put("length", value.length());
+        fieldDef.put("length", length);
+        List<Object> rows = new java.util.ArrayList<>();
+        for (String value : values) {
+            rows.add(Arrays.asList(value));
+        }
         Map<String, Object> record = new LinkedHashMap<>();
         record.put("record_type", recordType);
         record.put("fields", Arrays.<Object>asList(fieldDef));
-        record.put("rows", Arrays.<Object>asList(Arrays.asList(value)));
+        record.put("rows", rows);
         return record;
     }
 

@@ -344,7 +344,62 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // buildMessageFile: record_type の値が特別扱いされないこと
+    // buildMessagePool: fw_header: に書いた項目は本文フラグメントにならないこと
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: messages の fw_header: マップに書いた項目は
+     * 電文本文のフラグメントにならず、records に書いた本文レコードだけが本文になること。
+     *
+     * <p>
+     * FW 制御ヘッダは {@code fw_header:} マップで受け、本文は {@code records} で受ける。
+     * 両者が混ざらないことを固定する<br>
+     * Given: messages の id=req001 が fw_header:（requestId/userId/resendFlag/resultCode）と
+     *        BODY レコード（SEARCH_KEY のみ）を持つ<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  本文は BODY レコード 1 件のみで、fw_header: の項目は本文フィールドに現れず、
+     *        FW 制御ヘッダ側にだけ現れること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderMapItemsAreNotBodyFragments() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool pool = buildMessagePool(yaml, "messages", "req001", DIR);
+        assertNotNull(pool);
+
+        // Then: 本文フラグメントは records に書いた BODY の 1 件だけであること
+        FixedLengthFile file = sourceOf(pool);
+        assertNotNull(file);
+        assertThat("fw_header: はフラグメントにならず、本文は records の 1 レコードのみであること",
+                file.createLayout().getRecords().size(), is(1));
+
+        // Then: 本文フィールドは SEARCH_KEY のみで、fw_header: の項目を含まないこと
+        List<DataRecord> messages = ((RequestTestingMessagePool) pool).getExpectedMessageList();
+        assertThat("本文は 1 件であること", messages.size(), is(1));
+        DataRecord body = messages.get(0);
+        assertThat("records に書いた本文フィールドは取得できること", body.getString("SEARCH_KEY"), is("SEARCHKEY1"));
+        assertThat("fw_header: の requestId が本文フィールドに混ざらないこと",
+                body.containsKey("requestId"), is(false));
+        assertThat("fw_header: の userId が本文フィールドに混ざらないこと",
+                body.containsKey("userId"), is(false));
+        assertThat("fw_header: の resendFlag が本文フィールドに混ざらないこと",
+                body.containsKey("resendFlag"), is(false));
+        assertThat("fw_header: の resultCode が本文フィールドに混ざらないこと",
+                body.containsKey("resultCode"), is(false));
+
+        // Then: fw_header: の項目は FW 制御ヘッダ側にだけ現れること
+        Map<String, String> fwHeader = getFwHeader(pool);
+        assertThat("requestId は FW 制御ヘッダとして取得できること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("userId は FW 制御ヘッダとして取得できること", fwHeader.get("userId"), is("testUser01"));
+        assertThat("本文フィールド SEARCH_KEY は FW 制御ヘッダに混ざらないこと",
+                fwHeader.containsKey("SEARCH_KEY"), is(false));
+    }
+
+    // ========================================================================
+    // buildMessagePool: record_type の値が特別扱いされないこと
     // ========================================================================
 
     /**
