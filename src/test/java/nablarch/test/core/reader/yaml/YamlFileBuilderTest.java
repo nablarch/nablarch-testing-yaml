@@ -4,6 +4,7 @@ import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
+import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
@@ -510,5 +511,110 @@ public class YamlFileBuilderTest {
         LayoutDefinition layout = result.get(0).createLayout();
         assertThat("field-separator \"\\\\t\" はタブ文字になること",
                 layout.getDirective().get("field-separator"), is("\t"));
+    }
+
+    // ========================================================================
+    // record_type の値 "FW_HEADER" が特別扱いされないこと（メッセージ系経路）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFragmentsForMessage: record_type の値が "FW_HEADER" のレコードも
+     * 読み飛ばされずフラグメントとして構築されること。
+     *
+     * <p>
+     * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する。
+     * よって "FW_HEADER" という値も他の値と同じく装飾的な名前として扱われる<br>
+     * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
+     * When:  buildFragmentsForMessage を呼ぶ<br>
+     * Then:  2 フラグメントが構築され、いずれも record_type が "default" に固定され、値行が保持されること
+     * </p>
+     */
+    @Test
+    public void buildFragmentsForMessage_fwHeaderRecordTypeIsNotSkipped() throws Exception {
+        // Given
+        List<Object> records = Arrays.<Object>asList(
+                messageRecord("FW_HEADER", "requestId", "0000000001"),
+                messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
+        FixedLengthFile file = new FixedLengthFile("dummy/message.dat");
+
+        // When
+        YamlFileBuilder.buildFragmentsForMessage(file, records, Collections.<TestDataInterpreter>emptyList());
+
+        // Then
+        List<DataFileFragment> fragments = fragmentsOf(file);
+        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", fragments.size(), is(2));
+        assertThat("1つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(0)), is("default"));
+        assertThat("2つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(1)), is("default"));
+        assertThat("FW_HEADER レコードの値行が保持されること",
+                valuesOf(fragments.get(0)).get(0).get("requestId"), is("0000000001"));
+        assertThat("BODY レコードの値行が保持されること",
+                valuesOf(fragments.get(1)).get(0).get("SEARCH_KEY"), is("SEARCHKEY1"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFragmentsForSendSync: record_type の値が "FW_HEADER" のレコードも
+     * 読み飛ばされずフラグメントとして構築され、値行に連番が付与されること。
+     *
+     * <p>
+     * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
+     * When:  buildFragmentsForSendSync を呼ぶ<br>
+     * Then:  2 フラグメントが構築され、FW_HEADER レコードの値行にも連番（FIRST_FIELD_NO="1"）が付与されること
+     * </p>
+     */
+    @Test
+    public void buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped() throws Exception {
+        // Given
+        List<Object> records = Arrays.<Object>asList(
+                messageRecord("FW_HEADER", "requestId", "0000000001"),
+                messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
+        MockMessages file = new MockMessages("dummy/sendSync.dat");
+
+        // When
+        YamlFileBuilder.buildFragmentsForSendSync(file, records, Collections.<TestDataInterpreter>emptyList());
+
+        // Then
+        List<DataFileFragment> fragments = fragmentsOf(file);
+        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", fragments.size(), is(2));
+        assertThat("1つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(0)), is("default"));
+        assertThat("FW_HEADER レコードの値行が保持されること",
+                valuesOf(fragments.get(0)).get(0).get("requestId"), is("0000000001"));
+        assertThat("FW_HEADER レコードの値行にも連番が付与されること",
+                valuesOf(fragments.get(0)).get(0).get(DataFileFragment.FIRST_FIELD_NO), is("1"));
+    }
+
+    /** メッセージ系のレコードレイアウト（1 フィールド・1 値行）を組み立てる。 */
+    private static Map<String, Object> messageRecord(String recordType, String fieldName, String value) {
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", fieldName);
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", value.length());
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", recordType);
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList(value)));
+        return record;
+    }
+
+    /** {@link DataFile} のフラグメント一覧をリフレクションで取得する（公開 API がないため）。 */
+    @SuppressWarnings("unchecked")
+    private static List<DataFileFragment> fragmentsOf(DataFile file) throws Exception {
+        Field allField = DataFile.class.getDeclaredField("all");
+        allField.setAccessible(true);
+        return (List<DataFileFragment>) allField.get(file);
+    }
+
+    /** {@link DataFileFragment} のレコード種別をリフレクションで取得する（公開 API がないため）。 */
+    private static String recordTypeOf(DataFileFragment fragment) throws Exception {
+        Field recordTypeField = DataFileFragment.class.getDeclaredField("recordType");
+        recordTypeField.setAccessible(true);
+        return (String) recordTypeField.get(fragment);
+    }
+
+    /** {@link DataFileFragment} の値行をリフレクションで取得する（公開 API がないため）。 */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, String>> valuesOf(DataFileFragment fragment) throws Exception {
+        Field valuesField = DataFileFragment.class.getDeclaredField("values");
+        valuesField.setAccessible(true);
+        return (List<Map<String, String>>) valuesField.get(fragment);
     }
 }

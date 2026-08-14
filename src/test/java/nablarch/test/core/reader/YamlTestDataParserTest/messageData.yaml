@@ -21,7 +21,7 @@ messages:
 expected_request_header_messages:
   - id: req001
     records:
-      - record_type: FW_HEADER
+      - record_type: default
         fields:
           - name: requestId
             type: 半角

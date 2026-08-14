@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
  *
  * <p>
  * {@link YamlLoader#load} が返す YAML Map を {@link YamlMessageBuilder} が走査し、値加工
- * （FW_HEADER スキップ・メッセージ長 {@code -} 注入・{@code fw_header} のマップ検証）して
+ * （メッセージ長 {@code -} 注入・{@code fw_header} のマップ検証）して
  * {@link MessagePool}・{@link nablarch.test.core.file.MockMessages} を組み立てる一連のロジックを検証する。
  * </p>
  */
@@ -98,7 +98,7 @@ public class YamlMessageBuilderTest {
      * FW ヘッダ（requestId・userId 等）が設定されていること。
      *
      * <p>
-     * Given: messages に id=req001 が FW_HEADER/BODY レコードで定義されている<br>
+     * Given: messages に id=req001 が fw_header: マップと BODY レコードで定義されている<br>
      * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が返り、requestId="0000000001", userId="testUser01" が設定されていること
      * </p>
@@ -178,7 +178,7 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * expected_request_header_messages セクションから buildMessagePool で取得できること<br>
-     * Given: expected_request_header_messages に id=req001（FW_HEADER レコード）<br>
+     * Given: expected_request_header_messages に id=req001（ヘッダ項目を fields/rows に記述したレコード）<br>
      * When:  buildMessagePool(yaml, "expected_request_header_messages", "req001", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が返ること
      * </p>
@@ -343,7 +343,7 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // buildMessageFile: skipFwHeader=true で FW_HEADER フラグメント除外（QA観点1-軽微）
+    // buildMessageFile: records に記述したレコードのみがフラグメントになること（QA観点1-軽微）
     // ========================================================================
 
     /**
@@ -357,7 +357,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void buildMessagePool_fwHeaderFragmentExcluded() throws Exception {
+    public void buildMessagePool_onlyDescribedRecordsBecomeFragments() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
@@ -429,7 +429,7 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // FW_HEADER rows が空のとき例外なく空 Map が返ること（E-3 分岐D）
+    // fw_header: が空マップのとき例外なく空 Map が返ること（E-3 分岐D）
     // ========================================================================
 
     /**
@@ -473,7 +473,7 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // FW_HEADER フラグメントが存在しない場合は空 Map を FW ヘッダとして使用すること
+    // fw_header: マップが存在しない場合は空 Map を FW ヘッダとして使用すること
     // ========================================================================
 
     /**
@@ -487,7 +487,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void buildMessagePool_noFwHeaderFragmentReturnsEmptyFwHeader() throws Exception {
+    public void buildMessagePool_noFwHeaderMapReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
@@ -504,7 +504,7 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // FW_HEADER rows が Map 形式（誤記）のとき IllegalStateException + context（E-3）
+    // fw_header: がマップ以外（誤記）のとき IllegalStateException + context（E-3）
     // ========================================================================
 
     /**
@@ -615,7 +615,7 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // extractFwHeader: FW_HEADER の行がフィールド数より少ない場合はスキップされること
+    // fw_header: に一部のキーのみ記載した場合は記載分だけが設定されること
     // ========================================================================
 
     /**
@@ -715,16 +715,16 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [MS-04] records 側に FW_HEADER レコードがなくても fw_header: マップから FW ヘッダが取得できること。
+     * [MS-04] records 側にヘッダ相当のレコードがなくても fw_header: マップから FW ヘッダが取得できること。
      *
      * <p>
-     * Given: messages エントリに fw_header: マップがあり records には FW_HEADER レコードがない YAML<br>
+     * Given: messages エントリに fw_header: マップがあり records には本文レコードのみの YAML<br>
      * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
      * Then:  fwHeader に requestId が設定されていること
      * </p>
      */
     @Test
-    public void buildMessagePool_fwHeaderMapReadableWithoutFwHeaderRecord() throws Exception {
+    public void buildMessagePool_fwHeaderMapReadableWithoutHeaderRecord() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -737,7 +737,7 @@ public class YamlMessageBuilderTest {
         fwHeaderField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-        assertThat("records に FW_HEADER レコードがなくても fw_header マップから取得できること",
+        assertThat("records にヘッダ相当のレコードがなくても fw_header マップから取得できること",
                 fwHeader.get("requestId"), is("0000000001"));
     }
 

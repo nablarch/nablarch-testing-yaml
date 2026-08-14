@@ -609,7 +609,7 @@ public class YamlTestDataParserTest {
      * getMessage: メッセージが取得でき、FW ヘッダ値（requestId・userId）が設定されていること。
      *
      * <p>
-     * Given: messages の FW_HEADER レコードに requestId="0000000001", userId="testUser01" が含まれる<br>
+     * Given: messages の fw_header: マップに requestId="0000000001", userId="testUser01" が含まれる<br>
      * When:  getMessage を呼ぶ<br>
      * Then:  MessagePool が返り、requestId と userId が extractFwHeader で正しく抽出されていること
      * </p>

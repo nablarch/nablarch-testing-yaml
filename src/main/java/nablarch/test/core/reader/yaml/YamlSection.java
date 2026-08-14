@@ -66,21 +66,10 @@ public final class YamlSection {
     // メッセージ系定数
     // ========================================================================
 
-    /**
-     * FW制御ヘッダレコード種別名。
-     *
-     * <p>
-     * {@link YamlFileBuilder#buildFragmentsForMessage} および {@link YamlFileBuilder#buildFragmentsForSendSync} が
-     * messages セクションの records から FW_HEADER レコードを
-     * スキップする際に使用する。FW制御ヘッダ自体は {@link #FIELD_FW_HEADER} マップから取得する。
-     * </p>
-     */
-    public static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
-
     /** messages エントリ直下の FW 制御ヘッダマップキー */
     public static final String FIELD_FW_HEADER = "fw_header";
 
-    /** フォールバック時に使用するレコードタイプ名。record_type が未指定の場合およびメッセージ系（FW_HEADER スキップ）の場合に使用する。 */
+    /** レコードタイプ名。record_type が未指定の場合のフォールバック、およびメッセージ系で固定値として使用する。 */
     public static final String DEFAULT_RECORD_TYPE = "default";
 
     // ========================================================================

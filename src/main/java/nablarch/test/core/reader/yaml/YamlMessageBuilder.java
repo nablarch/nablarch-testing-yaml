@@ -175,7 +175,7 @@ public final class YamlMessageBuilder {
     }
 
     /**
-     * 受信メッセージ用の本文ファイルにディレクティブとレコードレイアウト（本文・FW_HEADER スキップ）を組み立てて返す。
+     * 受信メッセージ用の本文ファイルにディレクティブとレコードレイアウト（{@code records} 全件）を組み立てて返す。
      *
      * @param file    本文ファイル（{@link FixedLengthFile}）
      * @param map     エントリ Map
@@ -191,7 +191,7 @@ public final class YamlMessageBuilder {
     }
 
     /**
-     * 送信同期メッセージ用の本文ファイルにディレクティブとレコードレイアウト（本文・FW_HEADER スキップ）を組み立てて返す。
+     * 送信同期メッセージ用の本文ファイルにディレクティブとレコードレイアウト（{@code records} 全件）を組み立てて返す。
      *
      * <p>値行に連番（FIRST_FIELD_NO）を付与する。</p>
      *

@@ -23,7 +23,6 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.FILE_TYPE_FIXED;
-import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
@@ -111,7 +110,7 @@ public final class YamlFileBuilder {
      * 通常ファイル用（{@code setup_files}／{@code expected_files}）にレコード群から
      * {@link DataFileFragment} を組み立てる。
      *
-     * <p>FW_HEADER レコードを含め、すべての {@code record_type} をそのまま使用する。</p>
+     * <p>{@code record_type} は記述された値をそのまま使用する（未指定の場合のみ {@code "default"}）。</p>
      *
      * @param file    ファイル
      * @param records 生のレコードレイアウト Map 群（YAML 順）
@@ -125,8 +124,10 @@ public final class YamlFileBuilder {
     /**
      * 受信メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
      *
-     * <p>FW_HEADER レコードをスキップし、{@code record_type} を {@code "default"} に固定し、
-     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。</p>
+     * <p>{@code record_type} は記述された値によらず {@code "default"} に固定し、
+     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。
+     * FW 制御ヘッダは {@code fw_header:} マップから取得するため、{@code records} には
+     * 特別扱いされるレコードはない。</p>
      *
      * @param file    ファイル
      * @param records 生のレコードレイアウト Map 群（YAML 順）
@@ -140,7 +141,7 @@ public final class YamlFileBuilder {
     /**
      * 送信同期メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
      *
-     * <p>FW_HEADER レコードをスキップし、{@code record_type} を {@code "default"} に固定し、
+     * <p>{@code record_type} は記述された値によらず {@code "default"} に固定し、
      * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
      * 各値行に連番（1 始まりの行インデックス）を {@link DataFileFragment#FIRST_FIELD_NO} として付与する。
      * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
@@ -159,27 +160,24 @@ public final class YamlFileBuilder {
     /**
      * レコード群から {@link DataFileFragment} を組み立てる共通実装。
      *
-     * @param file         ファイル
-     * @param records      生のレコードレイアウト Map 群（YAML 順）
-     * @param skipFwHeader true の場合 FW_HEADER レコードをスキップし、record_type を {@code "default"} に固定し、
-     *                     長さ未指定フィールドを {@code "-"}（動的計算）として扱う（メッセージ系）
-     * @param withId       true の場合、各値行に連番（1 始まりの行インデックス）を
-     *                     {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
-     *                     {@code withId=true} は {@code skipFwHeader=true} のときのみ有効。
-     * @param interps      使用するインタープリタリスト
+     * @param file      ファイル
+     * @param records   生のレコードレイアウト Map 群（YAML 順）
+     * @param messaging true の場合メッセージ系経路として、record_type を {@code "default"} に固定し、
+     *                  長さ未指定フィールドを {@code "-"}（動的計算）として扱う
+     * @param withId    true の場合、各値行に連番（1 始まりの行インデックス）を
+     *                  {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
+     *                  {@code withId=true} は {@code messaging=true} のときのみ有効。
+     * @param interps   使用するインタープリタリスト
      */
     private static void buildFragmentsInternal(DataFile file, List<Object> records,
-                                               boolean skipFwHeader, boolean withId,
+                                               boolean messaging, boolean withId,
                                                List<TestDataInterpreter> interps) {
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
             String recordType = toStr(record.get(FIELD_RECORD_TYPE));
-            if (skipFwHeader && FW_HEADER_RECORD_TYPE.equals(recordType)) {
-                continue;
-            }
 
             DataFileFragment fragment = file.getNewFragment();
-            fragment.setRecordType(skipFwHeader
+            fragment.setRecordType(messaging
                     ? DEFAULT_RECORD_TYPE
                     : (recordType != null ? recordType : DEFAULT_RECORD_TYPE));
 
@@ -204,13 +202,13 @@ public final class YamlFileBuilder {
             fragment.setNames(names);
             fragment.setTypes(types);
 
-            // メッセージファイル（skipFwHeader=true）は常に固定長のため setLengths が必要。
+            // メッセージファイル（messaging=true）は常に固定長のため setLengths が必要。
             // それ以外は length フィールドが 1 件以上ある場合のみ setLengths を呼ぶ。
-            if (skipFwHeader || hasLength) {
+            if (messaging || hasLength) {
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {
-                    // skipFwHeader=true（メッセージ）の場合 length 未指定フィールドを "-"（動的計算）として扱う。
-                    cleanedLengths.add(l != null ? l : (skipFwHeader ? "-" : ""));
+                    // messaging=true（メッセージ）の場合 length 未指定フィールドを "-"（動的計算）として扱う。
+                    cleanedLengths.add(l != null ? l : (messaging ? "-" : ""));
                 }
                 fragment.setLengths(cleanedLengths);
             }
