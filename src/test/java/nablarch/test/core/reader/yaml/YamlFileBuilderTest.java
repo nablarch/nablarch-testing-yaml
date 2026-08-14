@@ -525,6 +525,155 @@ public class YamlFileBuilderTest {
     }
 
     // ========================================================================
+    // 区切り文字ディレクティブの記法（JSON スキーマの description が述べる挙動）
+    //
+    // ntf-testdata-yaml-schema.json の
+    //   $defs.directives.properties.record-separator.description
+    //   $defs.directives.properties.field-separator.description
+    // が述べている挙動を、YAML ファイルを経由した実際の経路で実測して固定する。
+    // 担保するのは以下の 2 点である。
+    //   * description が示す記法（シンボル指定・バックスラッシュと t の 2 文字表記）が
+    //     実行で通り、期待どおりの値になること
+    //   * description が示していない記法（YAML のダブルクォート文字列内エスケープ
+    //     シーケンス "\r\n" / "\t" による実制御文字の指定）が実行で通らないこと
+    //
+    // これらのテストは description の文字列自体を参照しない。したがって description の
+    // 文言が変わってもテストは落ちない。文言と挙動の整合を保つのは文言を書く側の責務で、
+    // ここで固定するのは文言が拠り所とする実挙動のみである。
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: record-separator のシンボル 4 種が、それぞれ対応する改行コードに変換されること。
+     *
+     * <p>
+     * description が述べる挙動:
+     * {@code $defs.directives.properties.record-separator.description} の
+     * 「改行コードは {@code NONE} / {@code CR} / {@code LF} / {@code CRLF} のシンボルで指定する」。<br>
+     * Given: expected_files の symbolRecordSeparator{None,Cr,Lf,Crlf} グループに各シンボルを指定<br>
+     * When:  buildFileList を呼び createLayout() する<br>
+     * Then:  record-separator ディレクティブが順に 空文字 / CR / LF / CR+LF であること
+     * </p>
+     */
+    @Test
+    public void buildFileList_recordSeparatorSymbolsAreConvertedToLineSeparators() {
+        // Given
+        Map<String, String> expected = new LinkedHashMap<String, String>();
+        expected.put("symbolRecordSeparatorNone", "");
+        expected.put("symbolRecordSeparatorCr", "\r");
+        expected.put("symbolRecordSeparatorLf", "\n");
+        expected.put("symbolRecordSeparatorCrlf", "\r\n");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        for (Map.Entry<String, String> entry : expected.entrySet()) {
+            String groupId = entry.getKey();
+
+            // When
+            List<DataFile> result = buildFileList(yaml, "expected_files", "[" + groupId + "]", DIR);
+
+            // Then
+            assertThat(groupId + " が1件取得できること", result.size(), is(1));
+            LayoutDefinition layout = result.get(0).createLayout();
+            assertThat(groupId + " のシンボルが対応する改行コードに変換されること",
+                    layout.getDirective().get("record-separator"), is(entry.getValue()));
+        }
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: record-separator に制御文字でない任意のリテラル文字列を指定すると
+     * その文字列自身がレコード区切りになること。
+     *
+     * <p>
+     * description が述べる挙動:
+     * {@code $defs.directives.properties.record-separator.description} の
+     * 「シンボル以外の文字列を書いた場合は、その文字列自身が区切り文字になる」。<br>
+     * Given: expected_files の literalRecordSeparator グループに record-separator: ":"<br>
+     * When:  buildFileList を呼び createLayout() する<br>
+     * Then:  record-separator ディレクティブが ":" であること
+     * </p>
+     */
+    @Test
+    public void buildFileList_recordSeparatorLiteralStringIsUsedAsIs() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "expected_files", "[literalRecordSeparator]", DIR);
+
+        // Then
+        assertThat("1件取得できること", result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("シンボルに合致しないリテラル文字列はそれ自身がレコード区切りになること",
+                layout.getDirective().get("record-separator"), is(":"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: record-separator に実制御文字 CR+LF を指定すると
+     * レコード区切りが空文字になること。
+     *
+     * <p>
+     * description が述べる挙動:
+     * {@code $defs.directives.properties.record-separator.description} の
+     * 「YAML のダブルクォート文字列に {@code "\r\n"} と書くと実際の制御文字に展開され、
+     * NTF が値を trim する際に除去されて区切りが空文字になる（エラーにならない）」。<br>
+     * YAML のダブルクォート文字列は {@code "\r\n"} を実際の CR+LF へ展開するが、
+     * {@code DataFile#setDirective} が値を {@code trim()} してから変換するため、
+     * 制御文字だけの値は空文字になる。例外は送出されず、レコード区切りが無言で壊れる。<br>
+     * Given: expected_files の controlCharRecordSeparator グループに record-separator: "\r\n"（実 CR+LF）<br>
+     * When:  buildFileList を呼び createLayout() する<br>
+     * Then:  record-separator ディレクティブが空文字であること（CR+LF にはならない）
+     * </p>
+     */
+    @Test
+    public void buildFileList_recordSeparatorControlCharBecomesEmpty() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "expected_files", "[controlCharRecordSeparator]", DIR);
+
+        // Then
+        assertThat("1件取得できること", result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("実制御文字 CR+LF は trim() で除去され空文字になること（CR+LF にはならない）",
+                layout.getDirective().get("record-separator"), is(""));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: field-separator に実制御文字のタブを指定すると
+     * {@link IllegalArgumentException} がスローされること。
+     *
+     * <p>
+     * description が述べる挙動:
+     * {@code $defs.directives.properties.field-separator.description} の
+     * 「YAML の {@code "\t"} は実際のタブ文字に展開され、NTF が値を trim する際に除去されて
+     * 0 文字になりエラーとなる」。<br>
+     * YAML のダブルクォート文字列は {@code "\t"} を実際のタブ文字へ展開するが、
+     * {@code DataFile#setDirective} の {@code trim()} で 0 文字になるため、
+     * 「2 文字表記の {@code \t} を除き、1 文字でない値はエラー」の検査に引っかかって例外になる。<br>
+     * タブを指定できる記法はバックスラッシュと t の 2 文字表記だけであり、
+     * それが通ることは {@link #buildFileList_tabFieldSeparatorBecomesTabChar()} が担保する。<br>
+     * Given: expected_files の controlCharFieldSeparator グループに field-separator: "\t"（実タブ文字）<br>
+     * When:  buildFileList を呼ぶ<br>
+     * Then:  IllegalArgumentException がスローされ、メッセージに
+     *        "field-separator must be one character" が含まれること
+     * </p>
+     */
+    @Test
+    public void buildFileList_controlCharFieldSeparatorThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        try {
+            buildFileList(yaml, "expected_files", "[controlCharFieldSeparator]", DIR);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            // Then
+            assertThat(e.getMessage(), containsString("field-separator must be one character"));
+        }
+    }
+
+    // ========================================================================
     // record_type の値 "FW_HEADER" が特別扱いされないこと（メッセージ系経路）
     // ========================================================================
 
