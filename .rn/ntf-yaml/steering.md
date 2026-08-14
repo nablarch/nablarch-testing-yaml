@@ -396,12 +396,103 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #12: YML-03 — `record_type: FW_HEADER` によるレコード読み飛ばしを廃止する
+
+**Purpose**: メッセージ系経路が `record_type` の値 `FW_HEADER` でレコードを読み飛ばす旧版前提の処理を廃止し、解説書 `testdata_notation.rst:1302`（「`record_type` に特別な予約値はない」／FW 制御ヘッダは `fw_header:` マップで記述する）の仕様に一致させる。
+
+**Prerequisites**: #11
+
+**Steps**:
+
+- [ ] A. RED: `record_type: FW_HEADER` を含むレコードが読み飛ばされないことを確認するテストを追加し、失敗することを確認する
+  - `buildFragmentsForMessage` 経路（`messages`）と `buildFragmentsForSendSync` 経路（送信同期）の両方
+  - 期待値: `FW_HEADER` という値を持つレコードも他の `record_type` 値と同じくフラグメントとして構築される
+- [ ] B. GREEN: `YamlFileBuilder#buildFragmentsInternal` の `skipFwHeader && FW_HEADER_RECORD_TYPE.equals(recordType)` によるスキップ分岐を削除する
+  - `skipFwHeader` 引数が担う他の役割（`record_type` を `"default"` 固定・length 未指定を `"-"` 扱い）は維持し、引数名・Javadoc を実態に合わせる
+  - `YamlSection.FW_HEADER_RECORD_TYPE` が未使用になったら削除する
+- [ ] C. 旧記法（`record_type: FW_HEADER` レコード）に依存している既存テスト・テストデータを新仕様（`fw_header:` マップ）へ移行する
+- [ ] D. `mvn clean test` 全 PASS 確認（Skipped は #11 で `@Ignore` にした 4 件のみ）
+- [ ] E. commit・push
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-12.md)
+- [ ] G. QA expert review (subagent)
+- [ ] H. Craft expert review — coding (subagent)
+- [ ] I. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- `record_type` の値が `FW_HEADER` のレコードが、`messages` 経路・送信同期メッセージ経路のいずれでも読み飛ばされずフラグメントとして構築される
+- `src/main` に `record_type` の値を特別扱いする分岐・定数が残っていない
+- FW 制御ヘッダを `fw_header:` マップから取得する経路が従来どおり動作する（既存の `fw_header` 関連テストが GREEN）
+- `mvn clean test` が BUILD SUCCESS（Skipped は #11 の 4 件のみ、Failures/Errors 0）
+- `ntf-testdata-yaml-schema.json` の検証ルール構造（`type` / `enum` / `required`）が変更されていない
+- `nablarch-testing` 本体が変更されていない
+
+---
+
+### #13: YML-08 — ディレクティブ description を解説書の記法へ修正する
+
+**Purpose**: `ntf-testdata-yaml-schema.json` の `record-separator` / `field-separator` の description が、`DataFile#setDirective` の `trim()` により実際には通らない「実制御文字をリテラル指定する記法」を推奨している状態を、解説書が示す記法（シンボル／エスケープ2文字表記）へ書き換える。
+
+**Prerequisites**: #12
+
+**Steps**:
+
+- [ ] A. RED: 現 description が推奨する記法が実際には通らないことを実行で確認するテストを追加する
+  - `record-separator` に実制御文字 `"\r\n"`（YAML のダブルクォートで展開された CR+LF）を与えるとレコード区切りが空になること
+  - `field-separator` に実制御文字のタブを与えると `IllegalArgumentException`（`field-separator must be one character`）になること
+  - あわせて解説書が示す記法（`record-separator: CRLF` 等のシンボル）が通ることを確認する
+- [ ] B. GREEN: `$defs.directives.properties.record-separator.description` と `field-separator.description` を解説書と一致する記法へ書き換える
+  - `record-separator`: シンボル `NONE` / `CR` / `LF` / `CRLF`（解説書 `:945`、記述例 `:1114`）
+  - `field-separator`: エスケープ2文字表記 `\t`（解説書 `:1078`）
+  - 実制御文字を値に書く記法の記述を削除する
+- [ ] C. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
+- [ ] D. `mvn clean test` 全 PASS 確認
+- [ ] E. commit・push
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-13.md)
+- [ ] G. QA expert review (subagent)
+- [ ] H. Craft expert review — writing (subagent)
+- [ ] I. Verification expert review — fact-check (subagent)
+
+**Completion criteria**:
+
+- `record-separator.description` に実制御文字によるリテラル指定（`"\r\n"` 等）の推奨が残っていない
+- `field-separator.description` に実制御文字のタブによる指定の推奨が残っていない
+- 両 description が示す記法が、実行で通ることをテストで担保されている
+- description 以外（`type` / `enum` / `required` 等の検証ルール構造）が変更されていない
+- JSON として妥当（`json.load` が通る）
+- `mvn clean test` が BUILD SUCCESS（Skipped は #11 の 4 件のみ、Failures/Errors 0）
+- `nablarch-testing` 本体（`DataFile#setDirective`）が変更されていない
+
+---
+
+### #14: Evaluation sign-off
+
+**Purpose**: `steering.md` の Acceptance criteria を通しで実行し、その結果をユーザーへ提示して評価ゲートの判定を受ける。
+
+**Prerequisites**: #13
+
+**Steps**:
+
+- [ ] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる
+- [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+
+**Completion criteria**:
+
+- Acceptance criteria 全項目の実行結果が根拠つきで提示されている
+- ユーザーの判定（`/rn:ty`）が得られている
+
+---
+
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-14
-- **Last completed**: #11（#10 の差し戻し・`@Ignore` 保留・チーム報告書作成）
-- **Next**: なし（#1〜#11 全完了）— 不具合 #F は未解決。報告書 `.rn/ntf-yaml/report-empty-expected-table.md` 7章の対応案 A/B/C をチームが判断し、本体 `TableData#loadData` 側で対応する。方針決定後に `@Ignore` の 4 件を復活させる
-- **Notes**: ブランチ `feature/ntf-yaml`（PR #1）。`mvn clean test` 164件 PASS（Skipped 4）を JDK 17 で再確認済み。報告書 9章の未決3件（①A/B/C の選択 ②解説書にカラム名必須を明記するか ③ブロックが黙って消える件を別課題とするか）はいずれも未決。未決: 既定 java を temurin-17 に固定するかユーザー判断待ち。未追跡だった本体 jar 展開残骸（`META-INF/` `entity.list.txt` `nablarch/`）はユーザー判断により削除済み（ビルドに不要であることは pom の source/resource root と `mvn clean test` で確認）。
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 
