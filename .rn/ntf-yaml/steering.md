@@ -439,21 +439,24 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. RED: 現 description が推奨する記法が実際には通らないことを実行で確認するテストを追加する
+- [x] A. RED: 現 description が推奨する記法が実際には通らないことを実行で確認するテストを追加する
   - `record-separator` に実制御文字 `"\r\n"`（YAML のダブルクォートで展開された CR+LF）を与えるとレコード区切りが空になること
   - `field-separator` に実制御文字のタブを与えると `IllegalArgumentException`（`field-separator must be one character`）になること
   - あわせて解説書が示す記法（`record-separator: CRLF` 等のシンボル）が通ることを確認する
-- [ ] B. GREEN: `$defs.directives.properties.record-separator.description` と `field-separator.description` を解説書と一致する記法へ書き換える
+  - RED 実行結果: `Tests run: 2, Failures: 1, Errors: 1` / BUILD FAILURE（`Expected: is "\r\n" but: was ""` / `IllegalArgumentException: field-separator must be one character.but was `）
+  - シンボルは 4 種すべて（`NONE` / `CR` / `LF` / `CRLF`）を assert する形へ拡張した（fact-check レビュー指摘）
+- [x] B. GREEN: `$defs.directives.properties.record-separator.description` と `field-separator.description` を解説書と一致する記法へ書き換える
   - `record-separator`: シンボル `NONE` / `CR` / `LF` / `CRLF`（解説書 `:945`、記述例 `:1114`）
   - `field-separator`: エスケープ2文字表記 `\t`（解説書 `:1078`）
   - 実制御文字を値に書く記法の記述を削除する
-- [ ] C. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
-- [ ] D. `mvn clean test` 全 PASS 確認
-- [ ] E. commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-13.md)
-- [ ] G. QA expert review (subagent)
-- [ ] H. Craft expert review — writing (subagent)
-- [ ] I. Verification expert review — fact-check (subagent)
+  - あわせて、YAML で実制御文字に展開されてしまう罠を両 description に警告として書き足した。`field-separator` 側は解説書 `testdata_examples.rst:1435` の YAML 固有の注意と同じ機序で説明する形へ揃えた
+- [x] C. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
+- [x] D. `mvn clean test` 全 PASS 確認
+- [x] E. commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-13.md)
+- [x] G. QA expert review (subagent)
+- [x] H. Craft expert review — writing (subagent)
+- [x] I. Verification expert review — fact-check (subagent)
 
 **Completion criteria**:
 
