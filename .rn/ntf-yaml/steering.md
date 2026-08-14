@@ -478,7 +478,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる
+- [x] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる
+  - 4 項目中 3 項目 OK（`mvn clean test` 177/0/0/Skipped 4・BUILD SUCCESS／本体無書き込み（`git status` 空・HEAD `fdf55d4`）／push 済み（HEAD `5a15b6d` = `origin/feature/ntf-yaml`））
+  - 1 項目は**評価不能**: 「全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）」。(a) 対象ファイル群は同ブランチに存在しない（実際の複製元は `worktree-agent-a79308e7e5862d004` = `d8ba387`）。(b) #4 以降のタスクが実装変更を伴うため、この基準は #1〜#3（移送）の時点の基準であって現在のスコープに一致しない
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
 
 **Completion criteria**:
