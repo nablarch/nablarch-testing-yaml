@@ -193,7 +193,7 @@ expected_request_header_messages:
     directives:
       text-encoding: Windows-31J
     records:
-      - record_type: default
+      - record_type: FW_HEADER
         fields:
           - name: requestId
             type: 半角

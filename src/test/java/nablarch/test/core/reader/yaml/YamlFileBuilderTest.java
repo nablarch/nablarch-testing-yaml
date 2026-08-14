@@ -1,6 +1,9 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.dataformat.DataRecord;
+import nablarch.core.dataformat.FieldDefinition;
 import nablarch.core.dataformat.LayoutDefinition;
+import nablarch.core.dataformat.RecordDefinition;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
@@ -15,7 +18,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -30,12 +32,19 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * {@link YamlFileBuilder} のファイル系メソッド（{@code buildDataFileList}）のテストクラス。
+ * {@link YamlFileBuilder} のテストクラス。
  *
  * <p>
- * {@link YamlLoader#load} が返す YAML Map を {@link YamlFileBuilder} が走査し、値加工
- * （{@code ${...}} の解釈・グループ絞り込み・必須チェック）して {@link DataFile} を組み立てる
- * 一連のロジックを検証する。
+ * ファイル系メソッド（{@code buildDataFileList}）については、{@link YamlLoader#load} が返す YAML Map を
+ * {@link YamlFileBuilder} が走査し、値加工（{@code ${...}} の解釈・グループ絞り込み・必須チェック）して
+ * {@link DataFile} を組み立てる一連のロジックを検証する。
+ * </p>
+ * <p>
+ * あわせて、メッセージ系のレコードレイアウト組み立てメソッド
+ * （{@link YamlFileBuilder#buildFragmentsForMessage}／{@link YamlFileBuilder#buildFragmentsForSendSync}）
+ * も本クラスで検証する。これらは {@link YamlFileBuilder} が公開する API であり、SUT が本クラスの
+ * 対象クラスと一致するためである（{@link YamlMessageBuilder} 経由の結合検証は
+ * {@code YamlMessageBuilderTest} が担う）。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
@@ -340,21 +349,21 @@ public class YamlFileBuilderTest {
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
 
-        // Then: DataFile にフラグメント数を返す公開 API がないため、private フィールド "all" をリフレクションで確認する。
+        // Then: レコード定義はフラグメント 1 件につき 1 件生成されるため、公開 API の createLayout() で確認する。
         assertThat(result.size(), is(1));
         assertThat(result.get(0), instanceOf(FixedLengthFile.class));
-        Field allField = DataFile.class.getDeclaredField("all");
-        allField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<DataFileFragment> fragments = (List<DataFileFragment>) allField.get(result.get(0));
-        assertThat("HEADER + DATA の 2 フラグメントが生成されること", fragments.size(), is(2));
+        List<RecordDefinition> records = result.get(0).createLayout().getRecords();
+        assertThat("HEADER + DATA の 2 フラグメントが生成されること", records.size(), is(2));
+        assertThat("1つ目のレコード種別が HEADER であること", records.get(0).getTypeName(), is("HEADER"));
+        assertThat("2つ目のレコード種別が DATA であること", records.get(1).getTypeName(), is("DATA"));
 
-        Field recordTypeField = DataFileFragment.class.getDeclaredField("recordType");
-        recordTypeField.setAccessible(true);
-        assertThat("1つ目のレコード種別が HEADER であること",
-                recordTypeField.get(fragments.get(0)).toString(), is("HEADER"));
-        assertThat("2つ目のレコード種別が DATA であること",
-                recordTypeField.get(fragments.get(1)).toString(), is("DATA"));
+        // Then: 各レコードの値行が記述どおりに変換されること
+        List<DataRecord> dataRecords = result.get(0).toDataRecords();
+        assertThat("HEADER 行 + DATA 行の 2 件が返ること", dataRecords.size(), is(2));
+        assertThat(dataRecords.get(0).getRecordType(), is("HEADER"));
+        assertThat(dataRecords.get(0).getString("SEQ"), is("H001"));
+        assertThat(dataRecords.get(1).getRecordType(), is("DATA"));
+        assertThat(dataRecords.get(1).getString("USER_ID"), is("001"));
     }
 
     /**
@@ -526,29 +535,79 @@ public class YamlFileBuilderTest {
      * よって "FW_HEADER" という値も他の値と同じく装飾的な名前として扱われる<br>
      * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
      * When:  buildFragmentsForMessage を呼ぶ<br>
-     * Then:  2 フラグメントが構築され、いずれも record_type が "default" に固定され、値行が保持されること
+     * Then:  2 フラグメントが構築され、いずれも record_type が "default" に固定され、
+     *        両レコードとも電文本文としてレンダリングされること
      * </p>
      */
     @Test
-    public void buildFragmentsForMessage_fwHeaderRecordTypeIsNotSkipped() throws Exception {
+    public void buildFragmentsForMessage_fwHeaderRecordTypeIsNotSkipped() {
         // Given
         List<Object> records = Arrays.<Object>asList(
                 messageRecord("FW_HEADER", "requestId", "0000000001"),
                 messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
         FixedLengthFile file = new FixedLengthFile("dummy/message.dat");
+        file.setDirective("text-encoding", "MS932");
 
         // When
         YamlFileBuilder.buildFragmentsForMessage(file, records, Collections.<TestDataInterpreter>emptyList());
 
-        // Then
-        List<DataFileFragment> fragments = fragmentsOf(file);
-        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", fragments.size(), is(2));
-        assertThat("1つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(0)), is("default"));
-        assertThat("2つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(1)), is("default"));
+        // Then: レコード定義はフラグメント 1 件につき 1 件生成される
+        List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
+        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", layoutRecords.size(), is(2));
+        assertThat("1つ目のレコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
+        assertThat("2つ目のレコード種別が 'default' に固定されること", layoutRecords.get(1).getTypeName(), is("default"));
+
+        // Then: 値行が電文本文としてレンダリングされること
+        List<DataRecord> dataRecords = file.toDataRecords();
+        assertThat("FW_HEADER レコードの値行も電文本文になること", dataRecords.size(), is(2));
         assertThat("FW_HEADER レコードの値行が保持されること",
-                valuesOf(fragments.get(0)).get(0).get("requestId"), is("0000000001"));
+                dataRecords.get(0).getString("requestId"), is("0000000001"));
         assertThat("BODY レコードの値行が保持されること",
-                valuesOf(fragments.get(1)).get(0).get("SEARCH_KEY"), is("SEARCHKEY1"));
+                dataRecords.get(1).getString("SEARCH_KEY"), is("SEARCHKEY1"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFragmentsForMessage: record_type の値が "FW_HEADER" で length 未指定のレコードも
+     * 読み飛ばされず、フィールド長が値から動的計算されること。
+     *
+     * <p>
+     * メッセージ系は常に固定長のため、{@code length} 未指定フィールドは {@code "-"}（動的計算）として扱われる。
+     * この経路を "FW_HEADER" レコードでも通ることを担保する<br>
+     * Given: records に record_type が "FW_HEADER" で length 未指定の 2 フィールドを持つレコード<br>
+     * When:  buildFragmentsForMessage を呼ぶ<br>
+     * Then:  1 フラグメントが構築され、各フィールドのバイト位置が値のバイト長から算出されること
+     * </p>
+     */
+    @Test
+    public void buildFragmentsForMessage_fwHeaderRecordWithoutLength() {
+        // Given: length を指定しない 2 フィールド（値はいずれも 10 バイト）
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "FW_HEADER");
+        record.put("fields", Arrays.<Object>asList(
+                messageFieldWithoutLength("requestId"),
+                messageFieldWithoutLength("userId")));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList("0000000001", "testUser01")));
+        FixedLengthFile file = new FixedLengthFile("dummy/message.dat");
+        file.setDirective("text-encoding", "MS932");
+
+        // When
+        YamlFileBuilder.buildFragmentsForMessage(file, Arrays.<Object>asList(record),
+                Collections.<TestDataInterpreter>emptyList());
+
+        // Then
+        List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
+        assertThat("length 未指定の FW_HEADER レコードも 1 フラグメント構築されること", layoutRecords.size(), is(1));
+        assertThat("レコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
+
+        List<FieldDefinition> fields = layoutRecords.get(0).getFields();
+        assertThat("1つ目のフィールドは先頭バイトから始まること", fields.get(0).getPosition(), is(1));
+        assertThat("length 未指定フィールドの長さが値のバイト長（10）から動的計算されること",
+                fields.get(1).getPosition(), is(11));
+
+        List<DataRecord> dataRecords = file.toDataRecords();
+        assertThat("値行が電文本文になること", dataRecords.size(), is(1));
+        assertThat(dataRecords.get(0).getString("requestId"), is("0000000001"));
+        assertThat(dataRecords.get(0).getString("userId"), is("testUser01"));
     }
 
     /**
@@ -562,24 +621,31 @@ public class YamlFileBuilderTest {
      * </p>
      */
     @Test
-    public void buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped() throws Exception {
+    public void buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped() {
         // Given
         List<Object> records = Arrays.<Object>asList(
                 messageRecord("FW_HEADER", "requestId", "0000000001"),
                 messageRecord("BODY", "SEARCH_KEY", "SEARCHKEY1"));
         MockMessages file = new MockMessages("dummy/sendSync.dat");
+        file.setDirective("text-encoding", "MS932");
 
         // When
         YamlFileBuilder.buildFragmentsForSendSync(file, records, Collections.<TestDataInterpreter>emptyList());
 
         // Then
-        List<DataFileFragment> fragments = fragmentsOf(file);
-        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", fragments.size(), is(2));
-        assertThat("1つ目のレコード種別が 'default' に固定されること", recordTypeOf(fragments.get(0)), is("default"));
+        List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
+        assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", layoutRecords.size(), is(2));
+        assertThat("1つ目のレコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
+        assertThat("2つ目のレコード種別が 'default' に固定されること", layoutRecords.get(1).getTypeName(), is("default"));
+
+        List<DataRecord> dataRecords = file.toDataRecords();
+        assertThat("FW_HEADER レコードの値行も電文本文になること", dataRecords.size(), is(2));
         assertThat("FW_HEADER レコードの値行が保持されること",
-                valuesOf(fragments.get(0)).get(0).get("requestId"), is("0000000001"));
-        assertThat("FW_HEADER レコードの値行にも連番が付与されること",
-                valuesOf(fragments.get(0)).get(0).get(DataFileFragment.FIRST_FIELD_NO), is("1"));
+                dataRecords.get(0).getString("requestId"), is("0000000001"));
+        assertThat("FW_HEADER レコードの値行にも連番（レコード内 1 始まり）が付与されること",
+                dataRecords.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
+        assertThat("BODY レコードの値行にも連番（レコード内 1 始まり）が付与されること",
+                dataRecords.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
     }
 
     /** メッセージ系のレコードレイアウト（1 フィールド・1 値行）を組み立てる。 */
@@ -595,26 +661,11 @@ public class YamlFileBuilderTest {
         return record;
     }
 
-    /** {@link DataFile} のフラグメント一覧をリフレクションで取得する（公開 API がないため）。 */
-    @SuppressWarnings("unchecked")
-    private static List<DataFileFragment> fragmentsOf(DataFile file) throws Exception {
-        Field allField = DataFile.class.getDeclaredField("all");
-        allField.setAccessible(true);
-        return (List<DataFileFragment>) allField.get(file);
-    }
-
-    /** {@link DataFileFragment} のレコード種別をリフレクションで取得する（公開 API がないため）。 */
-    private static String recordTypeOf(DataFileFragment fragment) throws Exception {
-        Field recordTypeField = DataFileFragment.class.getDeclaredField("recordType");
-        recordTypeField.setAccessible(true);
-        return (String) recordTypeField.get(fragment);
-    }
-
-    /** {@link DataFileFragment} の値行をリフレクションで取得する（公開 API がないため）。 */
-    @SuppressWarnings("unchecked")
-    private static List<Map<String, String>> valuesOf(DataFileFragment fragment) throws Exception {
-        Field valuesField = DataFileFragment.class.getDeclaredField("values");
-        valuesField.setAccessible(true);
-        return (List<Map<String, String>>) valuesField.get(fragment);
+    /** メッセージ系の length 未指定フィールド定義を組み立てる。 */
+    private static Map<String, Object> messageFieldWithoutLength(String fieldName) {
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", fieldName);
+        fieldDef.put("type", "半角");
+        return fieldDef;
     }
 }

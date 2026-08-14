@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.messaging.MessagePool;
@@ -343,34 +344,45 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // buildMessageFile: records に記述したレコードのみがフラグメントになること（QA観点1-軽微）
+    // buildMessageFile: record_type の値が特別扱いされないこと
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: BODY のみの messages を読んだとき
-     * FixedLengthFile に 1 フラグメントだけ含まれること。
+     * [YamlMessageBuilder] buildMessagePool: record_type の値が "FW_HEADER" のレコードも読み飛ばされず、
+     * レコード種別 "default" のフラグメントとして電文本文になること。
      *
      * <p>
-     * Given: messages に id=req001 が fw_header: マップ + BODY レコードで定義されている<br>
-     * When:  buildMessagePool を呼ぶ（records の BODY のみがフラグメントになる）<br>
-     * Then:  FixedLengthFile の layout に BODY レコード 1 件のみ含まれること
+     * {@code record_type} に特別な予約値はなく、値は常に "default" に置き換えられる。
+     * {@code expected_request_header_messages} は {@code fw_header:} を使わずヘッダ項目も
+     * {@code records} の fields/rows に記述するため、読み飛ばすと電文本文が 0 件になってしまう<br>
+     * Given: expected_request_header_messages の id=req001 に record_type: FW_HEADER のレコードが
+     *        requestId 等 4 フィールド・値行 1 行で定義されている<br>
+     * When:  buildMessagePool を呼ぶ<br>
+     * Then:  FixedLengthFile に 1 フラグメント（レコード種別 "default"）が構築され、
+     *        値行が記述どおりの電文本文としてレンダリングされること
      * </p>
      */
     @Test
-    public void buildMessagePool_onlyDescribedRecordsBecomeFragments() throws Exception {
+    public void buildMessagePool_fwHeaderRecordTypeIsNotSkipped() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When: MessagePool を構築し、内部の FixedLengthFile（source）の構造を検証する
-        MessagePool pool = buildMessagePool(yaml, "messages", "req001", DIR);
+        MessagePool pool = buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
         assertNotNull(pool);
         FixedLengthFile file = sourceOf(pool);
 
-        // Then: records に BODY のみ 1 フラグメントであること
+        // Then: FW_HEADER レコードも読み飛ばされず 1 フラグメントになること
         assertNotNull(file);
         LayoutDefinition layout = file.createLayout();
-        assertThat("BODY レコードのみが含まれること", layout.getRecords().size(), is(1));
+        assertThat("record_type: FW_HEADER のレコードもフラグメントになること", layout.getRecords().size(), is(1));
         assertThat("レコードタイプが 'default' に固定されること", layout.getRecords().get(0).getTypeName(), is("default"));
+
+        // Then: 値行が電文本文としてレンダリングされること
+        List<DataRecord> messages = ((RequestTestingMessagePool) pool).getExpectedMessageList();
+        assertThat("期待電文が 1 件取得できること", messages.size(), is(1));
+        assertThat(messages.get(0).getString("requestId"), is("0000000001"));
+        assertThat(messages.get(0).getString("userId"), is("testUser01"));
     }
 
     // ========================================================================

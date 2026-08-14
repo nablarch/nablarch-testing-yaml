@@ -126,8 +126,11 @@ public final class YamlFileBuilder {
      *
      * <p>{@code record_type} は記述された値によらず {@code "default"} に固定し、
      * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。
-     * FW 制御ヘッダは {@code fw_header:} マップから取得するため、{@code records} には
-     * 特別扱いされるレコードはない。</p>
+     * {@code record_type} に特別な予約値はなく、{@code records} の全レコードがフラグメントになる。
+     * FW 制御ヘッダの扱いは呼び出し元のセクションによって異なり、{@code messages} では
+     * {@code fw_header:} マップから取得し、{@code expected_request_header_messages} 等では
+     * {@code fw_header:} を使わずヘッダ項目も {@code records} の {@code fields}／{@code rows} に記述する。
+     * いずれの場合も本メソッドは {@code records} を一様に扱う。</p>
      *
      * @param file    ファイル
      * @param records 生のレコードレイアウト Map 群（YAML 順）

@@ -1,5 +1,6 @@
 package nablarch.test.core.reader;
 
+import nablarch.core.dataformat.DataRecord;
 import nablarch.test.Assertion;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
@@ -662,12 +663,16 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * getMessageWithoutCache(EXPECTED_REQUEST_HEADER_MESSAGES): メッセージが取得できること。
+     * getMessageWithoutCache(EXPECTED_REQUEST_HEADER_MESSAGES): 電文本文が記述どおりに取得できること。
      *
      * <p>
-     * Given: expected_request_header_messages に id=req001 と requestId/userId フィールドがある<br>
+     * {@code record_type} に特別な予約値はなく、値が "FW_HEADER" のレコードも読み飛ばされない。
+     * このセクションは {@code fw_header:} を使わず、ヘッダ項目も {@code records} の fields/rows に記述するため、
+     * 読み飛ばされると期待電文が 0 件の空メッセージになってしまう<br>
+     * Given: expected_request_header_messages の id=req001 に record_type: FW_HEADER のレコードがあり、
+     *        requestId/userId/resendFlag/resultCode の値行が 1 行記述されている<br>
      * When:  getMessageWithoutCache(dir, resource, EXPECTED_REQUEST_HEADER_MESSAGES, "req001") を呼ぶ<br>
-     * Then:  MessagePool が返ること
+     * Then:  RequestTestingMessagePool が返り、期待電文 1 件の各フィールドに記述どおりの値が入っていること
      * </p>
      */
     @Test
@@ -680,6 +685,16 @@ public class YamlTestDataParserTest {
         // Then: non-null かつ RequestTestingMessagePool であること
         assertNotNull(result);
         assertThat(result, instanceOf(RequestTestingMessagePool.class));
+
+        // Then: 本文行の中身まで検証する（record_type: FW_HEADER が読み飛ばされていないこと）
+        List<DataRecord> messages = ((RequestTestingMessagePool) result).getExpectedMessageList();
+        assertThat("FW_HEADER レコードも読み飛ばされず期待電文が 1 件取得できること", messages.size(), is(1));
+        DataRecord message = messages.get(0);
+        assertThat(message.getRecordType(), is("default"));
+        assertThat(message.getString("requestId"), is("0000000001"));
+        assertThat(message.getString("userId"), is("testUser01"));
+        assertThat(message.getString("resendFlag"), is("0"));
+        assertThat(message.getString("resultCode"), is("0000"));
     }
 
     /**

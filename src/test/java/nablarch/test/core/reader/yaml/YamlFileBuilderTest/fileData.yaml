@@ -72,6 +72,8 @@ setup_files:
     path: input/multi.dat
     type: fixed
     records:
+      # 固定長ファイルは全レコードレイアウトのレコード長が一致している必要があるため、
+      # HEADER は FILLER でレコード長を DATA と同じ 40 バイトに揃える。
       - record_type: HEADER
         fields:
           - name: SEQ
@@ -80,8 +82,11 @@ setup_files:
           - name: TYPE
             type: 半角
             length: 2
+          - name: FILLER
+            type: 半角
+            length: 34
         rows:
-          - ["H001", "01"]
+          - ["H001", "01", ""]
       - record_type: DATA
         fields:
           - name: USER_ID
