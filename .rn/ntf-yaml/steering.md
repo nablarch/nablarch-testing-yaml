@@ -492,14 +492,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
-session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
-so only a genuinely suspended session reads `paused`.)
-
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-17
+- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A まで完了、step B の評価ゲート待ち）
+- **Next**: #14 step B — 評価ゲート。ユーザーの `/rn:ty`（承認）または `/rn:gm`（差し戻し）を受ける
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、HEAD `e69b69f`、push 済み・作業ツリークリーン。PR なし
+  - **未回答の判断 1（3回提示・未回答）**: `YamlSection.FW_HEADER_RECORD_TYPE`（public 定数）は #12 で不要になったが削除すると `nablarch-testing-converter` の `YamlFormatReader.java:403-412` がコンパイル不能。`~/.m2` の 8/13 ジャーで通っているだけで `mvn install` を実行した時点で壊れる。A（推奨）現状維持・別セッションで converter を修正・それまで `mvn install` 禁止／B 定数を `@Deprecated` で残す／C 本セッションで converter も修正
+  - **未回答の判断 2**: Acceptance criteria 2 項目め「全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）」は評価不能。(a) 該当ファイルは同ブランチに存在しない（実複製元は `worktree-agent-a79308e7e5862d004` = `d8ba387`）(b) #4 以降が実装変更を伴う承認済みタスクのため基準が現スコープと不一致。Goal / Acceptance criteria / Rules を現スコープへ書き換えるかはユーザー判断待ち
+  - **スコープ外の申し送り**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない（`"\r\n"` はエラーなく区切りが空になる）。別リポジトリのため未着手
+  - `mvn` は必ず `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付きで実行する（Rules 参照）
 
 
