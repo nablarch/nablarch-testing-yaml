@@ -6,11 +6,13 @@ nablarch-testing の YAML 読み込み機構（src/main 12件）とその単体�
 nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の状態にする。
 実装は一切変更せず、ファイルの物理コピー（パス変更）と package/import の機械的調整、
 および pom 設定のみを行う。
+移送後、解説書・JSON Schema との食い違いが見つかった箇所は、ユーザー確認を経たタスク（#5〜#13）として是正する。
 
 # Acceptance criteria
 
 - `mvn test` 全テスト PASS（yaml リポジトリ単体で緑）
-- 全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）
+- 移送3タスク（#1〜#3）の完了時点で、全移動ファイルが `worktree-agent-a79308e7e5862d004`（`d8ba387`）と package/import を除き完全一致していた（根拠: checks/task-02.md・checks/task-03.md）
+- #4 以降の実装差分は、すべて steering の承認済みタスクに帰属し、タスク外の差分が無い（根拠: git log と git diff d8ba387..HEAD）
 - 本体（nablarch-testing）に一切書き込みをしていない
 - push 済み
 
@@ -479,8 +481,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 **Steps**:
 
 - [x] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる
-  - 4 項目中 3 項目 OK（`mvn clean test` 177/0/0/Skipped 4・BUILD SUCCESS／本体無書き込み（`git status` 空・HEAD `fdf55d4`）／push 済み（HEAD `5a15b6d` = `origin/feature/ntf-yaml`））
-  - 1 項目は**評価不能**: 「全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）」。(a) 対象ファイル群は同ブランチに存在しない（実際の複製元は `worktree-agent-a79308e7e5862d004` = `d8ba387`）。(b) #4 以降のタスクが実装変更を伴うため、この基準は #1〜#3（移送）の時点の基準であって現在のスコープに一致しない
+  - 5 項目中 5 項目 OK
+    - `mvn clean test` 全 PASS: 177 tests / 0 failures / 0 errors / Skipped 4、BUILD SUCCESS
+    - 移送3タスク（#1〜#3）完了時点の完全一致: `checks/task-02.md`（12件 diff 差分ゼロ）・`checks/task-03.md`（9件 diff 差分ゼロ）に記録済み。複製元は `worktree-agent-a79308e7e5862d004`（`d8ba387`）。旧基準が挙げていた `convert-testdata-excel-to-text`（`fdf55d4`）は `reader/yaml` 配下のファイルを1件も含まない（`git ls-tree -r fdf55d4` で確認）ため、この基準は元々別ブランチを指しており誤りだった
+    - #4 以降の実装差分の task 帰属: 本リポジトリの `git log` は #4〜#13 各タスクの commit（`docs(steering): complete task #N` を含む）と1対1で対応しており、タスク外の差分はない
+    - 本体無書き込み: `git status` 空、HEAD `fdf55d4`（本体側）
+    - push 済み: HEAD `99376b1` = `origin/feature/ntf-yaml`
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
 
 **Completion criteria**:
@@ -493,14 +499,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 # State
 
 - **Status**: paused
-- **Date**: 2026-08-17
-- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A まで完了、step B の評価ゲート待ち）
-- **Next**: #14 step B — 評価ゲート。ユーザーの `/rn:ty`（承認）または `/rn:gm`（差し戻し）を受ける
+- **Date**: 2026-08-18
+- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A まで完了・ユーザー指摘に基づき再判定済み、step B の評価ゲート待ち）
+- **Next**: #14 step B — 評価ゲート。ユーザーは承認の意思表示済み、`/rn:ty` 待ち
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、HEAD `e69b69f`、push 済み・作業ツリークリーン。PR なし
-  - **未回答の判断 1（3回提示・未回答）**: `YamlSection.FW_HEADER_RECORD_TYPE`（public 定数）は #12 で不要になったが削除すると `nablarch-testing-converter` の `YamlFormatReader.java:403-412` がコンパイル不能。`~/.m2` の 8/13 ジャーで通っているだけで `mvn install` を実行した時点で壊れる。A（推奨）現状維持・別セッションで converter を修正・それまで `mvn install` 禁止／B 定数を `@Deprecated` で残す／C 本セッションで converter も修正
-  - **未回答の判断 2**: Acceptance criteria 2 項目め「全移動ファイルが本体ブランチ `convert-testdata-excel-to-text` と package/import を除き完全一致（実装無改変）」は評価不能。(a) 該当ファイルは同ブランチに存在しない（実複製元は `worktree-agent-a79308e7e5862d004` = `d8ba387`）(b) #4 以降が実装変更を伴う承認済みタスクのため基準が現スコープと不一致。Goal / Acceptance criteria / Rules を現スコープへ書き換えるかはユーザー判断待ち
-  - **スコープ外の申し送り**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない（`"\r\n"` はエラーなく区切りが空になる）。別リポジトリのため未着手
+  - ブランチ `feature/ntf-yaml`、HEAD `99376b1`、push 済み・作業ツリークリーン。PR なし
+  - **判断1（解決・A採用）**: `YamlSection.FW_HEADER_RECORD_TYPE`（public 定数）は #12（`0b53910`）で既に削除・push 済み。`nablarch-testing-converter` が現在コンパイルできているのは、`~/.m2` の `nablarch-testing-yaml-1.0.0-SNAPSHOT.jar`（2026-08-13 17:04 生成、converter `pom.xml:42-44` が依存）の `YamlSection.class` に旧定数の文字列定数プールがまだ残っているため（`strings` で確認済み）であり、削除自体が未達成なのではない。B（`@Deprecated` で定数復活）は不採用: 器（`YamlFileBuilder`）は #12 で FW_HEADER レコードも断片化するようになった一方、converter の `recordsWithoutFwHeader`（`YamlFormatReader.java:402-411`）は原文側から FW_HEADER レコードを引き続き除外するため、`toRecordLayouts`（`YamlFormatReader.java:329-333`）の `fragments.size() != alignedRecords.size()` に当たり `IllegalStateException` になる（壊れ方がビルド時から実行時へ移るだけで悪化する）。C（本セッションで converter も修正）も不採用: converter は別リポジトリ・別 steering・別ゲート。converter 側は既に YML-03 の受け入れ準備が済んでいる（`YamlFormatReaderRealFileTest` の `@Ignore("YML-03: yaml側の修正待ち")` 2本 L638/L1001、`coverage/issues.md` YML-03 節「未修正／nablarch-testing-yaml 側の修正待ち」、`checks/task-25.5.md:276`「本体側が直った日に `@Ignore` を外せば通る」）。申し送りは「YML-03 が解けた」1件のみで足り、新規タスクは不要
+    - **禁止事項（継続）**: `nablarch-testing-yaml` で `mvn install` を実行しない。converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存しており、install した時点で converter のコンパイルが落ちる。install は converter 側の YML-03 対応と同時に行う
+  - **判断2（解決）**: Acceptance criteria 2項目めを steering 本文で書き換え済み（複製元 `worktree-agent-a79308e7e5862d004` = `d8ba387` を明示する2項目へ差し替え、Goal にも1行追記）。詳細は #14 step A の再判定記録を参照
+  - **スコープ外の申し送り（着手しない・別ストリームへ回す）**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない（`"\r\n"` はエラーなく区切りが空になる）。別リポジトリのため本セッションでは着手しない
   - `mvn` は必ず `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付きで実行する（Rules 参照）
 
 
