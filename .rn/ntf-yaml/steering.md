@@ -500,14 +500,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-18
-- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A まで完了・ユーザー指摘に基づき再判定済み、step B の評価ゲート待ち）
-- **Next**: #14 step B — 評価ゲート。ユーザーは承認の意思表示済み、`/rn:ty` 待ち
+- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A 完了・ユーザー指摘に基づき再判定済み。ユーザーは承認の意思表示済みだが `/rn:ty` は未実行）
+- **Next**: #14 step B — `/rn:ty` を受けて check-off（判断1・判断2 は解決済み、詳細は steering.md 本体と commit `8e1ea76` を参照。再叙述しない）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、HEAD `99376b1`、push 済み・作業ツリークリーン。PR なし
-  - **判断1（解決・A採用）**: `YamlSection.FW_HEADER_RECORD_TYPE`（public 定数）は #12（`0b53910`）で既に削除・push 済み。`nablarch-testing-converter` が現在コンパイルできているのは、`~/.m2` の `nablarch-testing-yaml-1.0.0-SNAPSHOT.jar`（2026-08-13 17:04 生成、converter `pom.xml:42-44` が依存）の `YamlSection.class` に旧定数の文字列定数プールがまだ残っているため（`strings` で確認済み）であり、削除自体が未達成なのではない。B（`@Deprecated` で定数復活）は不採用: 器（`YamlFileBuilder`）は #12 で FW_HEADER レコードも断片化するようになった一方、converter の `recordsWithoutFwHeader`（`YamlFormatReader.java:402-411`）は原文側から FW_HEADER レコードを引き続き除外するため、`toRecordLayouts`（`YamlFormatReader.java:329-333`）の `fragments.size() != alignedRecords.size()` に当たり `IllegalStateException` になる（壊れ方がビルド時から実行時へ移るだけで悪化する）。C（本セッションで converter も修正）も不採用: converter は別リポジトリ・別 steering・別ゲート。converter 側は既に YML-03 の受け入れ準備が済んでいる（`YamlFormatReaderRealFileTest` の `@Ignore("YML-03: yaml側の修正待ち")` 2本 L638/L1001、`coverage/issues.md` YML-03 節「未修正／nablarch-testing-yaml 側の修正待ち」、`checks/task-25.5.md:276`「本体側が直った日に `@Ignore` を外せば通る」）。申し送りは「YML-03 が解けた」1件のみで足り、新規タスクは不要
-    - **禁止事項（継続）**: `nablarch-testing-yaml` で `mvn install` を実行しない。converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存しており、install した時点で converter のコンパイルが落ちる。install は converter 側の YML-03 対応と同時に行う
-  - **判断2（解決）**: Acceptance criteria 2項目めを steering 本文で書き換え済み（複製元 `worktree-agent-a79308e7e5862d004` = `d8ba387` を明示する2項目へ差し替え、Goal にも1行追記）。詳細は #14 step A の再判定記録を参照
-  - **スコープ外の申し送り（着手しない・別ストリームへ回す）**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない（`"\r\n"` はエラーなく区切りが空になる）。別リポジトリのため本セッションでは着手しない
+  - ブランチ `feature/ntf-yaml`、HEAD `8e1ea76`、push 済み・作業ツリークリーン。PR なし
+  - **禁止事項（継続）**: `nablarch-testing-yaml` で `mvn install` を実行しない。converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存しており、install した時点で converter のコンパイルが落ちる。install は converter 側の YML-03 対応と同時に行う
+  - **スコープ外の申し送り（着手しない・別ストリームへ回す）**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない。別リポジトリのため本セッションでは着手しない
   - `mvn` は必ず `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付きで実行する（Rules 参照）
 
 
