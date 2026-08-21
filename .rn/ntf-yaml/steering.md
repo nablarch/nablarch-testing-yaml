@@ -497,7 +497,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #15: 2-1 — `#23` の修正で解消した不具合 #F の `@Ignore` を外す
+### ~~#15: 2-1 — `#23` の修正で解消した不具合 #F の `@Ignore` を外す~~
 
 **Purpose**: 本体 `TableData#loadData()` の `#23`（`b6e049a`）対応により不具合 #F が解消したため、保留していた偽陰性テストを復活させる。
 
@@ -505,12 +505,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `YamlTestDataParserTest.java:396`〜`:398` の FIXME コメントと `:399` の `@Ignore` を削除する（Given/When/Then は1文字も変えない）
-- [ ] B. `mvn -o clean test` で `emptyExpectedTable_failsWhenDbHasRows` が緑になることを確認する（緑にならなければ commit せず revert し、surefire レポートを添えて報告）
-- [ ] C. commit・push
-- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-15.md)
-- [ ] E. QA expert review (subagent)
-- [ ] F. Verification expert review — test (subagent)
+- [x] A. `YamlTestDataParserTest.java:396`〜`:398` の FIXME コメントと `:399` の `@Ignore` を削除する（Given/When/Then は1文字も変えない）
+- [x] B. `mvn -o clean test` で `emptyExpectedTable_failsWhenDbHasRows` が緑になることを確認する（緑にならなければ commit せず revert し、surefire レポートを添えて報告）
+- [x] C. commit・push
+- [x] D. self-check (OK/NG per completion criterion, record in checks/task-15.md)
+- [x] E. QA expert review (subagent)
+- [x] F. Verification expert review — test (subagent)
 
 **Completion criteria**:
 
@@ -633,6 +633,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: not suspended
 - **Date**: 2026-08-21
-- **Last completed**: #13
-- **Next**: #15
+- **Last completed**: #15
+- **Next**: #16
 - **Notes**: —
