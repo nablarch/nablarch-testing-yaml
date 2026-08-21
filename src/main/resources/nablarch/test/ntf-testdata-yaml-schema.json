@@ -374,7 +374,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行リスト。各要素は fields と同順・同件数の値配列。NTF は fields の順序でフィールドと値を対応付ける。各配列の要素数が fields の件数と一致しない場合は NTF がエラーを出す。0件も有効（setup_files では空ファイル、expected_files では出力なしの期待値として使用）",
+          "description": "データ行リスト。各要素は fields と同順の値配列。NTF は fields の順序でフィールドと値を対応付ける。各配列の要素数が fields の件数より少ない場合、不足したフィールドは `\"\"` として補完される。0件も有効（setup_files では空ファイル、expected_files では出力なしの期待値として使用）",
           "items": {
             "type": "array",
             "items": {
@@ -383,7 +383,7 @@
                 "null"
               ]
             },
-            "description": "フィールド値のリスト。fields の順序に完全対応。数値・真偽値も文字列（クォート付き）で記述すること"
+            "description": "フィールド値のリスト。fields の順序で先頭から対応付けられる。数値・真偽値も文字列（クォート付き）で記述すること"
           }
         }
       }
