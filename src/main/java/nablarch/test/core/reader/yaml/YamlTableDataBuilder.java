@@ -107,16 +107,22 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        // dataColumns が空（rows: []）のとき、YAML にはカラム名を書く場所が無いため長さ 0 の列名で
-        // TableData を生成する。これでよいのは、カラム名の解決が本ビルダではなく本体（DB を知る側）の
-        // 責務だからである。本ビルダは YAML の記述をそのまま写し取るだけで DB を参照しない
-        // （dbInfo は TableData へ引き渡すだけで、ここで列名解決には使わない）。これにより、
-        // DbInfo を持たない読み込み経路（変換ツール等）でも YAML を読める。
-        // 列名 0 件の TableData は本体側で次のように解決される。
-        //   - 期待値（expected_tables）: TableData#loadData() が列名 0 件のとき
-        //     dbInfo.getColumns(tableName) へフォールバックして DB 全カラムを読むため偽陰性にならない。
-        //   - 準備データ（setup_tables）: setUpDb の削除は "DELETE FROM <table>" で列名に依存せず、
-        //     挿入は dbInfo から得た全カラムを使うため、0 行の TableData でテーブルが空になる。
+        // 列名は先頭行（rows.get(0)）のキーからのみ決まる（YamlSection#resolveColumns）。よって rows が
+        // 空、または先頭行が空マッピング（{}）のとき dataColumns は空になり、長さ 0 の列名で TableData を
+        // 生成する。YAML に列名を書く場所が無い以上、ここで列名を作り出すことはしない
+        //（dbInfo.getColumns による解決は、それが使えない DbInfo 実装 — 変換ツールの StubDbInfo は
+        // getColumns で UnsupportedOperationException を投げる — があるため本ビルダでは行わない）。
+        // 長さ 0 のまま渡してよい根拠は fillDefaults で分かれる。
+        //   - fillDefaults=false のうち expected_tables: 依存先 nablarch-testing の TableData#loadData() が
+        //     列名 0 件のとき dbInfo.getColumns(tableName) を取得対象カラムとして DB を読むため、行の有無は
+        //     検証される。この前提が崩れれば
+        //     YamlTestDataParserTest#emptyExpectedTable_failsWhenDbHasRows が落ちる。
+        //   - fillDefaults=false のうち setup_tables: 列名は 0 件のまま解決されない。TableData#deleteData()
+        //     は "DELETE FROM <table>" で列名を使わず、TableData#insertData() が使うのは dbInfo から得た
+        //     自動計算カラム除外のカラムであって TableData の列名ではないため、列名は必要にならない。
+        //   - fillDefaults=true（expected_complete_tables）: 下の fillDefaultValues() が呼ぶ
+        //     TableData#fillDefaultValues() が dbInfo.getColumns(tableName) を列名として設定するため、
+        //     この経路の TableData には DB 由来の全カラムが入る。
         TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
         for (List<String> rawRow : rawRows) {
             if (rawRow.isEmpty()) {

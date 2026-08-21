@@ -141,9 +141,9 @@ public class YamlTableDataBuilderTest {
      * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、rows: [] の場合にカラム名を解決するのは DB を知る本体側の責務
-     * （setUpDb の削除は "DELETE FROM &lt;table&gt;" で列名に依存せず、挿入は dbInfo の全カラムを使う）であり、
-     * YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
+     * カラム名が 0 件で正しいのは、YAML に列名を書く場所が無いためである。setup_tables では列名は
+     * 0 件のまま解決されないが、本体の削除・挿入は TableData の列名を使わないため必要にならない
+     * （詳細は {@code YamlTableDataBuilder#buildTableData} のコメント）。
      * </p>
      */
     @Test
@@ -416,12 +416,14 @@ public class YamlTableDataBuilderTest {
      * Then:  TableData が 1 件返り、カラム名が 0 件、行 0 件であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、カラム名を書く場所が YAML に無いときにそれを解決するのは
-     * DB を知る本体側の責務であり、YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
+     * カラム名が 0 件で正しいのは、列名が先頭行のキーからのみ決まり、先頭行が {} のときは YAML に
+     * 列名を書く場所が無いためである。setup_tables では列名は 0 件のまま解決されないが、本体の
+     * 削除・挿入は TableData の列名を使わないため必要にならない
+     * （詳細は {@code YamlTableDataBuilder#buildTableData} のコメント）。
      * </p>
      */
     @Test
-    public void buildTableDataList_allEmptyRowsReturnsTableDataWithAllDbColumns() {
+    public void buildTableDataList_allEmptyRowsReturnsTableDataWithNoColumns() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
@@ -867,13 +869,17 @@ public class YamlTableDataBuilderTest {
      * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、rows: [] の場合にカラム名を解決するのは DB を知る本体側の責務
-     * （{@code TableData#loadData()} が列名 0 件のとき dbInfo の全カラムへフォールバックして DB を読む）であり、
-     * YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
+     * カラム名が 0 件で正しいのは、YAML に列名を書く場所が無いためである。expected_tables では
+     * 依存先 nablarch-testing の {@code TableData#loadData()} が列名 0 件のとき dbInfo の全カラムを
+     * 取得対象として DB を読むため、行の有無は検証される（詳細は
+     * {@code YamlTableDataBuilder#buildTableData} のコメント）。
+     * 同じ rows: [] でも {@code buildTableDataList_emptyExpectedCompleteTableReturnsTableDataWithAllDbColumns}
+     * が 11 カラムを期待するのは、そちらが fillDefaults=true で {@code TableData#fillDefaultValues()} を
+     * 通り、DB の全カラムが列名として設定されるためである。
      * </p>
      */
     @Test
-    public void buildTableDataList_emptyExpectedTableReturnsTableDataWithAllDbColumns() {
+    public void buildTableDataList_emptyExpectedTableReturnsTableDataWithNoColumns() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
