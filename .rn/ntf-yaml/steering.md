@@ -521,7 +521,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #16: 2-2 / 2-3 — `rows: []` のカラム名解決の責務を本体側に置き、期待値と FIXME を実態に合わせる
+### ~~#16: 2-2 / 2-3 — `rows: []` のカラム名解決の責務を本体側に置き、期待値と FIXME を実態に合わせる~~
 
 **Purpose**: `rows: []` のときカラム名を解決するのは DB を知る `TableData#loadData()`（本体）の責務であり、YAML を読むだけの `YamlTableDataBuilder` が長さ0の列名で `TableData` を作るのは正しい、という責務の所在を期待値とコメントに反映する。
 
@@ -529,16 +529,16 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `YamlTableDataBuilderTest` の3テスト（`:145/147`・`:419/421`・`:869/871`）で「dbInfo の全カラム数（11）が返ること」を主張する `assertThat` を、列名0件を主張する形へ直す（テーブル名・件数・行数の `assertThat` は変えない）
-- [ ] B. 各テストの javadoc に、なぜ列名0件が正しいのかを1文で書く（責務の所在）
-- [ ] C. 3件の FIXME コメントと 3件の `@Ignore` を削除する
-- [ ] D. `YamlTableDataBuilder.java:110` の FIXME を、長さ0の列名で `TableData` を作ってよい理由を説明する通常のコメントへ書き換える（「FIXME」「TODO」の語を残さない）
-- [ ] E. `mvn -o clean test` 全 PASS 確認
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-16.md)
-- [ ] H. QA expert review (subagent)
-- [ ] I. Craft expert review — coding (subagent)
-- [ ] J. Verification expert review — test (subagent)
+- [x] A. `YamlTableDataBuilderTest` の3テスト（`:145/147`・`:419/421`・`:869/871`）で「dbInfo の全カラム数（11）が返ること」を主張する `assertThat` を、列名0件を主張する形へ直す（テーブル名・件数・行数の `assertThat` は変えない）
+- [x] B. 各テストの javadoc に、なぜ列名0件が正しいのかを1文で書く（責務の所在）
+- [x] C. 3件の FIXME コメントと 3件の `@Ignore` を削除する
+- [x] D. `YamlTableDataBuilder.java:110` の FIXME を、長さ0の列名で `TableData` を作ってよい理由を説明する通常のコメントへ書き換える（「FIXME」「TODO」の語を残さない）
+- [x] E. `mvn -o clean test` 全 PASS 確認
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-16.md)
+- [x] H. QA expert review (subagent)
+- [x] I. Craft expert review — coding (subagent)
+- [x] J. Verification expert review — test (subagent)
 
 **Completion criteria**:
 
@@ -567,6 +567,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] B. フィクスチャ: 先頭 `{}` の**新規グループ**を `tableData.yaml` 等に追加する。**既存グループ `emptyRowMixed`（`tableData.yaml:63-75`。`{}` が2番目）は変更しない**
 - [ ] C. GREEN: `resolveColumns` を「先頭の**非空マッピング行**のキーを列名にする」実装へ変更する。非空マッピング行が1つも無ければ従来どおり空リストを返す
 - [ ] D. `list_maps` 経路でも同根の症状（先頭 `{}` で全行が空 Map になる）が塞がることを確認する
+- [ ] D2. #16 で書いた `YamlTableDataBuilder.java:111` の冒頭「列名は先頭行（`rows.get(0)`）のキーからのみ決まる」と、`YamlSection#resolveColumns` の javadoc（`:135-143`）が、変更後の実装と食い違わないよう更新する
 - [ ] E. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。コマンドと結果を記録する
 - [ ] F. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認。`BUILD SUCCESS` だけを根拠にしない）
 - [ ] G. commit・push（**#16 とは別コミット**）
@@ -672,6 +673,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: not suspended
 - **Date**: 2026-08-21
-- **Last completed**: #15
-- **Next**: #16（実行中）→ #17
+- **Last completed**: #16
+- **Next**: #17
 - **Notes**: —
