@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -393,10 +392,6 @@ public class YamlTestDataParserTest {
      * Then:  AssertionError がスローされること（DB に行があるのに通り抜けない）
      * </p>
      */
-    // FIXME: 不具合 #F（rows: [] の expected_tables が DB に行があっても素通りする偽陰性）は未解決。
-    // 暫定対応（TableData の列名を未設定にして DbInfo フォールバックへ載せる）は、DB を持たない
-    // 読み込み経路（変換ツール）を壊すため差し戻した。本体 TableData#loadData の対応後に復活させる。
-    @Ignore("不具合 #F 未解決のため保留（FIXME 参照）")
     @Test
     public void emptyExpectedTable_failsWhenDbHasRows() {
         // Given: DB に 1 件挿入
