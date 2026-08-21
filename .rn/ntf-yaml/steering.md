@@ -550,7 +550,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #17: `resolveColumns` の先頭行 `{}` によるデータ行の無言消失を塞ぐ
+### ~~#17: `resolveColumns` の先頭行 `{}` によるデータ行の無言消失を塞ぐ~~
 
 **Purpose**: `rows` の先頭要素が空マッピング（`{}`）のとき列名が0件になり、後続の実データ行が無言で捨てられる不具合を解消する。`setup_tables` ではテーブルが空にされたうえでデータが投入されず、エラーも出ない。
 
@@ -560,22 +560,22 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. RED: 3経路それぞれに「先頭 `{}` ＋後続に実データ行」のテストを追加し、失敗することを確認する
+- [x] A. RED: 3経路それぞれに「先頭 `{}` ＋後続に実データ行」のテストを追加し、失敗することを確認する
   - `buildTableDataList`（`setup_tables`）
   - `buildTableDataList`（`expected_tables`）
   - `buildListMapRows`（`list_maps`。`YamlTableDataBuilder.java:157` が同じ `resolveColumns` を呼ぶ）
-- [ ] B. フィクスチャ: 先頭 `{}` の**新規グループ**を `tableData.yaml` 等に追加する。**既存グループ `emptyRowMixed`（`tableData.yaml:63-75`。`{}` が2番目）は変更しない**
-- [ ] C. GREEN: `resolveColumns` を「先頭の**非空マッピング行**のキーを列名にする」実装へ変更する。非空マッピング行が1つも無ければ従来どおり空リストを返す
-- [ ] D. `list_maps` 経路でも同根の症状（先頭 `{}` で全行が空 Map になる）が塞がることを確認する
-- [ ] D2. #16 で書いた `YamlTableDataBuilder.java:111` の冒頭「列名は先頭行（`rows.get(0)`）のキーからのみ決まる」と、`YamlSection#resolveColumns` の javadoc（`:135-143`）が、変更後の実装と食い違わないよう更新する
-- [ ] E. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。コマンドと結果を記録する
-- [ ] F. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認。`BUILD SUCCESS` だけを根拠にしない）
-- [ ] G. commit・push（**#16 とは別コミット**）
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-17.md)
-- [ ] I. QA expert review (subagent)
-- [ ] J. Design expert review (subagent)
-- [ ] K. Craft expert review — coding (subagent)
-- [ ] L. Verification expert review — test (subagent)
+- [x] B. フィクスチャ: 先頭 `{}` の**新規グループ**を `tableData.yaml` 等に追加する。**既存グループ `emptyRowMixed`（`tableData.yaml:63-75`。`{}` が2番目）は変更しない**
+- [x] C. GREEN: `resolveColumns` を「先頭の**非空マッピング行**のキーを列名にする」実装へ変更する。非空マッピング行が1つも無ければ従来どおり空リストを返す
+- [x] D. `list_maps` 経路でも同根の症状（先頭 `{}` で全行が空 Map になる）が塞がることを確認する
+- [x] D2. #16 で書いた `YamlTableDataBuilder.java:111` の冒頭「列名は先頭行（`rows.get(0)`）のキーからのみ決まる」と、`YamlSection#resolveColumns` の javadoc（`:135-143`）が、変更後の実装と食い違わないよう更新する
+- [x] E. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。コマンドと結果を記録する
+- [x] F. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認。`BUILD SUCCESS` だけを根拠にしない）
+- [x] G. commit・push（**#16 とは別コミット**）
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-17.md)
+- [x] I. QA expert review (subagent)
+- [x] J. Design expert review (subagent)
+- [x] K. Craft expert review — coding (subagent)
+- [x] L. Verification expert review — test (subagent)
 
 **スコープ外（今回直さない。報告書へ回す）**: 「先頭行に無いキーを2行目以降が持っていても捨てられる」件（2026-08-21 ユーザー判断）。
 
@@ -673,6 +673,6 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: not suspended
 - **Date**: 2026-08-21
-- **Last completed**: #16
-- **Next**: #17
+- **Last completed**: #17
+- **Next**: #18
 - **Notes**: —
