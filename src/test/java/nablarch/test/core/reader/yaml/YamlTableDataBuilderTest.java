@@ -141,9 +141,9 @@ public class YamlTableDataBuilderTest {
      * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、YAML に列名を書く場所が無いためである。setup_tables では列名は
-     * 0 件のまま解決されないが、本体の削除・挿入は TableData の列名を使わないため必要にならない
-     * （詳細は {@code YamlTableDataBuilder#buildTableData} のコメント）。
+     * カラム名が 0 件で正しいのは、rows: [] ではどの行もキーを持たず、YAML に列名を書く場所が
+     * 無いためである。setup_tables では列名は 0 件のまま解決されないが、それで支障がない理由は
+     * {@code YamlTableDataBuilder#buildTableData} の javadoc に記す。
      * </p>
      */
     @Test
@@ -157,7 +157,7 @@ public class YamlTableDataBuilderTest {
         // Then: rows:[] エントリは 0 行の TableData として返る（Excel 経路の振る舞いに合わせる）
         assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
         assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
-        assertThat("カラム名が 0 件であること（解決は本体側の責務）", result.get(0).getColumnNames().length, is(0));
+        assertThat("カラム名が 0 件であること", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 であること", result.get(0).size(), is(0));
     }
 
@@ -409,17 +409,17 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * rows 内の空マッピングはすべてスキップされるため行データもカラム名も 0 件となる
-     * （{@code buildTableDataList_emptyRowEntrySkipped} がスキップ自体を検証する）。<br>
+     * 行データが 0 件となるのは空マッピングがデータ行として扱われないためであり、カラム名が 0 件と
+     * なるのは列名が先頭行のキーから決まるところ、その先頭行が {} だからである
+     * （スキップ自体は {@code buildTableDataList_emptyRowEntrySkipped} が検証する）。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
      * Then:  TableData が 1 件返り、カラム名が 0 件、行 0 件であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、列名が先頭行のキーからのみ決まり、先頭行が {} のときは YAML に
-     * 列名を書く場所が無いためである。setup_tables では列名は 0 件のまま解決されないが、本体の
-     * 削除・挿入は TableData の列名を使わないため必要にならない
-     * （詳細は {@code YamlTableDataBuilder#buildTableData} のコメント）。
+     * その 0 件を列名解決で埋めないのが正しいのは、このケースは全行が {} でどの行もキーを持たず、
+     * YAML に列名を書く場所が無いためである。setup_tables では列名は 0 件のまま解決されないが、
+     * それで支障がない理由は {@code YamlTableDataBuilder#buildTableData} の javadoc に記す。
      * </p>
      */
     @Test
@@ -432,7 +432,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
-        assertThat("カラム名が 0 件であること（解決は本体側の責務）", result.get(0).getColumnNames().length, is(0));
+        assertThat("カラム名が 0 件であること", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 件であること", result.get(0).size(), is(0));
     }
 
@@ -869,13 +869,11 @@ public class YamlTableDataBuilderTest {
      * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
      * </p>
      * <p>
-     * カラム名が 0 件で正しいのは、YAML に列名を書く場所が無いためである。expected_tables では
-     * 依存先 nablarch-testing の {@code TableData#loadData()} が列名 0 件のとき dbInfo の全カラムを
-     * 取得対象として DB を読むため、行の有無は検証される（詳細は
-     * {@code YamlTableDataBuilder#buildTableData} のコメント）。
+     * カラム名が 0 件で正しいのは、rows: [] ではどの行もキーを持たず、YAML に列名を書く場所が
+     * 無いためである。expected_tables では列名が 0 件でも行の有無は検証される。その理由は
+     * {@code YamlTableDataBuilder#buildTableData} の javadoc に記す。
      * 同じ rows: [] でも {@code buildTableDataList_emptyExpectedCompleteTableReturnsTableDataWithAllDbColumns}
-     * が 11 カラムを期待するのは、そちらが fillDefaults=true で {@code TableData#fillDefaultValues()} を
-     * 通り、DB の全カラムが列名として設定されるためである。
+     * が 11 カラムを期待するのは、そちらが fillDefaults=true で呼ばれる経路だからである。
      * </p>
      */
     @Test

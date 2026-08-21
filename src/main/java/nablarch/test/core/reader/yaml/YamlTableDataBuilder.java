@@ -97,6 +97,34 @@ public final class YamlTableDataBuilder {
         return result;
     }
 
+    /**
+     * 1 エントリ分の {@link TableData} を組み立てる。
+     *
+     * <p>
+     * 列名が 0 件のまま渡ってくることがある（条件は下の {@code new TableData(...)} 直前のコメント）。
+     * 0 件のまま渡してよい根拠は {@code fillDefaults} で分かれる。
+     * </p>
+     * <ul>
+     *   <li>fillDefaults=false のうち {@code expected_tables}: 依存先 nablarch-testing の
+     *       {@code TableData#loadData()} が列名 0 件のとき {@code dbInfo.getColumns(tableName)} を
+     *       取得対象カラムとして DB を読むため、行の有無は検証される。この前提が崩れれば
+     *       {@code nablarch.test.core.reader.YamlTestDataParserTest#emptyExpectedTable_failsWhenDbHasRows}
+     *       が落ちる。</li>
+     *   <li>fillDefaults=false のうち {@code setup_tables}: 列名は 0 件のまま解決されない。
+     *       {@code TableData#deleteData()} は {@code "DELETE FROM <table>"} で列名を使わず、
+     *       {@code TableData#insertData()} が使うのは {@code dbInfo} から得た自動計算カラム除外の
+     *       カラムであって TableData の列名ではないため、列名は必要にならない。</li>
+     *   <li>fillDefaults=true（{@code expected_complete_tables}）: 下の {@code fillDefaultValues()} が
+     *       呼ぶ {@code TableData#fillDefaultValues()} が {@code dbInfo.getColumns(tableName)} を
+     *       列名として設定するため、この経路の TableData には DB 由来の全カラムが入る。</li>
+     * </ul>
+     *
+     * <p>
+     * 最後の 1 件は {@code dbInfo.getColumns} を使うが、これは列名解決をそれに依存させない方針と
+     * 矛盾しない。{@code getColumns} を提供しない {@link DbInfo} 実装と組み合わせる読み込み専用の
+     * 経路は fillDefaults=false で呼ぶ約束であり、{@code fillDefaultValues()} には到達しないためである。
+     * </p>
+     */
     private TableData buildTableData(String tableName, List<String> cols, List<List<String>> rawRows,
                                      boolean fillDefaults, List<TestDataInterpreter> interps) {
         List<String> dataColumns = new ArrayList<String>();
@@ -107,22 +135,10 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        // 列名は先頭行（rows.get(0)）のキーからのみ決まる（YamlSection#resolveColumns）。よって rows が
-        // 空、または先頭行が空マッピング（{}）のとき dataColumns は空になり、長さ 0 の列名で TableData を
-        // 生成する。YAML に列名を書く場所が無い以上、ここで列名を作り出すことはしない
-        //（dbInfo.getColumns による解決は、それが使えない DbInfo 実装 — 変換ツールの StubDbInfo は
-        // getColumns で UnsupportedOperationException を投げる — があるため本ビルダでは行わない）。
-        // 長さ 0 のまま渡してよい根拠は fillDefaults で分かれる。
-        //   - fillDefaults=false のうち expected_tables: 依存先 nablarch-testing の TableData#loadData() が
-        //     列名 0 件のとき dbInfo.getColumns(tableName) を取得対象カラムとして DB を読むため、行の有無は
-        //     検証される。この前提が崩れれば
-        //     YamlTestDataParserTest#emptyExpectedTable_failsWhenDbHasRows が落ちる。
-        //   - fillDefaults=false のうち setup_tables: 列名は 0 件のまま解決されない。TableData#deleteData()
-        //     は "DELETE FROM <table>" で列名を使わず、TableData#insertData() が使うのは dbInfo から得た
-        //     自動計算カラム除外のカラムであって TableData の列名ではないため、列名は必要にならない。
-        //   - fillDefaults=true（expected_complete_tables）: 下の fillDefaultValues() が呼ぶ
-        //     TableData#fillDefaultValues() が dbInfo.getColumns(tableName) を列名として設定するため、
-        //     この経路の TableData には DB 由来の全カラムが入る。
+        // 列名は先頭行（rows.get(0)）のキーからのみ決まる（YamlSection#resolveColumns）。どの行もキーを
+        // 持たない場合、すなわち rows が空（rows: []）か全行が空マッピング（{}）の場合は列名 0 件になるが、
+        // YAML に列名を書く場所が無いためここで作り出すことはしない。本ビルダは getColumns を提供しない
+        // DbInfo 実装と組み合わせて読み込み専用に使われうるので、dbInfo.getColumns にも依存させない。
         TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
         for (List<String> rawRow : rawRows) {
             if (rawRow.isEmpty()) {
