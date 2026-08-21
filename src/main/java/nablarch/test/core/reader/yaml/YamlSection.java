@@ -134,8 +134,15 @@ public final class YamlSection {
     }
 
     /**
-     * 先頭行のキーをカラム名（マーカー含む・YAML 記述順・大文字小文字保持）として決定する。
-     * 行が無い場合は空リストを返す。
+     * 先頭のキーを持つ行のキーをカラム名（マーカー含む・YAML 記述順・大文字小文字保持）として決定する。
+     * キーを持つ行が 1 つも無い場合は空リストを返す。
+     *
+     * <p>
+     * 空マッピング（{@code {}}）行とマッピングでない行（スカラ等）はキーを持たないため読み飛ばす。
+     * {@link #castMap(Object)} が Map でない値に対して空 Map を返すので、両者は同じ判定で扱える。
+     * 先頭が空マッピングの場合にそこで列名を 0 件と決めてしまうと、後続の実データ行が値を持たない
+     * 行として捨てられるため、キーを持つ最初の行まで探す。
+     * </p>
      *
      * <p>
      * SnakeYAML はマッピングを {@link java.util.LinkedHashMap} でロードするため、{@code keySet} の
@@ -143,10 +150,13 @@ public final class YamlSection {
      * </p>
      */
     public static List<String> resolveColumns(List<Object> rows) {
-        if (rows.isEmpty()) {
-            return new ArrayList<String>();
+        for (Object row : rows) {
+            Map<String, Object> rowMap = castMap(row);
+            if (!rowMap.isEmpty()) {
+                return new ArrayList<String>(rowMap.keySet());
+            }
         }
-        return new ArrayList<String>(castMap(rows.get(0)).keySet());
+        return new ArrayList<String>();
     }
 
     /**

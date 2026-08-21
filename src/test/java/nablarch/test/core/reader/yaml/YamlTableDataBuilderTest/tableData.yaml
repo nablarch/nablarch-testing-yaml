@@ -75,6 +75,21 @@ setup_tables:
         NUMBER_COL: "21"
         NUMBER_COL2: "21.0"
 
+  - group_id: leadingEmptyRow
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000030"
+        PK_COL2: "CC"
+        VARCHAR2_COL: "second"
+        NUMBER_COL: "30"
+        NUMBER_COL2: "30.0"
+      - PK_COL1: "0000000031"
+        PK_COL2: "DD"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "31"
+        NUMBER_COL2: "31.0"
+
 
 list_maps:
   - id: testListMap
@@ -127,6 +142,14 @@ list_maps:
       - {}
       - KEY1: "after"
 
+  - id: leadingEmptyRowListMap
+    rows:
+      - {}
+      - KEY1: "second"
+        KEY2: "val2"
+      - KEY1: "third"
+        KEY2: "val3"
+
 expected_tables:
   - group_id: markerColInTable
     table: TEST_TABLE
@@ -141,3 +164,13 @@ expected_tables:
   - group_id: newGroup_emptyExpected
     table: TEST_TABLE
     rows: []
+
+  - group_id: leadingEmptyRowExpected
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000040"
+        PK_COL2: "EE"
+        VARCHAR2_COL: "expected"
+        NUMBER_COL: "40"
+        NUMBER_COL2: "40.0"

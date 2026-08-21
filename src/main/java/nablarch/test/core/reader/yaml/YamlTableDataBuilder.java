@@ -33,7 +33,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * YAML トップレベル Map（{@link YamlLoader#load} が返す順序保持 Map）を走査し、構造の写し取りと
  * 値加工（特殊記法 {@code ${...}} の解釈・{@code ${binaryFile:}} の basePath 解決・マーカーカラム除外・
- * デフォルト値補完・グループ ID 絞り込み）を一括で行う。カラム名は各エントリ先頭行のキー
+ * デフォルト値補完・グループ ID 絞り込み）を一括で行う。カラム名は各エントリ先頭のキーを持つ行のキー
  * （マーカー含む・YAML 記述順）から決定する。
  * </p>
  *
@@ -101,7 +101,8 @@ public final class YamlTableDataBuilder {
      * 1 エントリ分の {@link TableData} を組み立てる。
      *
      * <p>
-     * 列名が 0 件のまま渡ってくることがある（条件は下の {@code new TableData(...)} 直前のコメント）。
+     * どの行もキーを持たない場合、すなわち rows が空（{@code rows: []}）か全行が空マッピング（{@code {}}）の
+     * 場合は、列名が 0 件のまま渡ってくる（詳細は下の {@code new TableData(...)} 直前のコメント）。
      * 0 件のまま渡してよい根拠は {@code fillDefaults} で分かれる。
      * </p>
      * <ul>
@@ -135,7 +136,7 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        // 列名は先頭行（rows.get(0)）のキーからのみ決まる（YamlSection#resolveColumns）。どの行もキーを
+        // 列名は先頭のキーを持つ行のキーから決まる（YamlSection#resolveColumns）。どの行もキーを
         // 持たない場合、すなわち rows が空（rows: []）か全行が空マッピング（{}）の場合は列名 0 件になるが、
         // YAML に列名を書く場所が無いためここで作り出すことはしない。本ビルダは getColumns を提供しない
         // DbInfo 実装と組み合わせて読み込み専用に使われうるので、dbInfo.getColumns にも依存させない。
