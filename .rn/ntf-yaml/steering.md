@@ -488,7 +488,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
     - 本体無書き込み: `git status` 空、HEAD `fdf55d4`（本体側）
     - push 済み: HEAD `99376b1` = `origin/feature/ntf-yaml`
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
-  - **保留（2026-08-21）**: 同一ブランチに #15〜#19 を追加したため step A の実行結果は陳腐化した。sign-off は #19 完了後に step A を再実行してから受ける。
+  - **保留（2026-08-21）**: 同一ブランチに #15〜#20 を追加したため step A の実行結果は陳腐化した。sign-off は #20 完了後に step A を再実行してから受ける。
 
 **Completion criteria**:
 
@@ -550,11 +550,50 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #17: 手順3（XLS-42）— `record_fragment.rows` のスキーマ記述を実装と解説書に合わせる
+### #17: `resolveColumns` の先頭行 `{}` によるデータ行の無言消失を塞ぐ
+
+**Purpose**: `rows` の先頭要素が空マッピング（`{}`）のとき列名が0件になり、後続の実データ行が無言で捨てられる不具合を解消する。`setup_tables` ではテーブルが空にされたうえでデータが投入されず、エラーも出ない。
+
+**Prerequisites**: #16
+
+**根拠（2026-08-21 実測）**: `YamlSection.java:144-149` の `resolveColumns` は `rows.get(0)` のキーのみを列名にする。先頭が `{}` なら `columnNames` が空になり、`YamlTableDataBuilder.java:203-215` の `extractRows` が実データ行に対しても空の `rowValues` を作る（`for (String col : columnNames)` が0周）。その空行は `YamlTableDataBuilder.java:121-123` の `if (rawRow.isEmpty()) { continue; }` で捨てられる。
+
+**Steps**:
+
+- [ ] A. RED: 3経路それぞれに「先頭 `{}` ＋後続に実データ行」のテストを追加し、失敗することを確認する
+  - `buildTableDataList`（`setup_tables`）
+  - `buildTableDataList`（`expected_tables`）
+  - `buildListMapRows`（`list_maps`。`YamlTableDataBuilder.java:157` が同じ `resolveColumns` を呼ぶ）
+- [ ] B. フィクスチャ: 先頭 `{}` の**新規グループ**を `tableData.yaml` 等に追加する。**既存グループ `emptyRowMixed`（`tableData.yaml:63-75`。`{}` が2番目）は変更しない**
+- [ ] C. GREEN: `resolveColumns` を「先頭の**非空マッピング行**のキーを列名にする」実装へ変更する。非空マッピング行が1つも無ければ従来どおり空リストを返す
+- [ ] D. `list_maps` 経路でも同根の症状（先頭 `{}` で全行が空 Map になる）が塞がることを確認する
+- [ ] E. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。コマンドと結果を記録する
+- [ ] F. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認。`BUILD SUCCESS` だけを根拠にしない）
+- [ ] G. commit・push（**#16 とは別コミット**）
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-17.md)
+- [ ] I. QA expert review (subagent)
+- [ ] J. Design expert review (subagent)
+- [ ] K. Craft expert review — coding (subagent)
+- [ ] L. Verification expert review — test (subagent)
+
+**スコープ外（今回直さない。報告書へ回す）**: 「先頭行に無いキーを2行目以降が持っていても捨てられる」件（2026-08-21 ユーザー判断）。
+
+**Completion criteria**:
+
+- 先頭 `{}` ＋後続実データ行のとき、`setup_tables` / `expected_tables` / `list_maps` の3経路すべてで後続のデータ行が保持される
+- 非空マッピング行が1つも無い場合は従来どおり列名0件（#16 で確定した振る舞いが退行していない）
+- 既存グループ `emptyRowMixed` のフィクスチャと期待値が変更されていない
+- 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
+- `pom.xml` / `argLine` が変更されておらず、他リポジトリへの書き込みが無い
+- `mvn -o clean test` が `Tests run:` 出力つきで BUILD SUCCESS（Failures/Errors/Skipped すべて 0）
+
+---
+
+### #18: 手順3（XLS-42）— `record_fragment.rows` のスキーマ記述を実装と解説書に合わせる
 
 **Purpose**: スキーマの `description` だけが実装・解説書と食い違っているため、実装に合わせて直す。
 
-**Prerequisites**: #16
+**Prerequisites**: #17
 
 **Steps**:
 
@@ -565,7 +604,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] E. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
 - [ ] F. スキーマ検証テストが緑のままであることを確認。`rows:` の要素数が `fields` より少ない YAML がスキーマ検証で落ちるなら直す
 - [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-17.md)
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
 - [ ] I. QA expert review (subagent)
 - [ ] J. Craft expert review — writing (subagent)
 - [ ] K. Verification expert review — fact-check (subagent)
@@ -580,11 +619,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #18: 手順4 — 変更差分のカバレッジ実測と未達分岐を埋めるテスト追加
+### #19: 手順4 — 変更差分のカバレッジ実測と未達分岐を埋めるテスト追加
 
 **Purpose**: このブランチが base から変更した `src/main`（10ファイル `+1843`・全部新規＝結果的にモジュール全体）について C0/C1 100% を満たす。
 
-**Prerequisites**: #17
+**Prerequisites**: #18
 
 **Steps**:
 
@@ -595,7 +634,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] E. 到達不能と判断した行・分岐は、`@ExcludeFromCoverage` の類を足さず、理由をコードの行番号付きで報告する
 - [ ] F. 再計測して `INSTRUCTION_MISSED` / `BRANCH_MISSED` が 0 であることを確認する
 - [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-19.md)
 - [ ] I. QA expert review (subagent)
 - [ ] J. Verification expert review — test (subagent)
 
@@ -609,18 +648,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #19: 手順5 — `mvn install`（下流 converter の前提）
+### #20: 手順5 — `mvn install`（下流 converter の前提）
 
 **Purpose**: 順序3番目の `nablarch-testing-converter` が着手できるよう、緑になった成果物を `.m2` へ配置する。
 
-**Prerequisites**: #18
+**Prerequisites**: #19
 
 **Steps**:
 
 - [ ] A. すべて緑であることを確認する
 - [ ] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
 - [ ] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30:03）
-- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-19.md)
+- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-20.md)
 
 **Completion criteria**:
 
@@ -634,5 +673,5 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Status**: not suspended
 - **Date**: 2026-08-21
 - **Last completed**: #15
-- **Next**: #16
+- **Next**: #16（実行中）→ #17
 - **Notes**: —
