@@ -3,8 +3,11 @@ package nablarch.test.core.reader.yaml;
 import nablarch.test.core.reader.DataType;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -248,5 +251,150 @@ public class YamlSectionTest {
                 result.size(), is(1));
         assertTrue("先頭要素が BinaryFileInterpreter であること",
                 result.get(0) instanceof nablarch.test.core.util.interpreter.BinaryFileInterpreter);
+    }
+    // ========================================================================
+    // resolveColumns: 先頭のキーを持つ行のキーをカラム名として決定すること
+    // ========================================================================
+
+    /**
+     * 記述順を保つ行（{@link LinkedHashMap}）を組み立てる。SnakeYAML のマッピングロード結果に合わせる。
+     */
+    private static Map<String, Object> row(String... keys) {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        for (String key : keys) {
+            map.put(key, "v");
+        }
+        return map;
+    }
+
+    /**
+     * [YamlSection] resolveColumns: 先頭が空マッピングでも、後続で最初にキーを持つ行のキーが記述順で返ること。
+     *
+     * <p>
+     * Given: 空マッピング行・3 キーの行・2 キーの行 からなる rows<br>
+     * When:  YamlSection.resolveColumns(rows) を呼ぶ<br>
+     * Then:  2 番目の行の 3 キーが YAML 記述順で返ること（後続行のキーは影響しないこと）
+     * </p>
+     */
+    @Test
+    public void resolveColumns_returnsKeysOfFirstKeyedRowInDeclarationOrder() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(
+                row(),
+                row("COL_C", "COL_A", "COL_B"),
+                row("COL_A"));
+
+        // When
+        List<String> result = YamlSection.resolveColumns(rows);
+
+        // Then
+        assertThat("先頭のキーを持つ行のキーが記述順で返ること",
+                result, is(Arrays.asList("COL_C", "COL_A", "COL_B")));
+    }
+
+    /**
+     * [YamlSection] resolveColumns: rows が空の場合は空リストが返ること。
+     *
+     * <p>
+     * Given: 空の rows<br>
+     * When:  YamlSection.resolveColumns(emptyList) を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void resolveColumns_emptyRowsReturnsEmptyList() {
+        // When
+        List<String> result = YamlSection.resolveColumns(Collections.emptyList());
+
+        // Then
+        assertTrue("rows が空の場合は空リストが返ること", result.isEmpty());
+    }
+
+    /**
+     * [YamlSection] resolveColumns: 全行が空マッピングの場合は空リストが返ること。
+     *
+     * <p>
+     * Given: 空マッピング行のみ 2 件からなる rows<br>
+     * When:  YamlSection.resolveColumns(rows) を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void resolveColumns_allEmptyMappingRowsReturnsEmptyList() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(row(), row());
+
+        // When
+        List<String> result = YamlSection.resolveColumns(rows);
+
+        // Then
+        assertTrue("キーを持つ行が 1 つも無い場合は空リストが返ること", result.isEmpty());
+    }
+
+    /**
+     * [YamlSection] resolveColumns: 全行がマッピングでない値（スカラ）の場合は空リストが返ること。
+     *
+     * <p>
+     * Given: String と Integer だけからなる rows<br>
+     * When:  YamlSection.resolveColumns(rows) を呼ぶ<br>
+     * Then:  空リストが返ること
+     * </p>
+     */
+    @Test
+    public void resolveColumns_allScalarRowsReturnsEmptyList() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList("scalar", 42);
+
+        // When
+        List<String> result = YamlSection.resolveColumns(rows);
+
+        // Then
+        assertTrue("キーを持つ行が 1 つも無い場合は空リストが返ること", result.isEmpty());
+    }
+
+    /**
+     * [YamlSection] resolveColumns: マッピングでない行（スカラ等）を読み飛ばして後続の行から列名を決めること。
+     *
+     * <p>
+     * YAML ファイル経由ではスキーマ（{@code rows.items} が {@code {"type":"object"}}）が
+     * スカラ行を弾くため、この経路はこの単体テストでしか担保できない。<br>
+     * Given: String 行・Integer 行・2 キーの行 からなる rows<br>
+     * When:  YamlSection.resolveColumns(rows) を呼ぶ<br>
+     * Then:  スカラ行が読み飛ばされ、3 番目の行の 2 キーが返ること
+     * </p>
+     */
+    @Test
+    public void resolveColumns_skipsNonMappingRows() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList("scalar", 42, row("COL_X", "COL_Y"));
+
+        // When
+        List<String> result = YamlSection.resolveColumns(rows);
+
+        // Then
+        assertThat("マッピングでない行を読み飛ばして後続の行から列名を決めること",
+                result, is(Arrays.asList("COL_X", "COL_Y")));
+    }
+
+    /**
+     * [YamlSection] resolveColumns: カラム名の大文字小文字がそのまま保持されること。
+     *
+     * <p>
+     * Given: 大文字小文字が混在するキーを持つ行 1 件からなる rows<br>
+     * When:  YamlSection.resolveColumns(rows) を呼ぶ<br>
+     * Then:  キーが大文字小文字を変換されずに返ること
+     * </p>
+     */
+    @Test
+    public void resolveColumns_preservesColumnNameCase() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(row("pkCol1", "PK_COL2", "Varchar2Col"));
+
+        // When
+        List<String> result = YamlSection.resolveColumns(rows);
+
+        // Then
+        assertThat("大文字小文字が保持されること",
+                result, is(Arrays.asList("pkCol1", "PK_COL2", "Varchar2Col")));
     }
 }

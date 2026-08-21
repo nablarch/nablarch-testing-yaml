@@ -18,6 +18,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -431,7 +432,7 @@ public class YamlTableDataBuilderTest {
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, DIR);
 
         // Then
-        assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
+        assertThat("全行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
         assertThat("カラム名が 0 件であること", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 件であること", result.get(0).size(), is(0));
     }
@@ -943,12 +944,15 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: setup_tables の先頭行が空マッピング（{}）でも後続のデータ行が保持されること。
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables の列名が先頭の非空マッピング行のキーで決まり、後続のデータ行が保持されること。
      *
      * <p>
-     * Given: setup_tables の leadingEmptyRow グループに {} 行・通常行・通常行 の 3 エントリ<br>
+     * 先頭の {} を読み飛ばした後、最初にキーを持つ行（2 行目）が列名を決めることを固定する。
+     * 3 行目はキーの一部を持たないので、列名が 3 行目由来になっていれば列名リストが食い違って落ちる。<br>
+     * Given: setup_tables の leadingEmptyRow グループに {} 行・5 キーの行・3 キーの行 の 3 エントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[leadingEmptyRow]", false, path) を呼ぶ<br>
-     * Then:  先頭の {} 以降にある最初のキーを持つ行から列名が解決され、後続 2 行が値つきで返ること
+     * Then:  列名が 2 行目の 5 キーで YAML 記述順に決まり、後続 2 行が全列の値つきで返ること
+     *        （3 行目に無いキーは null になること）
      * </p>
      */
     @Test
@@ -961,20 +965,32 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat("先頭 {} の後続にある非空マッピング行から列名が解決されること",
-                result.get(0).getColumnNames().length, is(5));
+        assertThat("列名が先頭の非空マッピング行（2 行目）のキーで YAML 記述順に決まること",
+                Arrays.asList(result.get(0).getColumnNames()),
+                is(Arrays.asList("PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2")));
         assertThat("先頭 {} を除く 2 行が保持されること", result.get(0).size(), is(2));
-        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000030"));
-        assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000031"));
+        assertThat("1 行目の PK_COL1", result.get(0).getValue(0, "PK_COL1").toString(), is("0000000030"));
+        assertThat("1 行目の PK_COL2", result.get(0).getValue(0, "PK_COL2").toString(), is("CC"));
+        assertThat("1 行目の VARCHAR2_COL", result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("second"));
+        assertThat("1 行目の NUMBER_COL", result.get(0).getValue(0, "NUMBER_COL").toString(), is("30"));
+        assertThat("1 行目の NUMBER_COL2", result.get(0).getValue(0, "NUMBER_COL2").toString(), is("30.0"));
+        assertThat("2 行目の PK_COL1", result.get(0).getValue(1, "PK_COL1").toString(), is("0000000031"));
+        assertThat("2 行目の PK_COL2", result.get(0).getValue(1, "PK_COL2").toString(), is("DD"));
+        assertThat("2 行目の VARCHAR2_COL", result.get(0).getValue(1, "VARCHAR2_COL").toString(), is("third"));
+        assertNull("2 行目が持たない NUMBER_COL は null になること", result.get(0).getValue(1, "NUMBER_COL"));
+        assertNull("2 行目が持たない NUMBER_COL2 は null になること", result.get(0).getValue(1, "NUMBER_COL2"));
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: expected_tables の先頭行が空マッピング（{}）でも後続のデータ行が保持されること。
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の列名が先頭の非空マッピング行のキーで決まり、後続のデータ行が保持されること。
      *
      * <p>
-     * Given: expected_tables の leadingEmptyRowExpected グループに {} 行・通常行 の 2 エントリ<br>
+     * 先頭の {} を読み飛ばした後、最初にキーを持つ行（2 行目）が列名を決めることを固定する。
+     * 3 行目はキーの一部を持たないので、列名が 3 行目由来になっていれば列名リストが食い違って落ちる。<br>
+     * Given: expected_tables の leadingEmptyRowExpected グループに {} 行・5 キーの行・3 キーの行 の 3 エントリ<br>
      * When:  buildTableDataList(yaml, "expected_tables", "[leadingEmptyRowExpected]", false, path) を呼ぶ<br>
-     * Then:  先頭の {} 以降にある最初のキーを持つ行から列名が解決され、後続 1 行が値つきで返ること
+     * Then:  列名が 2 行目の 5 キーで YAML 記述順に決まり、後続 2 行が全列の値つきで返ること
+     *        （3 行目に無いキーは null になること）
      * </p>
      */
     @Test
@@ -987,20 +1003,69 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat("先頭 {} の後続にある非空マッピング行から列名が解決されること",
-                result.get(0).getColumnNames().length, is(5));
-        assertThat("先頭 {} を除く 1 行が保持されること", result.get(0).size(), is(1));
-        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000040"));
-        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("expected"));
+        assertThat("列名が先頭の非空マッピング行（2 行目）のキーで YAML 記述順に決まること",
+                Arrays.asList(result.get(0).getColumnNames()),
+                is(Arrays.asList("PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2")));
+        assertThat("先頭 {} を除く 2 行が保持されること", result.get(0).size(), is(2));
+        assertThat("1 行目の PK_COL1", result.get(0).getValue(0, "PK_COL1").toString(), is("0000000040"));
+        assertThat("1 行目の PK_COL2", result.get(0).getValue(0, "PK_COL2").toString(), is("EE"));
+        assertThat("1 行目の VARCHAR2_COL", result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("expected"));
+        assertThat("1 行目の NUMBER_COL", result.get(0).getValue(0, "NUMBER_COL").toString(), is("40"));
+        assertThat("1 行目の NUMBER_COL2", result.get(0).getValue(0, "NUMBER_COL2").toString(), is("40.0"));
+        assertThat("2 行目の PK_COL1", result.get(0).getValue(1, "PK_COL1").toString(), is("0000000041"));
+        assertThat("2 行目の PK_COL2", result.get(0).getValue(1, "PK_COL2").toString(), is("FF"));
+        assertThat("2 行目の VARCHAR2_COL", result.get(0).getValue(1, "VARCHAR2_COL").toString(), is("expected2"));
+        assertNull("2 行目が持たない NUMBER_COL は null になること", result.get(0).getValue(1, "NUMBER_COL"));
+        assertNull("2 行目が持たない NUMBER_COL2 は null になること", result.get(0).getValue(1, "NUMBER_COL2"));
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: list_maps の先頭行が空マッピング（{}）でも後続のデータ行が保持されること。
+     * [YamlTableDataBuilder] buildTableDataList: expected_complete_tables の先頭行が空マッピング（{}）でも後続のデータ行が保持され、省略カラムが補完されること。
      *
      * <p>
-     * Given: list_maps の leadingEmptyRowListMap に {} 行・通常行・通常行 の 3 エントリ<br>
+     * fillDefaults=true の経路は {@code fillDefaultValues()} が列名を dbInfo の全カラムへ差し替えるため、
+     * 先頭 {} で列名解決に失敗すると行そのものが落ちる。行が残ること・YAML に書いた値が
+     * デフォルト値で上書きされないことを固定する。<br>
+     * Given: expected_complete_tables の leadingEmptyRowComplete グループに {} 行・3 キーの行・2 キーの行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_complete_tables", "[leadingEmptyRowComplete]", true, path) を呼ぶ<br>
+     * Then:  2 行が保持され、dbInfo の全カラム数（11）になり、YAML に書いた値はそのまま・
+     *        省略カラムはデフォルト値で補完されること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_leadingEmptyRowInExpectedCompleteTableKeepsFollowingRows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "[leadingEmptyRowComplete]", true, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("dbInfo の全カラム数（11）に差し替わること", result.get(0).getColumnNames().length, is(11));
+        assertThat("先頭 {} を除く 2 行が保持されること", result.get(0).size(), is(2));
+        assertThat("1 行目の PK_COL1", result.get(0).getValue(0, "PK_COL1").toString(), is("0000000098"));
+        assertThat("1 行目の PK_COL2", result.get(0).getValue(0, "PK_COL2").toString(), is("YY"));
+        assertThat("1 行目の VARCHAR2_COL が YAML の値のままであること",
+                result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("complete"));
+        assertThat("1 行目の省略カラム NUMBER_COL がデフォルト値で補完されること",
+                result.get(0).getValue(0, "NUMBER_COL").toString(), is("0"));
+        assertThat("2 行目の PK_COL1", result.get(0).getValue(1, "PK_COL1").toString(), is("0000000097"));
+        assertThat("2 行目の PK_COL2", result.get(0).getValue(1, "PK_COL2").toString(), is("XY"));
+        assertNull("2 行目が持たない VARCHAR2_COL は列名に含まれるため補完対象外で null になること",
+                result.get(0).getValue(1, "VARCHAR2_COL"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: list_maps の列名が先頭の非空マッピング行のキーで決まり、後続のデータ行が保持されること。
+     *
+     * <p>
+     * 先頭の {} を読み飛ばした後、最初にキーを持つ行（2 行目）が列名を決めることを固定する。
+     * 3 行目は KEY2 を持たないので、列名が 3 行目由来になっていれば 2 件目の KEY2 が落ちて検出できる。<br>
+     * Given: list_maps の leadingEmptyRowListMap に {} 行・KEY1/KEY2 の行・KEY1 のみの行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "leadingEmptyRowListMap", path) を呼ぶ<br>
-     * Then:  3 件返り、1 件目は空 Map、2・3 件目は後続行のキーから解決した列の値を持つこと
+     * Then:  3 件返り、1 件目は空 Map、2・3 件目は 2 行目のキーから解決した列を持つこと
+     *        （3 件目に無い KEY2 は null で保持されること）
      * </p>
      */
     @Test
@@ -1014,9 +1079,13 @@ public class YamlTableDataBuilderTest {
         // Then
         assertThat("3 件返ること（先頭の空行を含む）", result.size(), is(3));
         assertTrue("1 件目（空マッピング行）は空 Map であること", result.get(0).isEmpty());
+        assertThat("列名が先頭の非空マッピング行（2 行目）のキーで決まること",
+                new ArrayList<String>(result.get(1).keySet()), is(Arrays.asList("KEY1", "KEY2")));
         assertThat("2 件目の KEY1 が保持されること", result.get(1).get("KEY1"), is("second"));
         assertThat("2 件目の KEY2 が保持されること", result.get(1).get("KEY2"), is("val2"));
+        assertThat("3 件目も 2 行目のキーで列が決まること",
+                new ArrayList<String>(result.get(2).keySet()), is(Arrays.asList("KEY1", "KEY2")));
         assertThat("3 件目の KEY1 が保持されること", result.get(2).get("KEY1"), is("third"));
-        assertThat("3 件目の KEY2 が保持されること", result.get(2).get("KEY2"), is("val3"));
+        assertNull("3 件目が持たない KEY2 は null になること", result.get(2).get("KEY2"));
     }
 }

@@ -75,6 +75,7 @@ setup_tables:
         NUMBER_COL: "21"
         NUMBER_COL2: "21.0"
 
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
   - group_id: leadingEmptyRow
     table: TEST_TABLE
     rows:
@@ -87,8 +88,6 @@ setup_tables:
       - PK_COL1: "0000000031"
         PK_COL2: "DD"
         VARCHAR2_COL: "third"
-        NUMBER_COL: "31"
-        NUMBER_COL2: "31.0"
 
 
 list_maps:
@@ -142,13 +141,13 @@ list_maps:
       - {}
       - KEY1: "after"
 
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
   - id: leadingEmptyRowListMap
     rows:
       - {}
       - KEY1: "second"
         KEY2: "val2"
       - KEY1: "third"
-        KEY2: "val3"
 
 expected_tables:
   - group_id: markerColInTable
@@ -165,6 +164,7 @@ expected_tables:
     table: TEST_TABLE
     rows: []
 
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
   - group_id: leadingEmptyRowExpected
     table: TEST_TABLE
     rows:
@@ -174,3 +174,6 @@ expected_tables:
         VARCHAR2_COL: "expected"
         NUMBER_COL: "40"
         NUMBER_COL2: "40.0"
+      - PK_COL1: "0000000041"
+        PK_COL2: "FF"
+        VARCHAR2_COL: "expected2"

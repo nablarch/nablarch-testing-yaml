@@ -101,8 +101,8 @@ public final class YamlTableDataBuilder {
      * 1 エントリ分の {@link TableData} を組み立てる。
      *
      * <p>
-     * どの行もキーを持たない場合、すなわち rows が空（{@code rows: []}）か全行が空マッピング（{@code {}}）の
-     * 場合は、列名が 0 件のまま渡ってくる（詳細は下の {@code new TableData(...)} 直前のコメント）。
+     * キーを持つ行が 1 つも無い場合（例えば rows が空（{@code rows: []}）のとき）は、列名が 0 件のまま
+     * 渡ってくる（詳細は下の {@code new TableData(...)} 直前のコメント）。
      * 0 件のまま渡してよい根拠は {@code fillDefaults} で分かれる。
      * </p>
      * <ul>
@@ -136,8 +136,8 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        // 列名は先頭のキーを持つ行のキーから決まる（YamlSection#resolveColumns）。どの行もキーを
-        // 持たない場合、すなわち rows が空（rows: []）か全行が空マッピング（{}）の場合は列名 0 件になるが、
+        // 列名は先頭のキーを持つ行のキーから決まる（YamlSection#resolveColumns）。キーを持つ行が
+        // 1 つも無い場合（例えば rows が空（rows: []）のとき）は列名 0 件になるが、
         // YAML に列名を書く場所が無いためここで作り出すことはしない。本ビルダは getColumns を提供しない
         // DbInfo 実装と組み合わせて読み込み専用に使われうるので、dbInfo.getColumns にも依存させない。
         TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);

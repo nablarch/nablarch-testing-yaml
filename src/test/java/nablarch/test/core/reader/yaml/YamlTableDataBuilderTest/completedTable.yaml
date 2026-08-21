@@ -7,3 +7,14 @@ expected_complete_tables:
   - group_id: newGroup_emptyComplete
     table: TEST_TABLE
     rows: []
+
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
+  - group_id: leadingEmptyRowComplete
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000098"
+        PK_COL2: "YY"
+        VARCHAR2_COL: "complete"
+      - PK_COL1: "0000000097"
+        PK_COL2: "XY"
