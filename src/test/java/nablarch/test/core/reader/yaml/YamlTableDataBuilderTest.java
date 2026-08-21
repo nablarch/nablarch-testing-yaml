@@ -15,7 +15,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -139,12 +138,14 @@ public class YamlTableDataBuilderTest {
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, path) を呼ぶ<br>
-     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
+     * </p>
+     * <p>
+     * カラム名が 0 件で正しいのは、rows: [] の場合にカラム名を解決するのは DB を知る本体側の責務
+     * （setUpDb の削除は "DELETE FROM &lt;table&gt;" で列名に依存せず、挿入は dbInfo の全カラムを使う）であり、
+     * YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
      * </p>
      */
-    // FIXME: rows: [] のカラム名解決を DbInfo フォールバックに載せる暫定対応を差し戻したため FAIL する。
-    // 現状は長さ 0 の列名で TableData が生成される。本体側の対応後に期待値を確定させて復活させる。
-    @Ignore("rows: [] のカラム名解決が未決のため保留（FIXME 参照）")
     @Test
     public void buildTableDataList_emptyRowsExcluded() {
         // Given
@@ -156,7 +157,7 @@ public class YamlTableDataBuilderTest {
         // Then: rows:[] エントリは 0 行の TableData として返る（Excel 経路の振る舞いに合わせる）
         assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
         assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
-        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("カラム名が 0 件であること（解決は本体側の責務）", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 であること", result.get(0).size(), is(0));
     }
 
@@ -408,17 +409,17 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * rows 内の空マッピングはすべてスキップされるため行データは 0 件となり、
-     * dbInfo フォールバックにより全カラムが補完される
+     * rows 内の空マッピングはすべてスキップされるため行データもカラム名も 0 件となる
      * （{@code buildTableDataList_emptyRowEntrySkipped} がスキップ自体を検証する）。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
-     * Then:  TableData が 1 件返り、dbInfo の全カラムが返り、行 0 件であること
+     * Then:  TableData が 1 件返り、カラム名が 0 件、行 0 件であること
+     * </p>
+     * <p>
+     * カラム名が 0 件で正しいのは、カラム名を書く場所が YAML に無いときにそれを解決するのは
+     * DB を知る本体側の責務であり、YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
      * </p>
      */
-    // FIXME: rows: [] のカラム名解決を DbInfo フォールバックに載せる暫定対応を差し戻したため FAIL する。
-    // 現状は長さ 0 の列名で TableData が生成される。本体側の対応後に期待値を確定させて復活させる。
-    @Ignore("rows: [] のカラム名解決が未決のため保留（FIXME 参照）")
     @Test
     public void buildTableDataList_allEmptyRowsReturnsTableDataWithAllDbColumns() {
         // Given
@@ -429,7 +430,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
-        assertThat("dbInfo の全カラムが返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("カラム名が 0 件であること（解決は本体側の責務）", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 件であること", result.get(0).size(), is(0));
     }
 
@@ -858,17 +859,19 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: rows: [] の expected_tables エントリが dbInfo の全カラムを返し行数 0 であること。
+     * [YamlTableDataBuilder] buildTableDataList: rows: [] の expected_tables エントリがカラム名 0 件・行数 0 の TableData を返すこと。
      *
      * <p>
      * Given: expected_tables に rows: [] のエントリ（newGroup_emptyExpected グループ）<br>
      * When:  buildTableDataList(yaml, "expected_tables", "[newGroup_emptyExpected]", false, path) を呼ぶ<br>
-     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、dbInfo の全カラム数（11）が返り、行数が 0 であること
+     * Then:  サイズ 1 のリストが返り、テーブル名が "TEST_TABLE"、カラム名が 0 件、行数が 0 であること
+     * </p>
+     * <p>
+     * カラム名が 0 件で正しいのは、rows: [] の場合にカラム名を解決するのは DB を知る本体側の責務
+     * （{@code TableData#loadData()} が列名 0 件のとき dbInfo の全カラムへフォールバックして DB を読む）であり、
+     * YAML を読むだけの本ビルダは記述どおり長さ 0 の列名を渡すのが正しいためである。
      * </p>
      */
-    // FIXME: rows: [] のカラム名解決を DbInfo フォールバックに載せる暫定対応を差し戻したため FAIL する。
-    // 現状は長さ 0 の列名で TableData が生成される。本体側の対応後に期待値を確定させて復活させる。
-    @Ignore("rows: [] のカラム名解決が未決のため保留（FIXME 参照）")
     @Test
     public void buildTableDataList_emptyExpectedTableReturnsTableDataWithAllDbColumns() {
         // Given
@@ -880,7 +883,7 @@ public class YamlTableDataBuilderTest {
         // Then
         assertThat("サイズ 1 のリストが返ること", result.size(), is(1));
         assertThat("テーブル名が TEST_TABLE であること", result.get(0).getTableName(), is("TEST_TABLE"));
-        assertThat("dbInfo の全カラム数（11）が返ること", result.get(0).getColumnNames().length, is(11));
+        assertThat("カラム名が 0 件であること（解決は本体側の責務）", result.get(0).getColumnNames().length, is(0));
         assertThat("行数が 0 であること", result.get(0).size(), is(0));
     }
 

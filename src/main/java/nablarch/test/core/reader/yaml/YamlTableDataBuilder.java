@@ -107,11 +107,16 @@ public final class YamlTableDataBuilder {
                 dataColumnIndexes.add(i);
             }
         }
-        // FIXME: dataColumns が空（rows: []）のとき、YAML にはカラム名を書く場所が無いため
-        // 長さ 0 の列名で TableData を生成する。この TableData を期待値に使うと
-        // TableData#loadData() が DB を読まずに 0 行を返し、検証が素通りする（偽陰性）。
-        // 暫定で列名を未設定にして DbInfo フォールバックへ載せていたが、DB を持たない
-        // 読み込み経路（変換ツール）を壊すため差し戻した。本体側の対応後に再検討する。
+        // dataColumns が空（rows: []）のとき、YAML にはカラム名を書く場所が無いため長さ 0 の列名で
+        // TableData を生成する。これでよいのは、カラム名の解決が本ビルダではなく本体（DB を知る側）の
+        // 責務だからである。本ビルダは YAML の記述をそのまま写し取るだけで DB を参照しない
+        // （dbInfo は TableData へ引き渡すだけで、ここで列名解決には使わない）。これにより、
+        // DbInfo を持たない読み込み経路（変換ツール等）でも YAML を読める。
+        // 列名 0 件の TableData は本体側で次のように解決される。
+        //   - 期待値（expected_tables）: TableData#loadData() が列名 0 件のとき
+        //     dbInfo.getColumns(tableName) へフォールバックして DB 全カラムを読むため偽陰性にならない。
+        //   - 準備データ（setup_tables）: setUpDb の削除は "DELETE FROM <table>" で列名に依存せず、
+        //     挿入は dbInfo から得た全カラムを使うため、0 行の TableData でテーブルが空になる。
         TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
         for (List<String> rawRow : rawRows) {
             if (rawRow.isEmpty()) {
