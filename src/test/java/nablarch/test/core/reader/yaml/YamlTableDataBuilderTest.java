@@ -410,7 +410,7 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * 行データが 0 件となるのは空マッピングがデータ行として扱われないためであり、カラム名が 0 件と
-     * なるのは列名が先頭行のキーから決まるところ、その先頭行が {} だからである
+     * なるのは列名解決がキーを持つ最初の行を探すところ、どの行もキーを持たないからである
      * （スキップ自体は {@code buildTableDataList_emptyRowEntrySkipped} が検証する）。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
