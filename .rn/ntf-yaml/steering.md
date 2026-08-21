@@ -488,6 +488,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
     - 本体無書き込み: `git status` 空、HEAD `fdf55d4`（本体側）
     - push 済み: HEAD `99376b1` = `origin/feature/ntf-yaml`
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+  - **保留（2026-08-21）**: 同一ブランチに #15〜#19 を追加したため step A の実行結果は陳腐化した。sign-off は #19 完了後に step A を再実行してから受ける。
 
 **Completion criteria**:
 
@@ -496,16 +497,142 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #15: 2-1 — `#23` の修正で解消した不具合 #F の `@Ignore` を外す
+
+**Purpose**: 本体 `TableData#loadData()` の `#23`（`b6e049a`）対応により不具合 #F が解消したため、保留していた偽陰性テストを復活させる。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] A. `YamlTestDataParserTest.java:396`〜`:398` の FIXME コメントと `:399` の `@Ignore` を削除する（Given/When/Then は1文字も変えない）
+- [ ] B. `mvn -o clean test` で `emptyExpectedTable_failsWhenDbHasRows` が緑になることを確認する（緑にならなければ commit せず revert し、surefire レポートを添えて報告）
+- [ ] C. commit・push
+- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-15.md)
+- [ ] E. QA expert review (subagent)
+- [ ] F. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- `YamlTestDataParserTest` に `FIXME` / `@Ignore` が残っていない
+- `emptyExpectedTable_failsWhenDbHasRows` が実行され PASS している（Skipped でない）
+- テストの Given/When/Then が `0197071` 時点と同一
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #16: 2-2 / 2-3 — `rows: []` のカラム名解決の責務を本体側に置き、期待値と FIXME を実態に合わせる
+
+**Purpose**: `rows: []` のときカラム名を解決するのは DB を知る `TableData#loadData()`（本体）の責務であり、YAML を読むだけの `YamlTableDataBuilder` が長さ0の列名で `TableData` を作るのは正しい、という責務の所在を期待値とコメントに反映する。
+
+**Prerequisites**: #15
+
+**Steps**:
+
+- [ ] A. `YamlTableDataBuilderTest` の3テスト（`:145/147`・`:419/421`・`:869/871`）で「dbInfo の全カラム数（11）が返ること」を主張する `assertThat` を、列名0件を主張する形へ直す（テーブル名・件数・行数の `assertThat` は変えない）
+- [ ] B. 各テストの javadoc に、なぜ列名0件が正しいのかを1文で書く（責務の所在）
+- [ ] C. 3件の FIXME コメントと 3件の `@Ignore` を削除する
+- [ ] D. `YamlTableDataBuilder.java:110` の FIXME を、長さ0の列名で `TableData` を作ってよい理由を説明する通常のコメントへ書き換える（「FIXME」「TODO」の語を残さない）
+- [ ] E. `mvn -o clean test` 全 PASS 確認
+- [ ] F. commit・push
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-16.md)
+- [ ] H. QA expert review (subagent)
+- [ ] I. Craft expert review — coding (subagent)
+- [ ] J. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- `grep -rn 'TODO\|FIXME\|@Ignore' src --include=*.java` が 0 件
+- 3テストが実行され PASS している（Skipped 0）
+- 変更した `assertThat` は列名に関するものだけで、テーブル名・件数・行数の主張は `0197071` 時点と同一
+- `YamlTableDataBuilder.java` のコメントが責務の所在を説明している
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #17: 手順3（XLS-42）— `record_fragment.rows` のスキーマ記述を実装と解説書に合わせる
+
+**Purpose**: スキーマの `description` だけが実装・解説書と食い違っているため、実装に合わせて直す。
+
+**Prerequisites**: #16
+
+**Steps**:
+
+- [ ] A. 3出典を実物で再確認する（`DataFileFragment.java:107` / `testdata_notation.rst:883` / 当スキーマ）※着手時に確認済み・行番号一致
+- [ ] B. `$defs.record_fragment.properties.rows.description` を「fields の件数より少ない場合、不足したフィールドは `""` として補完される」趣旨へ直す
+- [ ] C. `items.description` の「fields の順序に完全対応」も同件数前提の書き方なら合わせて直す
+- [ ] D. 「多い側」には触れない（エラー化とも「余りは無視される」とも書かない）
+- [ ] E. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
+- [ ] F. スキーマ検証テストが緑のままであることを確認。`rows:` の要素数が `fields` より少ない YAML がスキーマ検証で落ちるなら直す
+- [ ] G. commit・push
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-17.md)
+- [ ] I. QA expert review (subagent)
+- [ ] J. Craft expert review — writing (subagent)
+- [ ] K. Verification expert review — fact-check (subagent)
+
+**Completion criteria**:
+
+- `rows.description` に「一致しない場合は NTF がエラーを出す」が残っていない
+- 「多い場合」に関する記述を新たに追加していない
+- `description` 以外（`type` / `items` の構造・`pattern` / `required` 等）を変更していない
+- JSON として妥当
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #18: 手順4 — 変更差分のカバレッジ実測と未達分岐を埋めるテスト追加
+
+**Purpose**: このブランチが base から変更した `src/main`（10ファイル `+1843`・全部新規＝結果的にモジュール全体）について C0/C1 100% を満たす。
+
+**Prerequisites**: #17
+
+**Steps**:
+
+- [ ] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` でカバレッジを採取する（`pom.xml` / `argLine` は変更しない）
+- [ ] B. awk で未達クラス一覧を出し、**テストを足す前にユーザーへ提示する**
+- [ ] C. ユーザーの合図後、未達分岐を埋める「意味のあるテスト」を追加する
+- [ ] D. 追加テストごとに、その行・分岐を壊す変更を1つ入れると落ちることを実際に確認し、コマンドと結果を記録する
+- [ ] E. 到達不能と判断した行・分岐は、`@ExcludeFromCoverage` の類を足さず、理由をコードの行番号付きで報告する
+- [ ] F. 再計測して `INSTRUCTION_MISSED` / `BRANCH_MISSED` が 0 であることを確認する
+- [ ] G. commit・push
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
+- [ ] I. QA expert review (subagent)
+- [ ] J. Verification expert review — test (subagent)
+
+**Completion criteria**:
+
+- 差分対象クラスの `INSTRUCTION_MISSED` が 0、`BRANCH_MISSED` が 0（到達不能としてユーザーが承認した箇所を除く）
+- 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
+- 追加テストの javadoc に「何を担保するか」が1文で書かれている
+- `pom.xml` / `argLine` が変更されていない
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #19: 手順5 — `mvn install`（下流 converter の前提）
+
+**Purpose**: 順序3番目の `nablarch-testing-converter` が着手できるよう、緑になった成果物を `.m2` へ配置する。
+
+**Prerequisites**: #18
+
+**Steps**:
+
+- [ ] A. すべて緑であることを確認する
+- [ ] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
+- [ ] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30:03）
+- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-19.md)
+
+**Completion criteria**:
+
+- `mvn -o clean test` が BUILD SUCCESS の状態で install されている
+- jar のタイムスタンプが更新されている
+
+---
+
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-18
-- **Last completed**: #13 YML-08 — ディレクティブ description を解説書の記法へ修正する（#14 は step A 完了・ユーザー指摘に基づき再判定済み。ユーザーは承認の意思表示済みだが `/rn:ty` は未実行）
-- **Next**: #14 step B — `/rn:ty` を受けて check-off（判断1・判断2 は解決済み、詳細は steering.md 本体と commit `8e1ea76` を参照。再叙述しない）
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、HEAD `8e1ea76`、push 済み・作業ツリークリーン。PR なし
-  - **禁止事項（継続）**: `nablarch-testing-yaml` で `mvn install` を実行しない。converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存しており、install した時点で converter のコンパイルが落ちる。install は converter 側の YML-03 対応と同時に行う
-  - **スコープ外の申し送り（着手しない・別ストリームへ回す）**: 解説書 `testdata_examples.rst` の YAML 節にタブの注意（`:1435`）はあるが `record-separator` の実制御文字に対する注意がない。別リポジトリのため本セッションでは着手しない
-  - `mvn` は必ず `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付きで実行する（Rules 参照）
-
-
+- **Status**: not suspended
+- **Date**: 2026-08-21
+- **Last completed**: #13
+- **Next**: #15
+- **Notes**: —
