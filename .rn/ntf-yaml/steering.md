@@ -401,7 +401,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #12: YML-03 — `record_type: FW_HEADER` によるレコード読み飛ばしを廃止する
+### ~~#12: YML-03 — `record_type: FW_HEADER` によるレコード読み飛ばしを廃止する~~
 
 **Purpose**: メッセージ系経路が `record_type` の値 `FW_HEADER` でレコードを読み飛ばす旧版前提の処理を廃止し、解説書 `testdata_notation.rst:1302`（「`record_type` に特別な予約値はない」／FW 制御ヘッダは `fw_header:` マップで記述する）の仕様に一致させる。
 
@@ -436,7 +436,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #13: YML-08 — ディレクティブ description を解説書の記法へ修正する
+### ~~#13: YML-08 — ディレクティブ description を解説書の記法へ修正する~~
 
 **Purpose**: `ntf-testdata-yaml-schema.json` の `record-separator` / `field-separator` の description が、`DataFile#setDirective` の `trim()` により実際には通らない「実制御文字をリテラル指定する記法」を推奨している状態を、解説書が示す記法（シンボル／エスケープ2文字表記）へ書き換える。
 
