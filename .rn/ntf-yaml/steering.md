@@ -32,6 +32,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - mvn コマンド（compile / test / install 全て）は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn ...` で実行する（Nablarch v6 は Java 17 ターゲット。既定 java は 21 なので指定必須。親 POM は `--release` でなく `source`/`target` 指定のため 21 でビルドすると 21 専用 API が通ってしまう）
 - mvn は必ず `clean` を付ける（`jacoco:restore-instrumented-classes` は prepare-package で走るため、`clean` なしの `mvn test` / `mvn install` は instrument 済みクラスが `target/classes` に残り「Cannot process instrumented class」で失敗する）
 - javadoc 生成時に「モジュールが使用されていますが…java 8 api」の WARNING 1個が出るが、`maven-javadoc-plugin 2.10.4`（親 POM 固定）と Java 9+ モジュールシステムの非互換によるもので許容済み
+- mvn は**単独実行**する（並行実行でビルドが汚染された実績あり）。`BUILD SUCCESS` だけを根拠にせず `Tests run:` の行を確認する
+- **AskUserQuestion は使わない**（2026-08-24 ユーザー指示）。判断を仰ぐときは本文に書く
+- レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
 
 # Tasks
 
@@ -577,7 +580,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] K. Craft expert review — coding (subagent)
 - [x] L. Verification expert review — test (subagent)
 
-**スコープ外（今回直さない。報告書へ回す）**: 「先頭行に無いキーを2行目以降が持っていても捨てられる」件（2026-08-21 ユーザー判断）。
+**スコープ外（2026-08-24 ユーザー判断で決着・不具合ではない）**: 「先頭行に無いキーを2行目以降が持っていても捨てられる」件は `testdata_notation.rst:819`（「後続の行に最初の行のキーにないものを追加しても、そのキーは読み込まれない」）どおりの仕様。**報告書に不具合として書かない。** 同じく「先頭がマーカーのみの行で後続の実データ行の値が全消失」も `testdata_notation.rst:819`（カラム名は先頭要素のキーで決まる）＋ `:1514`（マーカーカラムは読み込み対象外）どおりで、本体 `HeaderLine.java:87-95` が同じ除外をしており Excel も同結果。**報告書に不具合として書かない。**
 
 **Completion criteria**:
 
@@ -621,11 +624,59 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #21: 全値が null／空文字の行がスキップされない不具合を塞ぐ
+
+**Purpose**: `rows` の要素が「空マッピング（`{}`）」だけでなく「全ての値が null または空文字」の場合も、行として存在しないものとして扱う。列名解決からもデータ行からも除外し、位置（先頭・中間・末尾）を問わず同じ結果にする。
+
+**Prerequisites**: #18
+
+**根拠（出典）**:
+
+- 解説書 `testdata_notation.rst:1534`「全要素が null または空文字のエントリは読み飛ばされる。（略）YAML では `rows:` 内の要素が空マッピング（`{}`）またはすべての値が空文字の場合にスキップされる。この空エントリの省略は（略）テーブルデータや `LIST_MAP` のエントリ自体を無いものとして扱う点で異なる。」→ #17 が塞いだのはこの一文の**前半（`{}`）だけ**
+- 本体の参照実装: `PoiXlsReader.java:140` `isBlankLine`（全セル空文字で true）を `:93` で読み飛ばす。`TestDataParsingTemplate.java:407` を `:180` で同様。**いずれも `interpret` より前**に判定している
+- 現状（yaml 側）: 行スキップ判定は `YamlTableDataBuilder.java:145` / `:193` / `:222` の `Map.isEmpty()` のみで、Map が空かどうかしか見ていない
+
+**適用範囲の境界**: テーブルデータ（`setup_tables` / `expected_tables` / `expected_complete_tables`）と `list_maps` のみ。**ファイルデータには適用しない** — `testdata_notation.rst:883` が「この扱いは、テーブルデータの空行のスキップとは異なる仕組みである」と明記しており、ファイルデータでは全フィールド `""` のレコードとして保持するのが正。
+
+**Steps**:
+
+- [ ] A. RED: 3経路それぞれに「全値が空文字の行を**先頭**に置く」「**中間**に置く」テストを追加し、失敗することを確認する
+  - `buildTableDataList`（`setup_tables`）／`buildTableDataList`（`expected_tables`）／`buildListMapRows`（`list_maps`）
+  - 中間位置は現状「値が全部 `""` のデータ行」として投入されるため、消えることを固定する
+- [ ] B. フィクスチャ: **新規グループ**を足す。**既存グループ（`emptyRows` / `allEmptyRows` / `emptyRowMixed` / `leadingEmptyRow` / `emptyRowListMap` / `leadingEmptyRowListMap`）は変更しない**
+- [ ] C. GREEN: `resolveColumns` / `extractRows` を呼ぶ**前**に「空マッピング、または全ての値が null／空文字」の行を取り除く。本体（`isBlankLine` → `interpret`）と順序を揃える
+- [ ] D. `null` と `""` の双方が空とみなされること、値が1つでも非空なら残ることを確認する
+- [ ] E. javadoc（`YamlSection#resolveColumns` `:135-151`、`YamlTableDataBuilder` クラス javadoc `:36-37`・`:104-107`・`:139-142`・`:146`・`:192`・`:211-212`）を変更後の実装と食い違わないよう更新する
+- [ ] F. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
+- [ ] G. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
+- [ ] H. commit・push
+- [ ] I. self-check (OK/NG per completion criterion, record in checks/task-21.md)
+- [ ] J. QA expert review (subagent)
+- [ ] K. Design expert review (subagent)
+- [ ] L. Craft expert review — coding (subagent)
+- [ ] M. Verification expert review — test (subagent)
+
+**判断待ち（着手前にユーザー回答が要る）**: `list_maps` の `{}` 行を現状は「空 Map」として結果に残しており（`YamlTableDataBuilder.java:192-193, 202`）、既存テスト `YamlTableDataBuilderTest#buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）がその挙動を固定している。`:1534` の「エントリ自体を無いものとして扱う」および Excel（`PoiXlsReader.java:93`）に合わせるなら、この既存テストの期待値を「2 件」へ変更する必要がある。フィクスチャは変えない。
+
+**Completion criteria**:
+
+- 全値が null／空文字の行が、先頭・中間のどちらに置かれても、`setup_tables` / `expected_tables` / `list_maps` の3経路すべてで行として存在しなくなる
+- 値が1つでも非空の行は従来どおり保持される
+- ファイルデータ（`YamlFileBuilder`）の挙動が変わっていない（全フィールド `""` のレコードは保持されたまま）
+- 既存フィクスチャのグループが変更されていない
+- 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
+- `pom.xml` / `argLine` が変更されておらず、他リポジトリへの書き込みが無い
+- `mvn -o clean test` が `Tests run:` 出力つきで BUILD SUCCESS（Failures/Errors/Skipped すべて 0）
+
+---
+
 ### #19: 手順4 — 変更差分のカバレッジ実測と未達分岐を埋めるテスト追加
 
 **Purpose**: このブランチが base から変更した `src/main`（10ファイル `+1843`・全部新規＝結果的にモジュール全体）について C0/C1 100% を満たす。
 
-**Prerequisites**: #18
+**Prerequisites**: #21
+
+**着手時のベースライン（2026-08-24 実測・要再取得）**: `Tests run: 187, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS。`TODO`/`FIXME`/`@Ignore` は 0 件
 
 **Steps**:
 
@@ -658,7 +709,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. すべて緑であることを確認する
+- [ ] A. **判断待ち（着手前にユーザー回答が要る）**: 旧 State の禁止事項「yaml で `mvn install` しない（converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存し install で壊れる）」と、指示書 手順5 の install 要求が衝突する。共通ルールの順序（yaml → converter）を前提に「converter は直後に自分の指示書で直す」と読んで実行してよいかを確認する
+- [ ] A2. すべて緑であることを確認する
 - [ ] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
 - [ ] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30:03）
 - [ ] D. self-check (OK/NG per completion criterion, record in checks/task-20.md)
@@ -672,18 +724,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-24
-- **Last completed**: #17
-- **Next**: #18 step I — QA / Craft(writing) / Verification(fact-check) の3レビューを `374df49` に対して実行する（実装・self-check は完了済み）
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、HEAD は本コミット、push 済み。PR なし
-  - **ユーザー判断待ち3件**（回答があるまで着手しない）:
-    1. スキーマ `:361` の親 `description` の同件数前提記述を #18 の範囲で直すか（#18 step L）
-    2. #17 と同型の穴2件を起票するか。(a) 全値が空文字の行がスキップされない（解説書 `testdata_notation.rst:1534` が `{}` と同格と規定。列名解決だけでなく行スキップ自体の実装が要る） (b) 先頭がマーカーのみの行で後続の実データ行の値が全消失（`isMarker` 除外で残列0件）
-    3. 解説書 `testdata_notation.rst:819`「カラム名は最初の行のキーで決まる」が #17 の変更と食い違う。**別リポジトリのため本セッションでは変更せず報告のみ**（`指示/doc-記載漏れの是正.md` の担当へ）
-  - **#20 の install について未回答**: 旧 State の禁止事項「yaml で `mvn install` しない（converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存し install で壊れる）」と、新指示書 手順5 の install 要求が衝突。新しい共通ルールの順序（yaml → converter）を前提に「converter は直後に自分の指示書で直す」と読んで実行してよいか、#20 着手前に確認する
-  - **AskUserQuestion は使わない**（2026-08-24 にユーザーが拒否）。判断を仰ぐときは本文で書く
-  - `mvn` は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付き、**単独実行**（並行実行でビルドが汚染された実績あり）。`BUILD SUCCESS` だけを根拠にせず `Tests run:` の行を確認する
-  - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
-  - 現在のベースライン: `Tests run: 187, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS。`TODO`/`FIXME`/`@Ignore` は 0 件
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
