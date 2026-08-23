@@ -598,17 +598,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 3出典を実物で再確認する（`DataFileFragment.java:107` / `testdata_notation.rst:883` / 当スキーマ）※着手時に確認済み・行番号一致
-- [ ] B. `$defs.record_fragment.properties.rows.description` を「fields の件数より少ない場合、不足したフィールドは `""` として補完される」趣旨へ直す
-- [ ] C. `items.description` の「fields の順序に完全対応」も同件数前提の書き方なら合わせて直す
-- [ ] D. 「多い側」には触れない（エラー化とも「余りは無視される」とも書かない）
-- [ ] E. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
-- [ ] F. スキーマ検証テストが緑のままであることを確認。`rows:` の要素数が `fields` より少ない YAML がスキーマ検証で落ちるなら直す
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
+- [x] A. 3出典を実物で再確認する（`DataFileFragment.java:107` / `testdata_notation.rst:883` / 当スキーマ）※着手時に確認済み・行番号一致
+- [x] B. `$defs.record_fragment.properties.rows.description` を「fields の件数より少ない場合、不足したフィールドは `""` として補完される」趣旨へ直す
+- [x] C. `items.description` の「fields の順序に完全対応」も同件数前提の書き方なら合わせて直す
+- [x] D. 「多い側」には触れない（エラー化とも「余りは無視される」とも書かない）
+- [x] E. JSON として妥当か検証（`python3 -c "import json; json.load(open(...))"`）
+- [x] F. スキーマ検証テストが緑のままであることを確認。`rows:` の要素数が `fields` より少ない YAML がスキーマ検証で落ちるなら直す
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
 - [ ] I. QA expert review (subagent)
 - [ ] J. Craft expert review — writing (subagent)
 - [ ] K. Verification expert review — fact-check (subagent)
+- [ ] L. **判断待ち**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること」が残存。子（`rows.description`）と矛盾する。#18 の範囲で直すかユーザー判断待ち
 
 **Completion criteria**:
 
@@ -671,8 +672,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: not suspended
-- **Date**: 2026-08-21
+- **Status**: paused
+- **Date**: 2026-08-24
 - **Last completed**: #17
-- **Next**: #18
-- **Notes**: —
+- **Next**: #18 step I — QA / Craft(writing) / Verification(fact-check) の3レビューを `374df49` に対して実行する（実装・self-check は完了済み）
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、HEAD は本コミット、push 済み。PR なし
+  - **ユーザー判断待ち3件**（回答があるまで着手しない）:
+    1. スキーマ `:361` の親 `description` の同件数前提記述を #18 の範囲で直すか（#18 step L）
+    2. #17 と同型の穴2件を起票するか。(a) 全値が空文字の行がスキップされない（解説書 `testdata_notation.rst:1534` が `{}` と同格と規定。列名解決だけでなく行スキップ自体の実装が要る） (b) 先頭がマーカーのみの行で後続の実データ行の値が全消失（`isMarker` 除外で残列0件）
+    3. 解説書 `testdata_notation.rst:819`「カラム名は最初の行のキーで決まる」が #17 の変更と食い違う。**別リポジトリのため本セッションでは変更せず報告のみ**（`指示/doc-記載漏れの是正.md` の担当へ）
+  - **#20 の install について未回答**: 旧 State の禁止事項「yaml で `mvn install` しない（converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存し install で壊れる）」と、新指示書 手順5 の install 要求が衝突。新しい共通ルールの順序（yaml → converter）を前提に「converter は直後に自分の指示書で直す」と読んで実行してよいか、#20 着手前に確認する
+  - **AskUserQuestion は使わない**（2026-08-24 にユーザーが拒否）。判断を仰ぐときは本文で書く
+  - `mvn` は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` かつ `clean` 付き、**単独実行**（並行実行でビルドが汚染された実績あり）。`BUILD SUCCESS` だけを根拠にせず `Tests run:` の行を確認する
+  - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
+  - 現在のベースライン: `Tests run: 187, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS。`TODO`/`FIXME`/`@Ignore` は 0 件
