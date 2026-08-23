@@ -612,11 +612,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] I. QA expert review (subagent) — 完了条件は全 OK、**総評 NG**（親 `:361` の未修正矛盾）。判定は `checks/task-18.md`
 - [x] J. Craft expert review — writing (subagent) — **NG**（NG-1 親子矛盾／NG-2・NG-3 `:386` の重複／NG-4 `:377` の曖昧さ）
 - [x] K. Verification expert review — fact-check (subagent) — **OK**（主張A〜F すべて真。旧記述「一致しない場合はエラー」は条件付きでも真でないことを確認）
-- [ ] L. **判断待ち（回答が来たらここから再開）**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること」が残存。子（`:377`）と矛盾する。#18 の範囲で直すかユーザー判断待ち。**coordinator の推奨は「直す」**（`:361` も description なので完了条件「description 以外を変更していない」に抵触しない。#18 の Purpose は矛盾解消そのもの）
-- [ ] M. L が承認されたら、以下3点を**1ラウンド**で実装エキスパートに修正させる（承認されなければ NG-4 のみ）
-  - `:361` 第3文 →「`rows` の各配列は fields と同じ順序で値を並べること（NTF パーサが列順で対応付ける。件数の扱いは rows の説明を参照）」。「多い側」には触れない
-  - `:386`（`items.description`）の第1文「フィールド値のリスト。fields の順序で先頭から対応付けられる。」→「フィールド値のリスト。」に縮める（`:377` 第2文と同内容で新情報ゼロ・受動で隣接文と声が反転）
-  - `:377` 第3文 →「各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `""` が設定される」（Craft NG-4: **値**の不足なのに「不足したフィールド」ではフィールド定義の不足とも読める。「補完」は `:108` で「カラム型ごとのデフォルト値」の意味に使われており二義）
+- [x] L. **判断（2026-08-24 ユーザー回答: 直す。ただし言い換えではなく削除）**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に残る「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること（NTF パーサが列順で対応付ける）」は、子（`:377`）と矛盾するため**第3文を丸ごと削除**する。第1文・第2文は残す。理由（ユーザー）: `:377` の第1・2文が同じ内容を件数の扱いまで含めて正確に述べており、親に言い換えを残すと同一画面内の相互参照が増えるだけで新情報がない
+- [ ] M. 以下3点を**1ラウンド**で実装エキスパートに修正させる（`description` 以外は触らない）
+  - `:361` 第3文「rows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（NTF パーサが列順で対応付ける）」を**丸ごと削除**する（直前の `\n` ごと）。第1文・第2文は変更しない
+  - `:386`（`items.description`）から「fields の順序で先頭から対応付けられる。」の**一文だけを削除**する（`:377` 第2文と同内容）。「フィールド値のリスト。」は items の要素が何かを示す唯一の記述なので**残す**。「数値・真偽値も文字列（クォート付き）で記述すること」も残す
+  - `:377` 第3文 →「各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `""` が設定される」（Craft NG-4 = Valid: **値**の不足なのに「不足したフィールド」ではフィールド定義の不足とも読める。「補完」は `:108` で「カラム型ごとのデフォルト値」の意味に使われており二義）
+  - QA 指摘「多い場合は無言で切り捨てられる旨を書く」は **Invalid**（ユーザー承認済み）。スキーマには書かず、報告書候補として `checks/task-18.md` の Triage に残す
 - [ ] N. 修正後、Craft(writing) と QA を再実行する（Verification は事実主張が変わらないため再実行不要。変えるなら再実行する）
 
 **Completion criteria**:
@@ -631,7 +632,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ### #21: 全値が null／空文字の行がスキップされない不具合を塞ぐ
 
-**Purpose**: `rows` の要素が「空マッピング（`{}`）」だけでなく「全ての値が null または空文字」の場合も、行として存在しないものとして扱う。列名解決からもデータ行からも除外し、位置（先頭・中間・末尾）を問わず同じ結果にする。
+**Purpose**: `rows` / `list_maps` の要素が「空マッピング（`{}`）」の場合も「全ての値が null または空文字」の場合も、行として存在しないものとして扱う。列名解決からもデータ行からも除外し、位置（先頭・中間・末尾）を問わず同じ結果にする。
 
 **Prerequisites**: #18
 
@@ -648,6 +649,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] A. RED: 3経路それぞれに「全値が空文字の行を**先頭**に置く」「**中間**に置く」テストを追加し、失敗することを確認する
   - `buildTableDataList`（`setup_tables`）／`buildTableDataList`（`expected_tables`）／`buildListMapRows`（`list_maps`）
   - 中間位置は現状「値が全部 `""` のデータ行」として投入されるため、消えることを固定する
+- [ ] A2. RED: `list_maps` の `{}` 行についても、既存テスト `buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）の期待値を「2件返り、いずれも通常行」へ書き換え、失敗することを確認する。**テストメソッド名と javadoc の Given/Then も書き換える**（現状の挙動を指す文言のため）。**フィクスチャ `emptyRowListMap` は変更しない**
 - [ ] B. フィクスチャ: **新規グループ**を足す。**既存グループ（`emptyRows` / `allEmptyRows` / `emptyRowMixed` / `leadingEmptyRow` / `emptyRowListMap` / `leadingEmptyRowListMap`）は変更しない**
 - [ ] C. GREEN: `resolveColumns` / `extractRows` を呼ぶ**前**に「空マッピング、または全ての値が null／空文字」の行を取り除く。本体（`isBlankLine` → `interpret`）と順序を揃える
 - [ ] D. `null` と `""` の双方が空とみなされること、値が1つでも非空なら残ることを確認する
@@ -661,11 +663,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] L. Craft expert review — coding (subagent)
 - [ ] M. Verification expert review — test (subagent)
 
-**判断待ち（着手前にユーザー回答が要る）**: `list_maps` の `{}` 行を現状は「空 Map」として結果に残しており（`YamlTableDataBuilder.java:192-193, 202`）、既存テスト `YamlTableDataBuilderTest#buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）がその挙動を固定している。`:1534` の「エントリ自体を無いものとして扱う」および Excel（`PoiXlsReader.java:93`）に合わせるなら、この既存テストの期待値を「2 件」へ変更する必要がある。フィクスチャは変えない。
+**確定スコープ（2026-08-24 ユーザー判断）**:
+
+- **対象ケースは2つ** — 「全ての値が null または空文字の行」と「空マッピング（`{}`）の行」の両方
+- **対象経路は2つ** — `table_data`（`setup_tables` / `expected_tables` / `expected_complete_tables`）と `list_maps` の両方。`{}` は #17 で `table_data` 側だけ塞いだ状態で、`list_maps` 側は未対応（`YamlTableDataBuilder.java:192-193, 202` が空 Map をそのまま結果に残す）
+- **完了条件は `testdata_notation.rst:1534` の一文が「両経路 × 両ケース」で満たされていること**
+- **ファイルデータには適用しない** — `:1534` が「別の仕組み」と明記（下の「適用範囲の境界」参照）
+
+**既存テストの期待値変更（同判断）**: `YamlTableDataBuilderTest#buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）は `:1534` に反する現在の実装を固定しているテストであるため、**期待値を「2件返り、いずれも通常行」へ変更する**。テストメソッド名と javadoc の Given/Then も現状固定の文言なので書き換える。**フィクスチャは変えない**。
 
 **Completion criteria**:
 
 - 全値が null／空文字の行が、先頭・中間のどちらに置かれても、`setup_tables` / `expected_tables` / `list_maps` の3経路すべてで行として存在しなくなる
+- 空マッピング（`{}`）の行が、先頭・中間のどちらに置かれても、`setup_tables` / `expected_tables` / `list_maps` の3経路すべてで行として存在しなくなる（`list_maps` は現状 空 Map として結果に残っている）
 - 値が1つでも非空の行は従来どおり保持される
 - ファイルデータ（`YamlFileBuilder`）の挙動が変わっていない（全フィールド `""` のレコードは保持されたまま）
 - 既存フィクスチャのグループが変更されていない
@@ -729,14 +739,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-24
-- **Last completed**: #17（#18 は step A〜K 完了、L/M/N が残り）
-- **Next**: #18 step L — 親 `:361` を #18 の範囲で直すかのユーザー回答を受け、step M で1ラウンド修正 → step N で Craft/QA 再実行 → check off
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、HEAD は本コミット、push 済み。PR なし
-  - **ユーザー回答待ち2件**（どちらも回答があるまで着手しない）:
-    1. #18 step L — 親 `:361` の「同じ件数」を直すか（推奨: 直す。具体案は step M に記載）
-    2. #21 — `list_maps` の `{}` 行を残す既存テスト `YamlTableDataBuilderTest#buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）の期待値を 3件→2件へ変えてよいか（推奨: 変える。`testdata_notation.rst:1534` と Excel `PoiXlsReader.java:93` に合わせるため）。フィクスチャは変えない
-  - #20 step A の install 判断待ちも未回答のまま（内容は #20 に記載済み）
-  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
