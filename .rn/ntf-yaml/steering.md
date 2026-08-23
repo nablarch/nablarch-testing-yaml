@@ -609,10 +609,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] F. スキーマ検証テストが緑のままであることを確認。`rows:` の要素数が `fields` より少ない YAML がスキーマ検証で落ちるなら直す
 - [x] G. commit・push
 - [x] H. self-check (OK/NG per completion criterion, record in checks/task-18.md)
-- [ ] I. QA expert review (subagent)
-- [ ] J. Craft expert review — writing (subagent)
-- [ ] K. Verification expert review — fact-check (subagent)
-- [ ] L. **判断待ち**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること」が残存。子（`rows.description`）と矛盾する。#18 の範囲で直すかユーザー判断待ち
+- [x] I. QA expert review (subagent) — 完了条件は全 OK、**総評 NG**（親 `:361` の未修正矛盾）。判定は `checks/task-18.md`
+- [x] J. Craft expert review — writing (subagent) — **NG**（NG-1 親子矛盾／NG-2・NG-3 `:386` の重複／NG-4 `:377` の曖昧さ）
+- [x] K. Verification expert review — fact-check (subagent) — **OK**（主張A〜F すべて真。旧記述「一致しない場合はエラー」は条件付きでも真でないことを確認）
+- [ ] L. **判断待ち（回答が来たらここから再開）**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること」が残存。子（`:377`）と矛盾する。#18 の範囲で直すかユーザー判断待ち。**coordinator の推奨は「直す」**（`:361` も description なので完了条件「description 以外を変更していない」に抵触しない。#18 の Purpose は矛盾解消そのもの）
+- [ ] M. L が承認されたら、以下3点を**1ラウンド**で実装エキスパートに修正させる（承認されなければ NG-4 のみ）
+  - `:361` 第3文 →「`rows` の各配列は fields と同じ順序で値を並べること（NTF パーサが列順で対応付ける。件数の扱いは rows の説明を参照）」。「多い側」には触れない
+  - `:386`（`items.description`）の第1文「フィールド値のリスト。fields の順序で先頭から対応付けられる。」→「フィールド値のリスト。」に縮める（`:377` 第2文と同内容で新情報ゼロ・受動で隣接文と声が反転）
+  - `:377` 第3文 →「各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `""` が設定される」（Craft NG-4: **値**の不足なのに「不足したフィールド」ではフィールド定義の不足とも読める。「補完」は `:108` で「カラム型ごとのデフォルト値」の意味に使われており二義）
+- [ ] N. 修正後、Craft(writing) と QA を再実行する（Verification は事実主張が変わらないため再実行不要。変えるなら再実行する）
 
 **Completion criteria**:
 
@@ -724,8 +729,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-24
+- **Last completed**: #17（#18 は step A〜K 完了、L/M/N が残り）
+- **Next**: #18 step L — 親 `:361` を #18 の範囲で直すかのユーザー回答を受け、step M で1ラウンド修正 → step N で Craft/QA 再実行 → check off
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、HEAD は本コミット、push 済み。PR なし
+  - **ユーザー回答待ち2件**（どちらも回答があるまで着手しない）:
+    1. #18 step L — 親 `:361` の「同じ件数」を直すか（推奨: 直す。具体案は step M に記載）
+    2. #21 — `list_maps` の `{}` 行を残す既存テスト `YamlTableDataBuilderTest#buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）の期待値を 3件→2件へ変えてよいか（推奨: 変える。`testdata_notation.rst:1534` と Excel `PoiXlsReader.java:93` に合わせるため）。フィクスチャは変えない
+  - #20 step A の install 判断待ちも未回答のまま（内容は #20 に記載済み）
+  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
