@@ -405,10 +405,7 @@ public class YamlFileBuilderTest {
      * 値行に「全要素が空ならスキップ」を入れるとこのテストが落ちる。<br>
      * Given: expected_files の allBlankFieldsRecord グループに rows が {@code ["", "", ""]} 1 件のエントリ<br>
      * When:  buildFileList(yaml, "expected_files", "[allBlankFieldsRecord]", path) を呼ぶ<br>
-     * Then:  レコードが 1 件保持されること
-     * </p>
-     * <p>
-     * 各フィールドの値が null か空文字かは別途検討中のため、ここでは件数のみを固定する。
+     * Then:  レコードが 1 件保持され、3 フィールドとも空文字（{@code null} ではない）で保持されること
      * </p>
      */
     @Test
@@ -423,6 +420,11 @@ public class YamlFileBuilderTest {
         assertThat(result.size(), is(1));
         assertThat("全フィールドが \"\" のレコードも 1 件として保持されること",
                 result.get(0).toDataRecords().size(), is(1));
+        DataRecord record = result.get(0).toDataRecords().get(0);
+        assertThat("レコードが 3 フィールドとも保持していること", record.size(), is(3));
+        assertThat("FIELD1 が空文字のまま保持されること", record.get("FIELD1"), is((Object) ""));
+        assertThat("FIELD2 が空文字のまま保持されること", record.get("FIELD2"), is((Object) ""));
+        assertThat("FIELD3 が空文字のまま保持されること", record.get("FIELD3"), is((Object) ""));
     }
 
     /**

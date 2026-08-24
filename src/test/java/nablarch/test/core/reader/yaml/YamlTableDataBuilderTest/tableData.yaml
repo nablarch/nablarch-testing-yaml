@@ -89,7 +89,6 @@ setup_tables:
         PK_COL2: "DD"
         VARCHAR2_COL: "third"
 
-
   # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
   # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
   - group_id: blankValueRowLeading
@@ -258,6 +257,13 @@ list_maps:
         KEY2: null
       - {}
 
+  # マーカーカラム（[NO]）も空行判定の対象に含めるため、マーカーカラムだけが値を持つ行は
+  # 「全ての値が null／空文字」ではなく、行としては残る。ただし DB 操作対象の列が 1 つも無いので
+  # list_maps の結果は空 Map になる（依存先 nablarch-testing の ListMapParser と同じ挙動）。
+  - id: markerOnlyRowListMap
+    rows:
+      - "[NO]": "1"
+
 
 expected_tables:
   - group_id: markerColInTable
@@ -287,7 +293,6 @@ expected_tables:
       - PK_COL1: "0000000041"
         PK_COL2: "FF"
         VARCHAR2_COL: "expected2"
-
 
   # 空マッピング（{}）の行は中間に置いても行として存在しないものとして扱われる。
   - group_id: emptyRowMixedExpected

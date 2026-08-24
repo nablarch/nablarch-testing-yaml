@@ -333,7 +333,6 @@ expected_files:
         rows:
           - ["A"]
 
-
   # ファイルデータには「全ての値が空なら行を落とす」規則を適用しない（テーブル系・list_maps のみ）。
   # 全フィールドが "" のレコードも 1 件のレコードとして保持されることを固定する。
   - group_id: allBlankFieldsRecord

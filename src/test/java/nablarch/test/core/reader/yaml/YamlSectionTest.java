@@ -273,10 +273,11 @@ public class YamlSectionTest {
     /**
      * 全ての値を {@code "v"} とした行を {@link #rowOf(Object...)} で組み立てる。
      * 値そのものが問われないテスト（列名解決等）で使う。
-     * 空マッピング（{@code {}}）の行は「キーを持つ行」ではないので、{@link #rowOf(Object...)} を
-     * 引数なしで呼んで組み立てること。
+     * 空マッピング（{@code {}}）の行は本メソッドではなく {@link #rowOf(Object...)} を引数なしで
+     * 呼んで組み立てる（戻り値は同じだが、キーを持たない行はキーを列挙しない方の呼び方に揃える、
+     * という本テストクラス内の表記規約）。
      */
-    private static Map<String, Object> row(String... keys) {
+    private static Map<String, Object> rowWithKeys(String... keys) {
         Object[] keyValues = new Object[keys.length * 2];
         for (int i = 0; i < keys.length; i++) {
             keyValues[i * 2] = keys[i];
@@ -299,8 +300,8 @@ public class YamlSectionTest {
         // Given
         List<Object> rows = Arrays.<Object>asList(
                 rowOf(),
-                row("COL_C", "COL_A", "COL_B"),
-                row("COL_A"));
+                rowWithKeys("COL_C", "COL_A", "COL_B"),
+                rowWithKeys("COL_A"));
 
         // When
         List<String> result = YamlSection.resolveColumns(rows);
@@ -384,7 +385,7 @@ public class YamlSectionTest {
     @Test
     public void resolveColumns_skipsNonMappingRows() {
         // Given
-        List<Object> rows = Arrays.<Object>asList("scalar", 42, row("COL_X", "COL_Y"));
+        List<Object> rows = Arrays.<Object>asList("scalar", 42, rowWithKeys("COL_X", "COL_Y"));
 
         // When
         List<String> result = YamlSection.resolveColumns(rows);
@@ -406,7 +407,7 @@ public class YamlSectionTest {
     @Test
     public void resolveColumns_preservesColumnNameCase() {
         // Given
-        List<Object> rows = Arrays.<Object>asList(row("pkCol1", "PK_COL2", "Varchar2Col"));
+        List<Object> rows = Arrays.<Object>asList(rowWithKeys("pkCol1", "PK_COL2", "Varchar2Col"));
 
         // When
         List<String> result = YamlSection.resolveColumns(rows);

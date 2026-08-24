@@ -220,13 +220,6 @@ public final class YamlSection {
      * </p>
      *
      * <p>
-     * 同種の判定を残すか否かの線引きは可視性で決めている。本メソッドは public であり
-     * {@link #dropBlankRows(List)} を通していない行を渡されても単体で正しく振る舞う必要があるため、
-     * この判定を残す。一方 {@code YamlTableDataBuilder#extractRows} は private かつ本メソッドと同じ
-     * 呼び出し元からしか到達しないため、判定を持たせず {@code dropBlankRows} に一本化してある。
-     * </p>
-     *
-     * <p>
      * SnakeYAML はマッピングを {@link java.util.LinkedHashMap} でロードするため、{@code keySet} の
      * 順序は YAML 記述順と一致する。
      * </p>
