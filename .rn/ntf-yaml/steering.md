@@ -942,7 +942,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Last completed**: `#20`（`mvn install` 実行。jar タイムスタンプ 8/18 09:30 → 8/24 16:48 へ更新確認済み）
 - **Next**: `#14` step A の再実行（Acceptance criteria の再実行。以前の記録は `#15`〜`#20` 追加により陳腐化）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 待ち（`#20` の commit がまだ push されていない）
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `27021cc`）。PR なし
   - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
   - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
   - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 旧記録時点 `fdf55d4` と異なる）。参照のみで書き込みなし。#14 再実行時に確認すること
