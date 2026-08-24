@@ -254,3 +254,49 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
 （209 → 224 は `#24` で追加した `YamlColumnOmissionTest` 14件分。#19 完了時点の210件から起算すると +14 = 224 で一致）
 
 `description` 以外のスキーマ要素は未変更（`git diff` はスキーマ4描述＋新規テストクラス・フィクスチャのみ）。
+
+---
+
+## レビュー ラウンド2（差分限定2観点: 是正が指示範囲に収まっているか／是正が新しい欠陥を生んでいないか）
+
+対象差分: `c56207d`（ラウンド1の指摘反映コミット）と `52611b1`（wip・非デリバラブル）。各担当は個別サブエージェントで実施し、指示に「実測で裏付ける／付属の検証スクリプトを正解として使わず独立に組む／敵対的に見る」を明記。
+
+### 観点1（差分が指示範囲に収まっているか）— Invalid
+
+**指摘**: `c56207d` の変更が `:361`（`$defs.record_fragment.description` の「ファイル系」→「record_fragment」）にも及んでおり指示範囲（`:18`/`:25`/`:108`＋新規テスト）外である、という指摘。
+
+**判定: Invalid（事実誤認）**。コーディネーターが独立に `git diff c56207d~1 c56207d -- src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` を実行して確認したところ、`c56207d` 単体の変更は `:18`/`:25`/`:108` の3つの `description` 値のみ（3 insertions, 3 deletions、`git show --stat` の `1 file changed, 3 insertions(+), 3 deletions(-)` と一致）。`:361` の変更は `2f060e8`（#24 step B2、2026-08-24 ユーザー承認済みスコープ (b)）に属し、`c56207d`/`52611b1` の差分には含まれない。担当サブエージェントが `2f060e8~1..c56207d` という誤った比較範囲を使ったために生じた誤指摘。
+
+### 観点2（是正が新しい欠陥を生んでいないか）— Valid 1件
+
+**指摘（Valid）**: `c56207d` で `:108` の `(2)` 段落に追記した Boolean 型 NPE の例外文「行ごとに省略せず値を明示すること」は、NPE の原因を「行ごとの省略」に限定して読める書き方になっている。実際の原因は「値が null であること」であり、(1)（カラム名決定行に無い＝全行省略）でも、クォートなし小文字 `null` を明示した場合でも同じ NPE になる。この文言は読み手がクォートなし `BOOL_COL: null` と明示することで「対処した」と誤認させ、実際には NPE を防げない。
+
+**実物確認（コーディネーターが独立に再確認、一致）**:
+- `../nablarch-testing` `TableData.java:163-164`（`insert.setBoolean(bindIndex++, row.containsKey(columnName) ? row.getBoolean(columnName) : (Boolean) getDefaultValue(columnName));`）— 前回指摘の行番号「162-164」から163-164への訂正が正しいことを `nl -ba` で確認
+- `nablarch-testing-yaml` `YamlSection.java:247-249`（`interpret` の null チェック）— 行番号一致を確認
+- `SqlRow#getBoolean` の null 伝播: 依存 jar が `2.2.0` ではなく `6-NEXT-SNAPSHOT` である点の訂正を含め、`javap -c` によるバイトコード確認で null 伝播を独立に検証済み（報告どおり）
+
+**反映**:
+1. `:108` の `(2)` 段落の当該文を、原因の経路（行内省略／クォートなし null／`COL:` 省略／クォート付き `"null"`）を問わず「値が null になれば」NPE になる旨へ書き替え、「null を明示しても防げない」ことを明記
+2. `YamlColumnOmissionTest.java` に `setupThrowsNpeWhenBooleanColumnIsExplicitNull`（明示 null 系統）を新規追加、フィクスチャ `omission.yaml` に `s10` を追加
+3. 変異確認: `TableData.java` の Boolean 分岐を「値が null なら getDefaultValue へフォールバック（NPE を投げない実装）」に変異させ、独立にコンパイル・classpath 差し替えで実行 → コーディネーターが自分のコマンドで再実行し **`Tests run: 15, Failures: 2`**（新規テストと既存の行内省略テストの両方が期待どおり FAIL）を確認。報告値と一致
+
+**範囲外として記録のみ（修正しない）**: `:108` 内 FK ブロックの「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は Boolean 型カラムに対して同様に誤誘導になるが、この文は `c56207d` 以前（`2f060e8` 時点）から存在し、ラウンド2の対象（`c56207d`/`52611b1` が新たに生んだ欠陥）に当たらないため今回は直さない。既出の `O-D1` と同一事象。
+
+### 反映後の確認
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
+[INFO] Tests run: 225, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+（224 → 225 は `setupThrowsNpeWhenBooleanColumnIsExplicitNull` 1件分）
+
+`description` 以外のスキーマ要素・実装コードは未変更（`git diff` はスキーマ `:108` の description 1本＋テストファイル2本のみ）。
+
+### ラウンド2 総括
+
+- 観点1: 指摘1件・Invalid（事実誤認と判定、却下）
+- 観点2: 指摘1件・Valid（反映済み）
+- ラウンド2で新しい欠陥（Valid）が出たため、指示書の完了条件「ラウンド2で新しい欠陥が出なければ完了」に該当せず、**ラウンド3が必要**（上限3回のうち残り1回）

@@ -286,6 +286,22 @@ public class YamlColumnOmissionTest {
     }
 
     /**
+     * (2) の例外は「行ごとの省略」に限らない: Boolean 型カラムにクォートなし小文字 {@code null} を
+     * 明示した場合（省略ではなく明示的な記述）も同じ NullPointerException になる。
+     * これは :108 の「行ごとに省略せず値を明示すること」という助言が、読み手が null を明示することで
+     * 満たしてしまえる書き方になっており、その場合も NPE を防げないことの実証である。
+     */
+    @Test
+    public void setupThrowsNpeWhenBooleanColumnIsExplicitNull() {
+        try {
+            setUp("s10");
+            fail("Boolean 型カラムに明示的な null を書いても NullPointerException が出なかった");
+        } catch (NullPointerException e) {
+            // 期待どおり
+        }
+    }
+
+    /**
      * (2) と「クォートなしの null を明示した場合」は同じ扱いになる
      * （{@code YamlSection} の値解決を通ると、キー省略も {@code COL: null} も同じ Java null になる）。
      */

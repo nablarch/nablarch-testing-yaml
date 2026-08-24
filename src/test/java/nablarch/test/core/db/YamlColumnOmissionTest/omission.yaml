@@ -169,6 +169,19 @@ setup_tables:
         DATE_COL: "2024-01-02"
         TIMESTAMP_COL: "2024-01-02 02:02:02"
 
+  # Boolean 型カラムにクォートなし小文字 null を明示した場合（省略ではなく明示。「行ごとに省略せず値を
+  # 明示すること」という助言どおりに null を明示しても NPE になることの確認用）
+  - group_id: s10
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+        BOOL_COL: null
+
 expected_tables:
   # (1) 全行で省略したカラムは比較対象に入らない
   - group_id: e1
