@@ -913,7 +913,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #20: 手順5 — `mvn install`（下流 converter の前提）
+### ~~#20: 手順5 — `mvn install`（下流 converter の前提）~~
 
 **Purpose**: 順序3番目の `nablarch-testing-converter` が着手できるよう、緑になった成果物を `.m2` へ配置する。
 
@@ -921,12 +921,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. **判断待ち（着手前にユーザー回答が要る）**: 旧 State の禁止事項「yaml で `mvn install` しない（converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存し install で壊れる）」と、指示書 手順5 の install 要求が衝突する。共通ルールの順序（yaml → converter）を前提に「converter は直後に自分の指示書で直す」と読んで実行してよいかを確認する
-- [ ] A2. すべて緑であることを確認する
-- [ ] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
-- [ ] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30:03）
-- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-20.md)
-- [ ] E. **Craft/QA レビューは不要**（Rules の基準: ビルド。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する
+- [x] A. **解消（2026-08-24 ユーザー判断）**: 旧 State の禁止事項「yaml で `mvn install` しない（converter が `pom.xml:42-44` で `1.0.0-SNAPSHOT` に依存し install で壊れる）」は、**出典が確認できず解消**とする。この文言が初めて現れるコミット `1bae0de` の親コミットの State は `Notes: —` のみで、全リビジョンを走査しても禁止を記した State も Rules も存在しない。禁止理由「converter が install で壊れる」もコンパイル面で成立しない（`.m2` 旧 jar と作業ツリー `target/classes` の全クラス `javap` 比較で公開 API 差分は追加1件 `YamlSection.dropBlankRows` のみ、クラス削除・署名変更なし、`pom.xml` 完全一致）。禁止の存在を前提にした記述は残さない
+- [x] A2. すべて緑であることを確認する — `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS（レビュー役が独立実行し 2026-08-24 16:39 に同結果を確認済み）
+- [x] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する — 指示書どおりのコマンド（`clean` なし）は Rules（`jacoco:restore-instrumented-classes` は prepare-package で走る）どおり `Cannot process instrumented class` で BUILD FAILURE。Rules に従い `clean` を付けて再実行し BUILD SUCCESS
+- [x] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30） — `2026-08-24 16:48` へ更新確認済み
+- [x] D. self-check (OK/NG per completion criterion, record in checks/task-20.md)
+- [x] E. **Craft/QA レビューは不要**（Rules の基準: ビルド。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する — `checks/task-20.md` に記録済み
 
 **Completion criteria**:
 
@@ -939,13 +939,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: `#24`（`:108` カラム省略の記述是正。step A〜G 完了、step G はラウンド3まで実施）
-- **Next**: `#20` step A（**ユーザー判断待ち**。着手前に回答が要る）
+- **Last completed**: `#20`（`mvn install` 実行。jar タイムスタンプ 8/18 09:30 → 8/24 16:48 へ更新確認済み）
+- **Next**: `#14` step A の再実行（Acceptance criteria の再実行。以前の記録は `#15`〜`#20` 追加により陳腐化）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `27d3936`）。PR なし
-  - **ユーザー判断待ち（次の具体アクション）**: `#20` step A の install 可否。旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は `#20` 参照
+  - ブランチ `feature/ntf-yaml`、push 待ち（`#20` の commit がまだ push されていない）
+  - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
   - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
-  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 step A の記録時点 `fdf55d4` と異なる）。参照のみで書き込みなし。#14 再実行時に確認すること
-  - `#14`（Evaluation sign-off）は `#20` 完了後に step A を再実行してから受ける
+  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 旧記録時点 `fdf55d4` と異なる）。参照のみで書き込みなし。#14 再実行時に確認すること
+  - `#14`（Evaluation sign-off）は Craft/QA レビュー不要（Rules の基準: サインオフ）。実行コマンドと生の出力を報告する
   - nablarch-document への報告書候補: `checks/task-18.md` / `checks/task-21.md` / `checks/task-22.md`
   - user-deferred paths: なし
