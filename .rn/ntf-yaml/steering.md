@@ -870,8 +870,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` でカバレッジを採取する（`pom.xml` / `argLine` は変更しない）
-- [ ] B. awk で未達クラス一覧を出し、**テストを足す前にユーザーへ提示する**
+- [x] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` でカバレッジを採取する（`pom.xml` / `argLine` は変更しない）
+- [x] B. awk で未達クラス一覧を出し、**テストを足す前にユーザーへ提示する**（実測結果は `checks/task-19.md`）
 - [ ] B/C ゲート（**ユーザー判断・2026-08-24 明示指示**）: step A・B の実測結果（実行コマンドと生の出力、未達クラス一覧）を報告したら**そこで止まる**。どの分岐を埋めるかの指示を待つ。**勝手に step C へ進まない**。根拠: `指示/yaml-あるべき姿とカバレッジ.md:114`「**まず実測して、未達クラスの一覧を報告すること。** テストを足すのはその後。何件足すことになるかが分かってからでないとユーザーが判断できない。」
 - [ ] C. ユーザーの合図後、未達分岐を埋める「意味のあるテスト」を追加する
 - [ ] D. 追加テストごとに、その行・分岐を壊す変更を1つ入れると落ちることを実際に確認し、コマンドと結果を記録する
@@ -918,8 +918,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`
+- **Status**: paused
+- **Date**: 2026-08-24
+- **Last completed**: #22
+- **Next**: `#19` の **step C**（未達分岐を埋めるテスト追加）。ただし **B/C ゲートでユーザー判断待ち**。どの分岐を埋めるかの指示が来るまで step C に進まない
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `8094013`）。PR なし
+  - **`#19` step A・B は実測完了**。実行コマンドと生の出力・未達クラス一覧・未達行のソースはすべて `checks/task-19.md`。要点: 9クラス中7クラスは C0/C1 達成済み。未達は `YamlFileBuilder`（`:227-228` の防御的ガード。`INSTRUCTION_MISSED=1` / `BRANCH_MISSED=1`）と `YamlLoader`（`:60-61` `:65-66` の static イニシャライザ。`INSTRUCTION_MISSED=12` / `BRANCH_MISSED=1`）の2クラスのみ
+  - **ユーザー判断待ち2件**:
+    1. **`#19` の未達2箇所をどうするか**（テストで埋める／到達不能として承認する）。判断材料は `checks/task-19.md`
+    2. **スキーマ `:361` の「ファイル系」をどうするか**（`#22` レビュー観点C の C-3）。`:108` から等値表現を外した結果、ファイル内で「ファイル系」は `:361` の見出し1箇所だけになった。`:361` は A0・A1 いずれの対象でもないため直すかはユーザー判断。直すなら `#24` に相乗りが自然。詳細は `checks/task-22.md` の「ユーザー判断が要る1件」
+  - **`#24` は `#22` から送られた新規タスク**（`:108` のカラム省略まわりの乖離3文）。`#23` は本体 nablarch-testing の課題番号として `#15` の表題で既出のため欠番
+  - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
+  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
+  - ⑥ nablarch-document への報告書候補: `checks/task-18.md`（5件・`rst:883` の2件はセット）、`checks/task-21.md`（`rst:819` と `rst:1534`）、`checks/task-22.md`（`rst:1534` の全値 null 欠落と、`rst:830`／`:1443-1445` の null 等価性）。**`rst:658` と `rst:819` は正しく、報告候補ではない**（食い違っているのはスキーマ側＝`#24`）
+  - user-deferred paths: なし
