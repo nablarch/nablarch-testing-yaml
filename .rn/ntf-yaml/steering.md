@@ -658,7 +658,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #21: 全値が null／空文字の行がスキップされない不具合を塞ぐ
+### ~~#21: 全値が null／空文字の行がスキップされない不具合を塞ぐ~~
 
 **Purpose**: `rows` / `list_maps` の要素が「空マッピング（`{}`）」の場合も「全ての値が null または空文字」の場合も、行として存在しないものとして扱う。列名解決からもデータ行からも除外し、位置（先頭・中間・末尾）を問わず同じ結果にする。
 
@@ -674,22 +674,33 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. RED: 3経路それぞれに「全値が空文字の行を**先頭**に置く」「**中間**に置く」テストを追加し、失敗することを確認する
+- [x] A. RED: 3経路それぞれに「全値が空文字の行を**先頭**に置く」「**中間**に置く」テストを追加し、失敗することを確認する
   - `buildTableDataList`（`setup_tables`）／`buildTableDataList`（`expected_tables`）／`buildListMapRows`（`list_maps`）
   - 中間位置は現状「値が全部 `""` のデータ行」として投入されるため、消えることを固定する
-- [ ] A2. RED: `list_maps` の `{}` 行についても、既存テスト `buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）の期待値を「2件返り、いずれも通常行」へ書き換え、失敗することを確認する。**テストメソッド名と javadoc の Given/Then も書き換える**（現状の挙動を指す文言のため）。**フィクスチャ `emptyRowListMap` は変更しない**
-- [ ] B. フィクスチャ: **新規グループ**を足す。**既存グループ（`emptyRows` / `allEmptyRows` / `emptyRowMixed` / `leadingEmptyRow` / `emptyRowListMap` / `leadingEmptyRowListMap`）は変更しない**
-- [ ] C. GREEN: `resolveColumns` / `extractRows` を呼ぶ**前**に「空マッピング、または全ての値が null／空文字」の行を取り除く。本体（`isBlankLine` → `interpret`）と順序を揃える
-- [ ] D. `null` と `""` の双方が空とみなされること、値が1つでも非空なら残ることを確認する
-- [ ] E. javadoc（`YamlSection#resolveColumns` `:135-151`、`YamlTableDataBuilder` クラス javadoc `:36-37`・`:104-107`・`:139-142`・`:146`・`:192`・`:211-212`）を変更後の実装と食い違わないよう更新する
-- [ ] F. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
-- [ ] G. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
-- [ ] H. commit・push
-- [ ] I. self-check (OK/NG per completion criterion, record in checks/task-21.md)
-- [ ] J. QA expert review (subagent)
-- [ ] K. Design expert review (subagent)
-- [ ] L. Craft expert review — coding (subagent)
-- [ ] M. Verification expert review — test (subagent)
+- [x] A2. RED: `list_maps` の `{}` 行についても、既存テスト `buildListMapRows_emptyRowIncludedAsEmptyMap`（`:765-777`）の期待値を「2件返り、いずれも通常行」へ書き換え、失敗することを確認する。**テストメソッド名と javadoc の Given/Then も書き換える**（現状の挙動を指す文言のため）。**フィクスチャ `emptyRowListMap` は変更しない**
+- [x] B. フィクスチャ: **新規グループ**を足す。**既存グループ（`emptyRows` / `allEmptyRows` / `emptyRowMixed` / `leadingEmptyRow` / `emptyRowListMap` / `leadingEmptyRowListMap`）は変更しない**
+- [x] C. GREEN: `resolveColumns` / `extractRows` を呼ぶ**前**に「空マッピング、または全ての値が null／空文字」の行を取り除く。本体（`isBlankLine` → `interpret`）と順序を揃える
+- [x] D. `null` と `""` の双方が空とみなされること、値が1つでも非空なら残ることを確認する
+- [x] E. javadoc（`YamlSection#resolveColumns` `:135-151`、`YamlTableDataBuilder` クラス javadoc `:36-37`・`:104-107`・`:139-142`・`:146`・`:192`・`:211-212`）を変更後の実装と食い違わないよう更新する
+- [x] F. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
+- [x] G. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
+- [x] H. commit・push
+- [x] I. self-check (OK/NG per completion criterion, record in checks/task-21.md)
+- [x] J. QA expert review (subagent)
+- [x] K. Design expert review (subagent)
+- [x] L. Craft expert review — coding (subagent)
+- [x] M. Verification expert review — test (subagent)
+
+**実施記録（2026-08-24）**:
+
+- コミット3本: `fb58781`（実装本体）→ `14ad84a`（レビュー修正1）→ `a5cb6dd`（レビュー修正2）→ `d75c79c`（レビュー修正3）。すべて push 済み・force-push なし
+- 実装: 判定を `YamlSection#isBlankRow` の1箇所に集約し、`dropBlankRows` を `resolveColumns` / `extractRows` より**前**に適用（本体 `PoiXlsReader#readLine` / `TestDataParsingTemplate#readTestData` と同じ順序）。前段で除去するため到達不能になった防衛分岐4件は削除。`resolveColumns` の読み飛ばしは public API の単体担保として残した
+- マーカーカラム（`[COL]`）の値も空行判定の対象に含める。本体 `PoiXlsReader#isBlankLine` が行の全セルを対象とするのに合わせたもの
+- レビュー3ラウンド（上限3）を消化。**Verification round 3 = 9変異すべて死亡・生存変異ゼロ・空振りテスト0件**
+- 最終: `mvn -o clean test` → `Tests run: 207, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS（coordinator が単独実行して確認）
+- 判定・Finding・triage・変異表は `checks/task-21.md`
+
+**未解決（`#21` の完了条件の外側・ユーザー判断待ち）**: スキーマ `ntf-testdata-yaml-schema.json` の `$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）の description に、空行スキップの規範が書かれていない。3レビュアーが独立に指摘（Design D / QA F1 / Craft F1）。とくに `:108` は「`null`（クォートなし）および `"null"`（クォートあり）はともに NullInterpreter により Java null に変換される」と等価性を明言しているが、**全値がそれだけの行**では分岐する（裸 `null` のみ → 行ごと消える／`"null"` のみ → 行は残り値が null）。**この分岐は本体 Excel と一致しており実装は正しい**（空セルは `isBlankLine` で落ち、文字列 `null` のセルは非空で残る）ので、直すべきはスキーマの description。coordinator 推奨は **`#22` step A1 として足すこと**（`#22` は step A0 で既に同じファイルに触り、`#18` で確立した「スキーマ description を実装に合わせる」作業と同種）
 
 **確定スコープ（2026-08-24 ユーザー判断）**:
 
@@ -723,6 +734,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
+- [ ] A1. **（ユーザー判断待ち・未承認）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に「空マッピング `{}` の行、および全ての値が `null`／空文字の行は行として存在しないものとして読み飛ばされる（`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる）」旨を足し、`:108` の「ともに…変換される」の一文を行レベルの差に触れる形へ直す。**ユーザーの承認を得るまで着手しない**
 - [ ] A0. **`#18` step R の F4 適用**: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
 - [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
 - [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
@@ -809,15 +821,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: active
 - **Date**: 2026-08-24
-- **Last completed**: #18
-- **Next**: #21 step A — RED（全値が空文字の行を先頭・中間に置くテストを3経路に追加し、失敗を確認する）。#22 は #21 と並行で進めてよい（2026-08-24 ユーザー指示）
+- **Last completed**: #21
+- **Next**: #22 step A0 —（`:377` の「位置対応させる」→「先頭から対応付ける」）。ただし **step A1 はユーザー承認待ちで着手しない**
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み。PR なし
-  - **ユーザー回答待ち1件**: `#18` の**新事実3**（`半角` 型の不足フィールドは `null` ではなく空文字 = `toDataRecords()` の値が `[]{String}`）の扱い。報告済み・回答待ち。**これに依存する作業は進めない**（`#22` の期待値で `null` か空文字かを問う場合が該当）
-  - #18 round 3 の却下判断のうち、Craft F1・F5 の却下／F4 の差し戻し／新事実1・2 の扱い／QA の `null` 指摘への Invalid 判定は 2026-08-24 に回答済み・`#18 step R` に反映
-  - #18 の残作業は **`#22` step A0 の1件のみ**（`:377` の「位置対応させる」→「先頭から対応付ける」）。単独ラウンドは立てない
-  - Craft/QA レビューの要否は Rules の基準で判断する（都度聞かない）。**判断単位はステップ**。#21 必要 / #22 必要 / #20 不要 / #14 不要 / #19 は step A・B 不要・step C 必要
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `d75c79c`）。PR なし
+  - **ユーザー回答待ち2件**:
+    1. `#18` の**新事実3**（`半角` 型の不足フィールドは `null` ではなく空文字 = `toDataRecords()` の値が `[]{String}`）の扱い。報告済み・回答待ち。**これに依存する作業は進めない**
+    2. `#21` から回ってきた**スキーマ description の追随**（`:108` / `:135` に空行スキップの規範が無い）。coordinator 推奨は `#22` step A1 として足すこと。**承認を得るまで着手しない**
+  - Craft/QA レビューの要否は Rules の基準で判断する（都度聞かない）。**判断単位はステップ**。#22 必要 / #20 不要 / #14 不要 / #19 は step A・B 不要・step C 必要
   - **#19 は step B と step C の間でユーザー判断を待つ**（実測結果を報告して停止。勝手に step C へ進まない）
   - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - ⑥ nablarch-document への報告書候補は `checks/task-18.md` の「⑥ nablarch-document への報告書候補」に一覧化済み（`rst:883` の2件は**セットで報告する**）
+  - ⑥ nablarch-document への報告書候補は `checks/task-18.md`（5件・`rst:883` の2件はセットで報告）と `checks/task-21.md`（`rst:819` と `rst:1534` の2件）に記録
