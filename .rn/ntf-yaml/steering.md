@@ -12,7 +12,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - `mvn test` 全テスト PASS（yaml リポジトリ単体で緑）
 - 移送3タスク（#1〜#3）の完了時点で、全移動ファイルが `worktree-agent-a79308e7e5862d004`（`d8ba387`）と package/import を除き完全一致していた（根拠: checks/task-02.md・checks/task-03.md）
-- #4 以降の実装差分は、すべて steering の承認済みタスクに帰属し、タスク外の差分が無い（根拠: git log と git diff d8ba387..HEAD）
+- #4 以降の実装差分は、すべて steering の承認済みタスクに帰属し、タスク外の差分が無い（根拠: `git diff --stat 0df7407..HEAD -- src/main` の14ファイルについてファイル→タスク→checks/記録の対応を実測。未採番だった5コミットは `#25` として追番・記録済み（`checks/task-25.md`）。`git diff d8ba387..HEAD` は d8ba387 がこのリポジトリに存在せず取得不能——2026-08-24 `git cat-file -t d8ba387` で `Not a valid object name` を確認、移送元 worktree ブランチが消滅済みのため）
 - 本体（nablarch-testing）に一切書き込みをしていない
 - push 済み
 
@@ -483,7 +483,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #14: Evaluation sign-off
+### ~~#14: Evaluation sign-off~~
 
 **Purpose**: `steering.md` の Acceptance criteria を通しで実行し、その結果をユーザーへ提示して評価ゲートの判定を受ける。
 
@@ -495,11 +495,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - 5 項目中 5 項目 OK
     - `mvn -o clean test` 全 PASS: `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0`、BUILD SUCCESS（`2026-08-24T16:51:04+09:00`）
     - 移送3タスク（#1〜#3）完了時点の完全一致: `checks/task-02.md`（12件 diff 差分ゼロ）・`checks/task-03.md`（9件 diff 差分ゼロ）に記録済み（変更なし・再取得不要）
-    - #4 以降の実装差分の task 帰属: `git log --oneline 0df7407..HEAD`（`0df7407` = task #3 完了コミット）は #4〜#24・#20 各タスクの commit（`complete task #N` を含む fix/test/docs/refactor/chore）と対応しており、タスク外の差分はない（コミット一覧を目視で確認）
+    - #4 以降の実装差分の task 帰属: `git diff --stat 0df7407..HEAD -- src/main` の14ファイルについてファイル→タスク→`checks/` 記録の対応を実測（2026-08-24 再取得）。未採番だった5コミット（`f375fde`・`630e700`・`10feb3e`・`6ea4655`・`b309359`）は `#25` として追番・記録済み。タスク外の差分はない
     - 本体無書き込み: 本体 `../nablarch-testing` の `git status --short` 空、HEAD `2e43786`（ブランチ `convert-testdata-excel-to-text`）
     - push 済み: HEAD `5b28eb9` = `origin/feature/ntf-yaml`（`git rev-parse HEAD` と `git rev-parse origin/feature/ntf-yaml` が一致）
-- [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+- [x] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
   - **Craft/QA レビューは不要**（Rules の基準: サインオフ。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する
+  - **判定: OK**（2026-08-24 ユーザー承認）。**マージはしない。PR #1 は DRAFT のまま維持する**（`gh pr list` で状態 DRAFT を確認済み。ユーザー指示によりこの状態を変更しない）
 
 **Completion criteria**:
 
@@ -876,6 +877,25 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### ~~#25: PR #1 レビュー中の未採番修正5件の追認~~
+
+**Purpose**: `#14` step A の根拠取り直し（2026-08-24）で判明した、PR #1 レビュー中に発生したが番号未採番だった実装差分5件（`f375fde`・`630e700`・`10feb3e`・`6ea4655`・`b309359`）を追番・記録し、「#4以降の実装差分はすべて承認済みタスクに帰属」を実物と一致させる
+
+**Prerequisites**: #24
+
+**Steps**:
+
+- [x] A. 5コミットの diff を実物で確認し、内容が commit message の主張どおりであることを検証（`checks/task-25.md`）
+- [x] B. 5コミットの変更が現在のコードに反映されたまま残っていることを確認
+- [x] C. self-check を `checks/task-25.md` に記録
+
+**Completion criteria**:
+
+- `checks/task-25.md` に5コミットの内容・実物確認結果が記録されている
+- 5コミットの変更が現在のコードから失われていないことが確認されている
+
+---
+
 ### ~~#19: 手順4 — 変更差分のカバレッジ実測と未達分岐を埋めるテスト追加~~
 
 **Purpose**: このブランチが base から変更した `src/main`（10ファイル `+1843`・全部新規＝結果的にモジュール全体）について C0/C1 100% を満たす。
@@ -938,10 +958,10 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: `#14` step A（Acceptance criteria 再実行。5項目中5項目 OK）
-- **Next**: `#14` step B（**ユーザー判定待ち**。`/rn:ty` または `/rn:gm`）
+- **Last completed**: `#14` step B（判定 OK。ユーザー承認済み）— 全タスク完了
+- **Next**: なし（未チェック項目なし。追加指示待ち）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD は次の commit 後に更新）。PR なし
+  - ブランチ `feature/ntf-yaml`、push 済み。**PR #1 は DRAFT のまま維持**（`gh pr list` で確認済み）。**マージ禁止**（2026-08-24 ユーザー指示）
   - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
   - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
   - 本体 `../nablarch-testing` の HEAD は `2e43786`（ブランチ `convert-testdata-excel-to-text`）。参照のみで書き込みなし
