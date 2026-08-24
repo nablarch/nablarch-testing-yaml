@@ -800,6 +800,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Notes**:
   - ブランチ `feature/ntf-yaml`、push 済み。PR なし
   - **ユーザー回答待ちなし**（判断A/B/C は 2026-08-24 に回答済み・反映済み）
+  - #18 round 3 の却下3件（規範と記法の接続／「位置対応させる」／`[]` のバッククォート）と新事実2件の扱いは coordinator 判断で確定し、報告済み。ユーザーからの巻き戻し指示は来ていない。蒸し返さない（根拠は `checks/task-18.md` round 3 triage）
   - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
   - #22（新規・Prerequisites: #18）は `record_fragment.rows` の description が述べる挙動を実経路で固定するタスク。round 3 の実測結果（`checks/task-18.md` の「新事実」）をそのまま入力に使える
