@@ -810,44 +810,38 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #24: `:108` のカラム省略まわりの記述の乖離2件を是正する
+### #24: `:108` のカラム省略まわりの記述の乖離を是正する
 
-**Purpose**: `#22` のレビュー ラウンド1 で見つかった、`$defs.table_data.properties.rows` の**既存**記述と実装の乖離2件を潰す。2件とも `#21` の空行除去によって列名決定行が動くようになったため顕在化した。
+**Purpose**: `#22` のレビュー ラウンド1 で見つかった、`$defs.table_data.properties.rows` の**既存**記述と実装の乖離を潰す。あわせて `:361` の「ファイル系」表記を直す。いずれも `#21` の空行除去によってカラム名決定行が動くようになったため顕在化した。
 
 **Prerequisites**: #22
 
 **注**: 番号 `#23` は本体 nablarch-testing の課題番号として `#15` の表題で既出のため、衝突を避けて欠番とする。
 
-**起票時のユーザー条件（2026-08-24）**:
+**確定スコープ（2026-08-24 ユーザー指示。3点）**:
 
-- **(a) は「未検証」として起票する**。レビュー役が実物で確認したのは `TableData.java:191-193` の `!row.containsKey(columnName)` → `getDefaultValue` までであり、「**列名決定行にあって当該行で省略したカラムは NULL が INSERT される**」という帰結は追っていない。**本タスクの1手順目を、この帰結の実物確認にすること**
-- **(b) はそのまま起票してよい**
-- 2件とも「空行除去で列名決定行が動くようになったため顕在化した」経緯を記録に含めること
+- **(a)** `:108` の「各オブジェクトに含まれないカラム（省略したカラム）」**3文**の是正。setup_tables の1文だけでなく expected_tables / expected_complete_tables の2文も対象（観点D の指摘）。文面は逐語指定しない。「省略」が「全行で省略」なのか「その行で省略」なのかを読み手が区別できる書き方にし、空行除去でカラム名決定行が動く点との関係も書く
+- **(b)** `:361` の「ファイル系」を「record_fragment」に差し替える。反例が見つかったら反映せず報告する
+- **(c)** (a)(b) の波及先の特定を、**反映より前**の作業として行う。スキーマ内の相互参照と、既存テストのうち文言に依存しているものを洗い出し、**完了条件の対象に含める**
 
 **Steps**:
 
-- [x] A. **(a) の帰結を実物で確認する**。**2026-08-24 の `#22` レビュー ラウンド2 で観点A・観点B が独立に確認し、coordinator も一次情報で裏を取った**（下記「(a) の裏取り結果」）。本ステップは、この出典チェーンを再点検し INSERT の実行箇所まで通すことに置き換わる
-
-  **(a) の裏取り結果（2026-08-24）— 「列名決定行にあって当該行で省略したカラムは NULL が INSERT される」は事実**:
-  - `YamlTableDataBuilder.java:219-221` — `extractRows` は `columnNames` だけを走査し、行に無いキーは `objectToString(rowMap.get(col))` = `null` を格納する（「不在」ではなく「値 null」になる）
-  - `TableData.java:523-534` — `addRow` は `columnNames` 全件を `map.put(...)` する（値 null でもキーは入る）
-  - `TableData.java:191-193` — `if (!row.containsKey(columnName)) return getDefaultValue(columnName);`（キーがあるのでここは通らない）
-  - `TableData.java:196-199` — `Object orig = row.get(columnName); if (orig == null) { return null; }`（**coordinator が実物確認**）→ デフォルト値ではなく null が返る
-  - 解説書も同じ結論（観点B 報告）: `testdata_notation.rst:658` / `:819`「`rows:` の先頭行のキーの一部を後続の行が持たない場合、そのカラムは `null` を明示的に指定したのと同じ扱いになる」。**食い違っているのはスキーマ側**
-  - 補足: **先頭行**が省略したカラムはカラム名集合ごと落ちるため、`:108` の既存文（デフォルト値補完・FK に `"0"`・比較対象外）はその場合には正しい。誤っているのは「各オブジェクトに含まれない」という**単位の取り方**
-- [x] B. (a) の確認結果に基づき `:108` の該当**3文すべて**を是正する（**2026-08-24 観点D の指摘によりスコープ拡張。coordinator が一次情報で裏取り済み**）。「各オブジェクトに含まれないカラム（省略したカラム）の挙動はセクションにより異なる」に続く3文は、3セクションとも同じ理由で実装と食い違う:
-  - setup_tables「INSERT 時にデフォルト値が補完される」→ 列名決定行にあるカラムを後続行が省略した場合は NULL が INSERT される（step A の裏取り結果）
-  - expected_tables「省略カラムは比較対象外になる」→ **比較対象外にならない**。`Assertion.java:256` が `String[] columns = expected.getColumnNames();` を取り、`:297-302` がその全カラムを `assertEqualsAsString` で1件ずつ比較する（**coordinator が実物確認**）。列名は列名決定行のキーで確定しているため、後続行で省略したカラムは null として比較される
-  - expected_complete_tables「型ごとのデフォルト値を補完してから全カラム比較」→ 補完されるのは `allColumns - columnNames` のカラムだけ。`TableData.java:709-712` の `omittedColumns` がその差集合で、**行単位の省略は補完対象に入らない**（**coordinator が実物確認**）
-- [x] C. **(b)**: マーカーカラム `[COL]` だけが非空の行が列名決定行になったときの帰結を確認し記述する。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る、という報告を実物で裏取りしてから書く
-- [x] D. JSON 妥当性確認（`python3 -c "import json; json.load(...)"`）と `mvn -o clean test` 全 PASS
+- [x] C. **波及先の特定（反映より前）** — 実施済み。スキーマ内の相互参照3件（`:18` / `:25` / `:108` 内 FK ブロック）を是正対象に追加。description の文字列を assert するテストは**0件**のためテスト変更は不要。詳細は `checks/task-24.md`
+- [x] A. **(a) の帰結を実物で確認する** — 実施済み。`#22` レビューの出典チェーンを再点検し、**INSERT の実行箇所まで通した**（本体 `TableData.java:137-177` `insertData` と `:325-334` `getNonComputedColumns` = DB 全カラム。よって YAML に無いカラムも INSERT 文に載り `convert` の `!containsKey` 分岐でデフォルト値になる）。詳細は `checks/task-24.md` の step A
+- [x] B. **(a) の反映** — `:108` の該当3文を「(1) 全行で省略 / (2) その行だけ省略」の区別に建て直し、波及先 `:18` / `:25` / `:108` 内 FK ブロックも同じ区別に揃えた
+- [x] B2. **(b) の反映** — `:361` の見出しを「【record_fragment の rows は配列の配列】」へ。着手前に独立検証し反例なし（`$ref` 元4つ・到達するトップレベル7セクション）
+- [x] D. JSON 妥当性確認と `mvn -o clean test` 全 PASS（`Tests run: 210, Failures: 0, Errors: 0, Skipped: 0`）
 - [x] E. commit・push
 - [x] F. self-check (OK/NG per completion criterion, record in checks/task-24.md)
-- [x] G. レビュー要否は Rules の基準で判断する（description を CC が起こすため原則 **必要**）
+- [ ] G. レビュー **必要**（description を CC が起こすため。Rules の基準）
+  - **ラウンド1 = 4観点を別担当で**（A 充足 / B 整合 / C 規約 / D 検証の妥当性）。各担当のプロンプトに次の3点を必ず入れる: 実測で裏付ける／付属の検証スクリプトを正解として使わず独立に組む／敵対的に見る。**レビュー対象にレビュー役の指示文（(a) の根拠3点と (b) の案）を明示的に含める**
+  - **ラウンド2以降は差分限定2観点のみ。上限3回**。各ラウンドの指摘件数と観点を記録する
+  - レビュー用サブエージェントには個別の一意な作業ディレクトリを割り当てる
 
-**別枠の観察（`#24` の対象外。記録のみ。2026-08-24 観点D）**:
+**範囲外の欠陥（`#24` では直さず課題として起票）**:
 
-- **O-D1（未確認・本体側）**: `:108` 末尾の助言「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は、**BOOLEAN 型カラムでは NPE になる疑い**がある。`TableData.java:162-164` が `insert.setBoolean(bindIndex++, row.containsKey(col) ? row.getBoolean(col) : (Boolean) getDefaultValue(col))` で、`SqlRow#getBoolean` が null を返すと `SqlPStatement#setBoolean(int, boolean)` の unboxing で落ちると読める。**静的読解のみで実行未確認**。本体 nablarch-testing の挙動で Excel 経路と共通のため YAML 側が持ち込んだ乖離ではない
+- **X-1**: 旧 step C（マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る）は、スコープ確定で `#24` から外れた。**未実施・未検証**。別タスクとして起票が必要
+- **O-D1（未確認・本体側）**: `:108` 末尾の助言「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は、**BOOLEAN 型カラムでは NPE になる疑い**がある。本体 `TableData.java:162-163` が `insert.setBoolean(bindIndex++, row.containsKey(col) ? row.getBoolean(col) : (Boolean) getDefaultValue(col))` で、`SqlRow#getBoolean` が null を返すと `setBoolean(int, boolean)` の unboxing で落ちると読める。**静的読解のみで実行未確認**。本体 Excel 経路と共通のため YAML 側が持ち込んだ乖離ではない
 - **O-D2（軽微）**: `list_maps` がテストコードへ渡す Map は `TreeMap`（キー昇順）である（`YamlTableDataBuilder.java:193`）。`:136` の「そのまま渡す」は記述順を保つとは書いていないので誤りではないが、キー順は観測されうる
 - **O-D3（軽微）**: `testShots` が空のとき web 経路は旧 ID `testCases` へフォールバックし、両方空のときだけ例外になる（`AbstractHttpRequestTestTemplate.java:220-229`）。`:136` の「エラーになる」は既存 `:132` と同じ簡略化で、ファイル内では整合している
 
@@ -855,6 +849,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - (a) の帰結が実物の出典（ファイル:行番号）つきで確定している
 - `:108` の記述が (a)(b) いずれについても実装と食い違わない
+- step C で特定した波及先が是正されている
 - `description` 以外のスキーマ要素が変更されていない
 - `mvn -o clean test` が BUILD SUCCESS
 
