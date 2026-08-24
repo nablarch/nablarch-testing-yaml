@@ -34,6 +34,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - javadoc 生成時に「モジュールが使用されていますが…java 8 api」の WARNING 1個が出るが、`maven-javadoc-plugin 2.10.4`（親 POM 固定）と Java 9+ モジュールシステムの非互換によるもので許容済み
 - mvn は**単独実行**する（並行実行でビルドが汚染された実績あり）。`BUILD SUCCESS` だけを根拠にせず `Tests run:` の行を確認する
 - **AskUserQuestion は使わない**（2026-08-24 ユーザー指示）。判断を仰ぐときは本文に書く
+- **Craft/QA レビューの要否は次の基準で判断する**（2026-08-24 ユーザー指示。都度確認しない）
+  - **必要**: CC が設計・実装するタスク（コード修正・テスト追加）
+  - **不要**: ユーザーが文言・構造を逐語指定したタスク／実測・計測タスク／ビルド・サインオフ
+  - 不要としたタスクでは、レビューの代わりに **実行コマンドと生の出力、適用後の全文、diff** を報告する
+  - 現行タスクへの当てはめ: #21 必要 / #22 必要 / #19 不要 / #20 不要 / #14 不要
+  - 基準の当てはめに迷う新タスクが出たときだけユーザーに聞く
 - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
 
 # Tasks
@@ -492,6 +498,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
     - push 済み: HEAD `99376b1` = `origin/feature/ntf-yaml`
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
   - **保留（2026-08-21）**: 同一ブランチに #15〜#20 を追加したため step A の実行結果は陳腐化した。sign-off は #20 完了後に step A を再実行してから受ける。
+  - **Craft/QA レビューは不要**（Rules の基準: サインオフ。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する
 
 **Completion criteria**:
 
@@ -638,6 +645,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 解説書との差: `rst:883` は `""` 補完を「可変長ファイルでは、…」で始まる節に置いている（同じ文の後半は「固定長ファイルの場合はスペースパディングされた定長レコードとして書き出される」と固定長にも触れており、節の切り方だけが実装より狭い）→ ⑥ nablarch-document の報告書候補
 
 - [x] Q. 修正後、Craft(writing) と QA を再々実行する — 実行済み。**QA pass / Craft fail**。完了条件5件は両者とも全 OK。Valid は Craft F2（「各配列の」の主語補い）の1件のみで修正済み。他は却下・Invalid・報告書候補・`#22` へ帰属。判定・根拠・triage・round 3 の新実測は `checks/task-18.md` の round 3 セクション
+- [x] R. **round 3 却下判断へのユーザー回答（2026-08-24）**: Craft F1（接続詞を足す）・Craft F5（`[]` のバッククォート）の**却下は支持**。新事実1・2 の扱い（1=⑥ 報告書候補へ／2=`#22` で扱う）も**両方支持**。QA の `null` 指摘への反証（新事実3: `半角` 型の不足フィールドは `null` ではなく空文字）も**支持**。**Craft F4 の却下のみ覆る** — 「位置対応させる」に前例が無いのは事実だが、その前例を `#18` 自身が `:386` から消していた。`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `:386` = 「フィールド値のリスト。**fields の順序で先頭から対応付けられる。**数値・真偽値も文字列（クォート付き）で記述すること」を実物で確認済み。**単独ラウンドは立てず、`#22` step A0 で `:377` を「先頭から対応付ける」へ戻す**
 
 **Completion criteria**:
 
@@ -714,6 +722,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
+- [ ] A0. **`#18` step R の F4 適用**: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
 - [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
 - [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
 - [ ] C. 以下3件を最低限の対象として固定する（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` の経路）
@@ -757,8 +766,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] F. 再計測して `INSTRUCTION_MISSED` / `BRANCH_MISSED` が 0 であることを確認する
 - [ ] G. commit・push
 - [ ] H. self-check (OK/NG per completion criterion, record in checks/task-19.md)
-- [ ] I. QA expert review (subagent)
-- [ ] J. Verification expert review — test (subagent)
+- [ ] I. **Craft/QA レビューは不要**（Rules の基準: 実測・計測タスク。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力、適用後の全文と diff** を報告する
 
 **Completion criteria**:
 
@@ -783,6 +791,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] B. `mvn -o install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
 - [ ] C. `~/.m2/.../nablarch-testing-yaml-1.0.0-SNAPSHOT.jar` のタイムスタンプが実行時刻へ更新されたことを確認する（着手前は 2026-08-18 09:30:03）
 - [ ] D. self-check (OK/NG per completion criterion, record in checks/task-20.md)
+- [ ] E. **Craft/QA レビューは不要**（Rules の基準: ビルド。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する
 
 **Completion criteria**:
 
@@ -793,15 +802,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
+- **Status**: active
 - **Date**: 2026-08-24
 - **Last completed**: #18
-- **Next**: #21 step A — RED（全値が空文字の行を先頭・中間に置くテストを3経路に追加し、失敗を確認する）
+- **Next**: #21 step A — RED（全値が空文字の行を先頭・中間に置くテストを3経路に追加し、失敗を確認する）。#22 は #21 と並行で進めてよい（2026-08-24 ユーザー指示）
 - **Notes**:
   - ブランチ `feature/ntf-yaml`、push 済み。PR なし
-  - **ユーザー回答待ちなし**（判断A/B/C は 2026-08-24 に回答済み・反映済み）
-  - #18 round 3 の却下3件（規範と記法の接続／「位置対応させる」／`[]` のバッククォート）と新事実2件の扱いは coordinator 判断で確定し、報告済み。ユーザーからの巻き戻し指示は来ていない。蒸し返さない（根拠は `checks/task-18.md` round 3 triage）
+  - **ユーザー回答待ちなし**（#18 round 3 の却下判断は 2026-08-24 に回答済み・#18 step R に反映）
+  - #18 の残作業は **`#22` step A0 の1件のみ**（`:377` の「位置対応させる」→「先頭から対応付ける」）。単独ラウンドは立てない
+  - Craft/QA レビューの要否は Rules の基準で判断する（都度聞かない）。#21 必要 / #22 必要 / #19 不要 / #20 不要 / #14 不要
   - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - #22（新規・Prerequisites: #18）は `record_fragment.rows` の description が述べる挙動を実経路で固定するタスク。round 3 の実測結果（`checks/task-18.md` の「新事実」）をそのまま入力に使える
-  - ⑥ nablarch-document への報告書候補は `checks/task-18.md` の「⑥ nablarch-document への報告書候補（round 3 時点の一覧）」に一覧化済み（5件）
+  - ⑥ nablarch-document への報告書候補は `checks/task-18.md` の「⑥ nablarch-document への報告書候補」に一覧化済み（`rst:883` の2件は**セットで報告する**）
