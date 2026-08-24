@@ -613,12 +613,22 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] J. Craft expert review — writing (subagent) — **NG**（NG-1 親子矛盾／NG-2・NG-3 `:386` の重複／NG-4 `:377` の曖昧さ）
 - [x] K. Verification expert review — fact-check (subagent) — **OK**（主張A〜F すべて真。旧記述「一致しない場合はエラー」は条件付きでも真でないことを確認）
 - [x] L. **判断（2026-08-24 ユーザー回答: 直す。ただし言い換えではなく削除）**: 同 `$defs.record_fragment` の**親 `description`**（スキーマ `:361`）に残る「rows の各配列は fields と完全に同じ順序・**同じ件数**で値を並べること（NTF パーサが列順で対応付ける）」は、子（`:377`）と矛盾するため**第3文を丸ごと削除**する。第1文・第2文は残す。理由（ユーザー）: `:377` の第1・2文が同じ内容を件数の扱いまで含めて正確に述べており、親に言い換えを残すと同一画面内の相互参照が増えるだけで新情報がない
-- [ ] M. 以下3点を**1ラウンド**で実装エキスパートに修正させる（`description` 以外は触らない）
+- [x] M. 以下3点を**1ラウンド**で実装エキスパートに修正させる（`description` 以外は触らない） — 完了（`60b2678`。3点とも指示どおり適用、`Tests run: 187, Failures: 0, Errors: 0, Skipped: 0`）
   - `:361` 第3文「rows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（NTF パーサが列順で対応付ける）」を**丸ごと削除**する（直前の `\n` ごと）。第1文・第2文は変更しない
   - `:386`（`items.description`）から「fields の順序で先頭から対応付けられる。」の**一文だけを削除**する（`:377` 第2文と同内容）。「フィールド値のリスト。」は items の要素が何かを示す唯一の記述なので**残す**。「数値・真偽値も文字列（クォート付き）で記述すること」も残す
   - `:377` 第3文 →「各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `""` が設定される」（Craft NG-4 = Valid: **値**の不足なのに「不足したフィールド」ではフィールド定義の不足とも読める。「補完」は `:108` で「カラム型ごとのデフォルト値」の意味に使われており二義）
   - QA 指摘「多い場合は無言で切り捨てられる旨を書く」は **Invalid**（ユーザー承認済み）。スキーマには書かず、報告書候補として `checks/task-18.md` の Triage に残す
-- [ ] N. 修正後、Craft(writing) と QA を再実行する（Verification は事実主張が変わらないため再実行不要。変えるなら再実行する）
+- [x] N. 修正後、Craft(writing) と QA を再実行する（Verification は事実主張が変わらないため再実行不要）— 実行済み。**両者とも総合 fail**。完了条件5件は両者とも全 OK で、落ちた理由は完了条件の外側。判定・根拠・triage は `checks/task-18.md` の round 2 セクション
+- [ ] O. **判断待ち（回答が来たらここから再開）**: 以下3件。coordinator の推奨を添えて提示済み
+  - **判断A（本命）: 順序・件数の「規範」を `:377` に書き戻すか**。`#18` で `:377` から「同件数」を、`:361` から第3文を落とした結果、`$defs.record_fragment` に規範が1文も残っていない。解説書は維持している（`testdata_notation.rst:1143` / `:1300` = 「``fields:`` と同じ順序・同じ件数で値を並べる」）。**推奨: 書き戻す**（案: `:377` を「各要素は fields と同じ順序・同じ件数で値を並べること（NTF は fields の順序で対応付ける）。要素数が…より少ない場合は…」の形へ）。書き戻さないと「末尾は省いてよい」と読める
+  - **判断B（軽微）: `:386` の順序記述を落としたままでよいか**。QA F3 の反証は「IDE 補完はカーソル位置ノードの description を出す」だが**未確認**。**推奨: 現状維持**（判断A で `:377` に規範を戻せば順序情報はそこに集約される）
+  - **判断C: description が述べる挙動を実経路で固定するテストを足すか、足すならどこで**。先例 `YamlFileBuilderTest.java:526-542`（#13 で追加）。`#18` の完了条件は description 限定のためスコープ拡大。**推奨: 新タスク化**（`#19` はカバレッジ計測が目的で性質が違う）
+- [ ] P. 判断A の回答を受け、round 2 の **Valid 4件**と合わせて**1ラウンド**で実装エキスパートに修正させる
+  - `:361` 末尾の `。` を削除（schema 内 description 全64件中、`。` 終わりはこの1件のみ。本差分が持ち込んだ）
+  - `:377`「値を指定しなかったフィールド」→ 末尾限定の表現へ（実装は位置対応 `DataFileFragment.java:107`。解説書 `rst:787`「記述しなかった分のカラム」）
+  - `:377`「0件も有効」→「`rows` が0件でも有効」（「要素数0の配列」と読むと `rst:883` の実挙動と正反対になる）
+  - `:386` に「必ず」を追加（`:108` `:136` と揃える）
+- [ ] Q. 修正後、Craft(writing) と QA を再々実行する
 
 **Completion criteria**:
 
@@ -739,8 +749,17 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-24
+- **Last completed**: #17（#18 は step A〜N 完了、O/P/Q が残り）
+- **Next**: #18 step O — 判断A/B/C のユーザー回答を受け、step P で Valid 4件と合わせて1ラウンド修正 → step Q で Craft/QA 再々実行 → チェックオフ
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、push 済み。PR なし
+  - **ユーザー回答待ち3件**（回答があるまで着手しない。全文と推奨は #18 step O、根拠は `checks/task-18.md` の round 2 triage）:
+    1. 判断A — 順序・件数の規範を `:377` に書き戻すか（推奨: 書き戻す）
+    2. 判断B — `:386` の順序記述を落としたままでよいか（推奨: 現状維持）
+    3. 判断C — description が述べる挙動を固定するテストを足すか、足すならどこで（推奨: 新タスク化）
+  - 判断Aの回答が来たら step P で Valid 4件と**同じラウンド**で直す（4件とも `:361` / `:377` / `:386` に集中しており分ける理由がない）
+  - #20 step A の install 判断待ちも未回答のまま（内容は #20 に記載済み）
+  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
+  - 報告書候補（`checks/task-18.md` round 2 triage に記録）: 「多い場合は無言で切り捨て」／Craft の軽微指摘4件（冗長・主語・「同順」・「要素数/件数」）／完了条件が実挙動との一致を問うていない点
