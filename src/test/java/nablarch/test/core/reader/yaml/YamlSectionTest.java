@@ -397,4 +397,111 @@ public class YamlSectionTest {
         assertThat("大文字小文字が保持されること",
                 result, is(Arrays.asList("pkCol1", "PK_COL2", "Varchar2Col")));
     }
+
+    // ========================================================================
+    // dropBlankRows: 行として存在しないもの（空マッピング・全値が null／空文字）を取り除くこと
+    // ========================================================================
+
+    /**
+     * 値を指定して記述順を保つ行（{@link LinkedHashMap}）を組み立てる。
+     */
+    private static Map<String, Object> rowOf(Object... keyValues) {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            map.put((String) keyValues[i], keyValues[i + 1]);
+        }
+        return map;
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: 空マッピング行と全ての値が null／空文字の行が取り除かれること。
+     *
+     * <p>
+     * Given: 空マッピング行・全ての値が空文字の行・全ての値が null の行・値を持つ行 からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  値を持つ行 1 件のみが記述順で返ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_removesEmptyMappingAndAllBlankValueRows() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(
+                rowOf(),
+                rowOf("COL_A", "", "COL_B", ""),
+                rowOf("COL_A", null, "COL_B", null),
+                rowOf("COL_A", "v", "COL_B", ""));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("値を持つ行のみ残ること", result.size(), is(1));
+        assertThat("残った行が値を持つ行であること", result.get(0), is((Object) rowOf("COL_A", "v", "COL_B", "")));
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: 値が 1 つでも非空なら行が残ること（null と空文字が混在していても同じ）。
+     *
+     * <p>
+     * Given: null・空文字・非空文字 が混在する行 1 件からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  その行が残ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_keepsRowHavingAnyNonBlankValue() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(rowOf("COL_A", null, "COL_B", "", "COL_C", "v"));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("値が 1 つでも非空なら残ること", result.size(), is(1));
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: マーカーカラムだけが値を持つ行も残ること。
+     *
+     * <p>
+     * 依存先 nablarch-testing の空行判定は行の全セルを対象とするため、マーカーカラムの値も
+     * 空行判定の対象に含める。<br>
+     * Given: "[NO]" のみ値を持ち他は空文字の行 1 件からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  その行が残ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_keepsRowHavingOnlyMarkerColumnValue() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(rowOf("[NO]", "1", "COL_A", ""));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("マーカーカラムの値も空行判定の対象になるため残ること", result.size(), is(1));
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: マッピングでない行（スカラ等）が取り除かれること。
+     *
+     * <p>
+     * Given: String 行・Integer 行・値を持つ行 からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  値を持つ行 1 件のみが返ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_removesNonMappingRows() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList("scalar", 42, rowOf("COL_A", "v"));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("マッピングでない行が取り除かれること", result.size(), is(1));
+        assertThat(result.get(0), is((Object) rowOf("COL_A", "v")));
+    }
 }

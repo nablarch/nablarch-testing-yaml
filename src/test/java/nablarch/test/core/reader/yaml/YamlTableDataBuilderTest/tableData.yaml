@@ -90,6 +90,55 @@ setup_tables:
         VARCHAR2_COL: "third"
 
 
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
+  - group_id: blankValueRowLeading
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: null
+      - PK_COL1: "0000000050"
+        PK_COL2: "GG"
+        VARCHAR2_COL: "leading"
+        NUMBER_COL: "50"
+        NUMBER_COL2: "50.0"
+
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  - group_id: blankValueRowMiddle
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000051"
+        PK_COL2: "HH"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "51"
+        NUMBER_COL2: "51.0"
+      - PK_COL1: ""
+        PK_COL2: null
+        VARCHAR2_COL: ""
+        NUMBER_COL: null
+        NUMBER_COL2: ""
+      - PK_COL1: "0000000052"
+        PK_COL2: "II"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "52"
+        NUMBER_COL2: "52.0"
+
+  # 値が 1 つでも非空なら行として保持される（他は null／空文字）。
+  - group_id: partiallyBlankValueRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000053"
+        PK_COL2: "JJ"
+        VARCHAR2_COL: ""
+        NUMBER_COL: null
+        NUMBER_COL2: ""
+      - PK_COL1: ""
+        PK_COL2: null
+        VARCHAR2_COL: ""
+        NUMBER_COL: null
+        NUMBER_COL2: ""
+
+
 list_maps:
   - id: testListMap
     rows:
@@ -149,6 +198,36 @@ list_maps:
         KEY2: "val2"
       - KEY1: "third"
 
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
+  - id: blankValueRowLeadingListMap
+    rows:
+      - KEY9: ""
+        KEY8: null
+      - KEY1: "second"
+        KEY2: "val2"
+
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  - id: blankValueRowMiddleListMap
+    rows:
+      - KEY1: "before"
+        KEY2: "val1"
+      - KEY1: ""
+        KEY2: null
+      - KEY1: "after"
+        KEY2: "val2"
+
+  # 値が 1 つでも非空なら行として保持される（他は null／空文字）。
+  - id: partiallyBlankValueRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: ""
+        KEY3: null
+      - KEY1: ""
+        KEY2: null
+        KEY3: ""
+
+
 expected_tables:
   - group_id: markerColInTable
     table: TEST_TABLE
@@ -177,3 +256,53 @@ expected_tables:
       - PK_COL1: "0000000041"
         PK_COL2: "FF"
         VARCHAR2_COL: "expected2"
+
+
+  # 空マッピング（{}）の行は中間に置いても行として存在しないものとして扱われる。
+  - group_id: emptyRowMixedExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000060"
+        PK_COL2: "KK"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "60"
+        NUMBER_COL2: "60.0"
+      - {}
+      - PK_COL1: "0000000061"
+        PK_COL2: "LL"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "61"
+        NUMBER_COL2: "61.0"
+
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
+  - group_id: blankValueRowLeadingExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: null
+      - PK_COL1: "0000000062"
+        PK_COL2: "MM"
+        VARCHAR2_COL: "leading"
+        NUMBER_COL: "62"
+        NUMBER_COL2: "62.0"
+
+  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  - group_id: blankValueRowMiddleExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000063"
+        PK_COL2: "NN"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "63"
+        NUMBER_COL2: "63.0"
+      - PK_COL1: ""
+        PK_COL2: null
+        VARCHAR2_COL: ""
+        NUMBER_COL: null
+        NUMBER_COL2: ""
+      - PK_COL1: "0000000064"
+        PK_COL2: "OO"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "64"
+        NUMBER_COL2: "64.0"

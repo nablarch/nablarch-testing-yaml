@@ -752,17 +752,17 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: rows に空マッピング（{}）が含まれる場合は空 Map として返ること。
+     * [YamlTableDataBuilder] buildListMapRows: rows 内の空エントリ（{}）は読み飛ばされること。
      *
      * <p>
-     * buildListMapRows (private) の rawRow.isEmpty() == true 分岐: 空マッピング行は空の TreeMap として結果に含まれる。<br>
+     * 空マッピング行は行として存在しないものとして扱われ、結果に含まれない。<br>
      * Given: list_maps の emptyRowListMap に 通常行・{} 行・通常行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "emptyRowListMap", path) を呼ぶ<br>
-     * Then:  3 件返り、2件目が空 Map であること
+     * Then:  {} 行がスキップされ、通常行 2 件のみ返ること
      * </p>
      */
     @Test
-    public void buildListMapRows_emptyRowIncludedAsEmptyMap() {
+    public void buildListMapRows_emptyRowEntrySkipped() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
@@ -770,10 +770,11 @@ public class YamlTableDataBuilderTest {
         List<Map<String, String>> result = buildListMapRows(yaml, "emptyRowListMap", DIR);
 
         // Then
-        assertThat("3 件返ること（空行を含む）", result.size(), is(3));
+        assertThat("空エントリ {} をスキップして 2 件のみ返ること", result.size(), is(2));
         assertThat("1 件目の KEY1 が正しいこと", result.get(0).get("KEY1"), is("before"));
-        assertTrue("2 件目（空マッピング行）は空 Map であること", result.get(1).isEmpty());
-        assertThat("3 件目の KEY1 が正しいこと", result.get(2).get("KEY1"), is("after"));
+        assertFalse("1 件目は空 Map でないこと", result.get(0).isEmpty());
+        assertThat("2 件目の KEY1 が正しいこと", result.get(1).get("KEY1"), is("after"));
+        assertFalse("2 件目は空 Map でないこと", result.get(1).isEmpty());
     }
 
     /**
@@ -1064,8 +1065,8 @@ public class YamlTableDataBuilderTest {
      * 3 行目は KEY2 を持たないので、列名が 3 行目由来になっていれば 2 件目の KEY2 が落ちて検出できる。<br>
      * Given: list_maps の leadingEmptyRowListMap に {} 行・KEY1/KEY2 の行・KEY1 のみの行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "leadingEmptyRowListMap", path) を呼ぶ<br>
-     * Then:  3 件返り、1 件目は空 Map、2・3 件目は 2 行目のキーから解決した列を持つこと
-     *        （3 件目に無い KEY2 は null で保持されること）
+     * Then:  先頭 {} を除く 2 件が返り、いずれも 2 行目のキーから解決した列を持つこと
+     *        （2 件目に無い KEY2 は null で保持されること）
      * </p>
      */
     @Test
@@ -1077,15 +1078,248 @@ public class YamlTableDataBuilderTest {
         List<Map<String, String>> result = buildListMapRows(yaml, "leadingEmptyRowListMap", DIR);
 
         // Then
-        assertThat("3 件返ること（先頭の空行を含む）", result.size(), is(3));
-        assertTrue("1 件目（空マッピング行）は空 Map であること", result.get(0).isEmpty());
+        assertThat("先頭 {} を除く 2 件が返ること", result.size(), is(2));
         assertThat("列名が先頭の非空マッピング行（2 行目）のキーで決まること",
+                new ArrayList<String>(result.get(0).keySet()), is(Arrays.asList("KEY1", "KEY2")));
+        assertThat("1 件目の KEY1 が保持されること", result.get(0).get("KEY1"), is("second"));
+        assertThat("1 件目の KEY2 が保持されること", result.get(0).get("KEY2"), is("val2"));
+        assertThat("2 件目も 2 行目のキーで列が決まること",
                 new ArrayList<String>(result.get(1).keySet()), is(Arrays.asList("KEY1", "KEY2")));
-        assertThat("2 件目の KEY1 が保持されること", result.get(1).get("KEY1"), is("second"));
-        assertThat("2 件目の KEY2 が保持されること", result.get(1).get("KEY2"), is("val2"));
-        assertThat("3 件目も 2 行目のキーで列が決まること",
-                new ArrayList<String>(result.get(2).keySet()), is(Arrays.asList("KEY1", "KEY2")));
-        assertThat("3 件目の KEY1 が保持されること", result.get(2).get("KEY1"), is("third"));
-        assertNull("3 件目が持たない KEY2 は null になること", result.get(2).get("KEY2"));
+        assertThat("2 件目の KEY1 が保持されること", result.get(1).get("KEY1"), is("third"));
+        assertNull("2 件目が持たない KEY2 は null になること", result.get(1).get("KEY2"));
+    }
+
+    // ========================================================================
+    // 全ての値が null または空文字の行が、行として存在しないものとして扱われること
+    // ========================================================================
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables の先頭行の値が全て null／空文字の場合、その行が列名解決からもデータ行からも除外されること。
+     *
+     * <p>
+     * 全ての値が null または空文字の行は、Excel の全セル空行と同様に行として存在しないものとして扱う。
+     * 先頭行のキー集合を後続行と変えてあるので、列名がその行から決まっていれば列名リストが食い違って落ちる。<br>
+     * Given: setup_tables の blankValueRowLeading グループに 値が全て空の 2 キーの行・5 キーの通常行 の 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[blankValueRowLeading]", false, path) を呼ぶ<br>
+     * Then:  列名が 2 行目の 5 キーで決まり、データ行は 1 件のみになること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_blankValueRowLeadingExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[blankValueRowLeading]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("列名が値を持つ行（2 行目）のキーで YAML 記述順に決まること",
+                Arrays.asList(result.get(0).getColumnNames()),
+                is(Arrays.asList("PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2")));
+        assertThat("先頭の全値空行を除く 1 行のみ返ること", result.get(0).size(), is(1));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000050"));
+        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("leading"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables の中間行の値が全て null／空文字の場合、その行が除外されること。
+     *
+     * <p>
+     * Given: setup_tables の blankValueRowMiddle グループに 通常行・値が全て空の行・通常行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[blankValueRowMiddle]", false, path) を呼ぶ<br>
+     * Then:  全値空の行がスキップされ、2 行のみ返ること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_blankValueRowMiddleExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[blankValueRowMiddle]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("中間の全値空行をスキップして 2 行のみ返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000051"));
+        assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000052"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: 値が 1 つでも非空の行は保持されること。
+     *
+     * <p>
+     * 除去対象は「全ての値が null または空文字」の行だけであり、1 つでも非空の値を持つ行は
+     * 従来どおりデータ行として扱われる。<br>
+     * Given: setup_tables の partiallyBlankValueRow グループに 一部のみ値を持つ行・値が全て空の行 の 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[partiallyBlankValueRow]", false, path) を呼ぶ<br>
+     * Then:  一部のみ値を持つ行だけが 1 行返り、空文字カラムは空文字・null カラムは null で保持されること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_partiallyBlankValueRowKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[partiallyBlankValueRow]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("値を 1 つでも持つ行のみ 1 行返ること", result.get(0).size(), is(1));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000053"));
+        assertThat(result.get(0).getValue(0, "PK_COL2").toString(), is("JJ"));
+        assertThat("空文字のカラムは空文字のまま保持されること",
+                result.get(0).getValue(0, "VARCHAR2_COL").toString(), is(""));
+        assertNull("null のカラムは null のまま保持されること", result.get(0).getValue(0, "NUMBER_COL"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の先頭行の値が全て null／空文字の場合、その行が列名解決からもデータ行からも除外されること。
+     *
+     * <p>
+     * Given: expected_tables の blankValueRowLeadingExpected グループに 値が全て空の 2 キーの行・5 キーの通常行 の 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[blankValueRowLeadingExpected]", false, path) を呼ぶ<br>
+     * Then:  列名が 2 行目の 5 キーで決まり、データ行は 1 件のみになること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_blankValueRowLeadingInExpectedTableExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[blankValueRowLeadingExpected]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("列名が値を持つ行（2 行目）のキーで YAML 記述順に決まること",
+                Arrays.asList(result.get(0).getColumnNames()),
+                is(Arrays.asList("PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2")));
+        assertThat("先頭の全値空行を除く 1 行のみ返ること", result.get(0).size(), is(1));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000062"));
+        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("leading"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の中間行の値が全て null／空文字の場合、その行が除外されること。
+     *
+     * <p>
+     * Given: expected_tables の blankValueRowMiddleExpected グループに 通常行・値が全て空の行・通常行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[blankValueRowMiddleExpected]", false, path) を呼ぶ<br>
+     * Then:  全値空の行がスキップされ、2 行のみ返ること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_blankValueRowMiddleInExpectedTableExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[blankValueRowMiddleExpected]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("中間の全値空行をスキップして 2 行のみ返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000063"));
+        assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000064"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の rows 内の空エントリ（{}）は読み飛ばされること。
+     *
+     * <p>
+     * Given: expected_tables の emptyRowMixedExpected グループに 通常行・{} 行・通常行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[emptyRowMixedExpected]", false, path) を呼ぶ<br>
+     * Then:  {} 行がスキップされ、2 行のみ返ること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_emptyRowEntryInExpectedTableSkipped() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[emptyRowMixedExpected]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("空エントリ {} をスキップして 2 行のみ返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000060"));
+        assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000061"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: list_maps の先頭行の値が全て null／空文字の場合、その行が列名解決からも結果からも除外されること。
+     *
+     * <p>
+     * 先頭行のキー集合を後続行と変えてあるので、列名がその行から決まっていれば結果のキーが食い違って落ちる。<br>
+     * Given: list_maps の blankValueRowLeadingListMap に 値が全て空の KEY9/KEY8 の行・KEY1/KEY2 の行 の 2 エントリ<br>
+     * When:  buildListMapRows(yaml, "blankValueRowLeadingListMap", path) を呼ぶ<br>
+     * Then:  1 件のみ返り、そのキーが 2 行目の KEY1／KEY2 であること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_blankValueRowLeadingExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "blankValueRowLeadingListMap", DIR);
+
+        // Then
+        assertThat("先頭の全値空行を除く 1 件のみ返ること", result.size(), is(1));
+        assertThat("列名が値を持つ行（2 行目）のキーで決まること",
+                new ArrayList<String>(result.get(0).keySet()), is(Arrays.asList("KEY1", "KEY2")));
+        assertThat(result.get(0).get("KEY1"), is("second"));
+        assertThat(result.get(0).get("KEY2"), is("val2"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: list_maps の中間行の値が全て null／空文字の場合、その行が除外されること。
+     *
+     * <p>
+     * Given: list_maps の blankValueRowMiddleListMap に 通常行・値が全て空の行・通常行 の 3 エントリ<br>
+     * When:  buildListMapRows(yaml, "blankValueRowMiddleListMap", path) を呼ぶ<br>
+     * Then:  全値空の行がスキップされ、2 件のみ返ること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_blankValueRowMiddleExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "blankValueRowMiddleListMap", DIR);
+
+        // Then
+        assertThat("中間の全値空行をスキップして 2 件のみ返ること", result.size(), is(2));
+        assertThat(result.get(0).get("KEY1"), is("before"));
+        assertThat(result.get(1).get("KEY1"), is("after"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 値が 1 つでも非空の行は保持されること。
+     *
+     * <p>
+     * Given: list_maps の partiallyBlankValueRowListMap に 一部のみ値を持つ行・値が全て空の行 の 2 エントリ<br>
+     * When:  buildListMapRows(yaml, "partiallyBlankValueRowListMap", path) を呼ぶ<br>
+     * Then:  一部のみ値を持つ行だけが 1 件返り、空文字キーは空文字・null キーは null で保持されること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_partiallyBlankValueRowKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "partiallyBlankValueRowListMap", DIR);
+
+        // Then
+        assertThat("値を 1 つでも持つ行のみ 1 件返ること", result.size(), is(1));
+        assertThat(result.get(0).get("KEY1"), is("kept"));
+        assertThat("空文字のキーは空文字のまま保持されること", result.get(0).get("KEY2"), is(""));
+        assertNull("null のキーは null のまま保持されること", result.get(0).get("KEY3"));
     }
 }

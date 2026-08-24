@@ -17,6 +17,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TABLE;
 import static nablarch.test.core.reader.yaml.YamlSection.KEY_LIST_MAPS;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
+import static nablarch.test.core.reader.yaml.YamlSection.dropBlankRows;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
 import static nablarch.test.core.reader.yaml.YamlSection.interpret;
@@ -33,8 +34,9 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * YAML トップレベル Map（{@link YamlLoader#load} が返す順序保持 Map）を走査し、構造の写し取りと
  * 値加工（特殊記法 {@code ${...}} の解釈・{@code ${binaryFile:}} の basePath 解決・マーカーカラム除外・
- * デフォルト値補完・グループ ID 絞り込み）を一括で行う。カラム名は各エントリ先頭のキーを持つ行のキー
- * （マーカー含む・YAML 記述順）から決定する。
+ * デフォルト値補完・グループ ID 絞り込み）を一括で行う。空マッピング（{@code {}}）の行と全ての値が
+ * {@code null} または空文字の行は、列名解決より前に {@link YamlSection#dropBlankRows} で取り除く。
+ * カラム名は取り除いた後の先頭行のキー（マーカー含む・YAML 記述順）から決定する。
  * </p>
  *
  * @author kiyotis
@@ -84,7 +86,9 @@ public final class YamlTableDataBuilder {
                         "Missing required field 'table' in " + sectionKey + " entry. groupId=" + groupId
                                 + ", basePath=" + basePath);
             }
-            List<Object> rows = getList(map, FIELD_ROWS);
+            // 行として存在しないもの（空マッピング、および全ての値が null／空文字の行）を
+            // 列名解決・値加工より前に取り除く（依存先 nablarch-testing の空行判定と同じ順序）。
+            List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
             List<String> columnNames = resolveColumns(rows);
             List<List<String>> rawRows = extractRows(rows, columnNames);
             // rows が空（rows: []）のテーブルも 0 行の TableData として生成する。
@@ -101,8 +105,9 @@ public final class YamlTableDataBuilder {
      * 1 エントリ分の {@link TableData} を組み立てる。
      *
      * <p>
-     * キーを持つ行が 1 つも無い場合（例えば rows が空（{@code rows: []}）のとき）は、列名が 0 件のまま
-     * 渡ってくる（詳細は下の {@code new TableData(...)} 直前のコメント）。
+     * キーを持つ行が 1 つも無い場合（例えば rows が空（{@code rows: []}）のときや、全行が
+     * 行として存在しないものとして取り除かれたとき）は、列名が 0 件のまま渡ってくる
+     * （詳細は下の {@code new TableData(...)} 直前のコメント）。
      * 0 件のまま渡してよい根拠は {@code fillDefaults} で分かれる。
      * </p>
      * <ul>
@@ -137,15 +142,11 @@ public final class YamlTableDataBuilder {
             }
         }
         // 列名は先頭のキーを持つ行のキーから決まる（YamlSection#resolveColumns）。キーを持つ行が
-        // 1 つも無い場合（例えば rows が空（rows: []）のとき）は列名 0 件になるが、
+        // 1 つも無い場合（例えば rows が空（rows: []）のときや、全行が取り除かれたとき）は列名 0 件になるが、
         // YAML に列名を書く場所が無いためここで作り出すことはしない。本ビルダは getColumns を提供しない
         // DbInfo 実装と組み合わせて読み込み専用に使われうるので、dbInfo.getColumns にも依存させない。
         TableData td = new TableData(dbInfo, tableName, dataColumns.toArray(new String[0]), defaultValues);
         for (List<String> rawRow : rawRows) {
-            if (rawRow.isEmpty()) {
-                // 空マッピング（{}）行はデータ行として扱わない。
-                continue;
-            }
             List<String> values = new ArrayList<String>(dataColumnIndexes.size());
             for (int idx : dataColumnIndexes) {
                 values.add(interpret(rawRow.get(idx), interps));
@@ -163,7 +164,8 @@ public final class YamlTableDataBuilder {
      *
      * <p>
      * 出力 Map のキー順は従来どおり {@link TreeMap} でソートする（本体読み込みの振る舞い不変）。
-     * マーカーカラム（{@code [COL]}）は DB 操作対象外として除外する。
+     * マーカーカラム（{@code [COL]}）は DB 操作対象外として除外する。行として存在しないもの
+     * （空マッピング、および全ての値が null／空文字の行）は列名解決より前に取り除く。
      * </p>
      *
      * @param yaml     YAML トップレベル Map
@@ -176,7 +178,7 @@ public final class YamlTableDataBuilder {
         for (Object entry : getList(yaml, KEY_LIST_MAPS)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
-                List<Object> rows = getList(map, FIELD_ROWS);
+                List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
                 List<String> columnNames = resolveColumns(rows);
                 return buildListMapRows(columnNames, extractRows(rows, columnNames), interps);
             }
@@ -189,15 +191,12 @@ public final class YamlTableDataBuilder {
         List<Map<String, String>> result = new ArrayList<Map<String, String>>();
         for (List<String> rawRow : rawRows) {
             Map<String, String> row = new TreeMap<String, String>();
-            // 空マッピング（{}）行は空の行として保持する。
-            if (!rawRow.isEmpty()) {
-                for (int i = 0; i < cols.size(); i++) {
-                    String col = cols.get(i);
-                    if (isMarker(col)) {
-                        continue;
-                    }
-                    row.put(col, interpret(rawRow.get(i), interps));
+            for (int i = 0; i < cols.size(); i++) {
+                String col = cols.get(i);
+                if (isMarker(col)) {
+                    continue;
                 }
+                row.put(col, interpret(rawRow.get(i), interps));
             }
             result.add(row);
         }
@@ -208,21 +207,14 @@ public final class YamlTableDataBuilder {
      * 各行をカラム名に揃えた未加工値リストへ写す。
      *
      * <p>
-     * マッピングでない行（スカラ等）は構造を持たないため除外する。空マッピング（{@code {}}）は
-     * 空リストとして保持する（行の有無を後段が判別できるようにするため）。
+     * 引数の rows は {@link YamlSection#dropBlankRows} を通した後の行であり、値を持つマッピングだけが
+     * 残っている。そのためマッピングでない行・空マッピング行の除外はここでは行わない。
      * </p>
      */
     private static List<List<String>> extractRows(List<Object> rows, List<String> columnNames) {
         List<List<String>> rawRows = new ArrayList<List<String>>();
         for (Object rowObj : rows) {
-            if (!(rowObj instanceof Map)) {
-                continue;
-            }
             Map<String, Object> rowMap = castMap(rowObj);
-            if (rowMap.isEmpty()) {
-                rawRows.add(new ArrayList<String>());
-                continue;
-            }
             List<String> rowValues = new ArrayList<String>(columnNames.size());
             for (String col : columnNames) {
                 rowValues.add(objectToString(rowMap.get(col)));
