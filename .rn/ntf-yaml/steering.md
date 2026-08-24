@@ -939,19 +939,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: `#24` 完了（step A〜G すべて済み。step G はラウンド3まで実施し、ラウンド3で新しい欠陥が出なかったため終了）。push 済み（HEAD `f39d95c`）
+- **Last completed**: `#24`（`:108` カラム省略の記述是正。step A〜G 完了、step G はラウンド3まで実施）
 - **Next**: `#20` step A（**ユーザー判断待ち**。着手前に回答が要る）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `f39d95c`）。PR なし
-  - **`#24` 完了**（`checks/task-24.md` にラウンド1〜3すべての判定・変異確認・反映内容を記録済み）。最終 `mvn -o clean test` = `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0`
-    - ラウンド1: 観点B（整合）NG・観点D（検証の妥当性）fail → Valid のみ反映、`YamlColumnOmissionTest` 14件新規追加
-    - ラウンド2: 観点1（差分限定範囲）Invalid（`:361` は承認済みスコープ、比較範囲の誤りによる誤指摘）・観点2（新しい欠陥）Valid（Boolean NPE 例外文が原因を行内省略に限定して読める書き方だった → 是正・テスト+1）
-    - ラウンド3: 観点1 範囲内・観点2 新しい欠陥なし（クォート付き `"null"` 系統のテストカバレッジを+1補強のみ）
-    - **O-D1（範囲外・別課題起票が必要）**: `:108` 内 FK ブロックの「NULL 許容カラムを NULL にしたい場合は `null`（クォートなし）を明示すること」は Boolean 型カラムでは NPE になる（`c56207d` 以前から存在する記述。ラウンド2/3 で実経路テスト3系統により実測確認済み・未修正）
-    - **X-1（範囲外・別課題起票が必要）**: マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。未実施・未検証
-  - **`#19` は完了**。未達2箇所（`YamlFileBuilder:227-228` / `YamlLoader:60-61` `:65-66`）を到達不能として承認済み（`checks/task-19.md`）
-  - **ユーザー判断待ち1件（次のアクション）**: **#20 step A の install 判断**（旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は #20 に記載済み）
-  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 step A の記録時点 `fdf55d4` と異なる）。yaml 側からの書き込みは無い（参照のみ）が、#14 の再実行時に確認すること
-  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - ⑥ nablarch-document への報告書候補: `checks/task-18.md`（5件・`rst:883` の2件はセット）、`checks/task-21.md`（`rst:819` と `rst:1534`）、`checks/task-22.md`（`rst:1534` の全値 null 欠落と、`rst:830`／`:1443-1445` の null 等価性）。**`rst:658` と `rst:819` は正しく、報告候補ではない**
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `27d3936`）。PR なし
+  - **ユーザー判断待ち（次の具体アクション）**: `#20` step A の install 可否。旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は `#20` 参照
+  - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
+  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 step A の記録時点 `fdf55d4` と異なる）。参照のみで書き込みなし。#14 再実行時に確認すること
+  - `#14`（Evaluation sign-off）は `#20` 完了後に step A を再実行してから受ける
+  - nablarch-document への報告書候補: `checks/task-18.md` / `checks/task-21.md` / `checks/task-22.md`
   - user-deferred paths: なし
