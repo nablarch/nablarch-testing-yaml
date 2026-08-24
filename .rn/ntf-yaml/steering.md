@@ -923,7 +923,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Last completed**: #22
 - **Next**: `#19` の **step C**（未達分岐を埋めるテスト追加）。ただし **B/C ゲートでユーザー判断待ち**。どの分岐を埋めるかの指示が来るまで step C に進まない
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `8094013`）。PR なし
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `e543825`）。PR なし
   - **`#19` step A・B は実測完了**。実行コマンドと生の出力・未達クラス一覧・未達行のソースはすべて `checks/task-19.md`。要点: 9クラス中7クラスは C0/C1 達成済み。未達は `YamlFileBuilder`（`:227-228` の防御的ガード。`INSTRUCTION_MISSED=1` / `BRANCH_MISSED=1`）と `YamlLoader`（`:60-61` `:65-66` の static イニシャライザ。`INSTRUCTION_MISSED=12` / `BRANCH_MISSED=1`）の2クラスのみ
   - **ユーザー判断待ち2件**:
     1. **`#19` の未達2箇所をどうするか**（テストで埋める／到達不能として承認する）。判断材料は `checks/task-19.md`
