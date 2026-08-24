@@ -956,14 +956,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-24
-- **Last completed**: `#14` step B（判定 OK。ユーザー承認済み）— 全タスク完了
-- **Next**: なし（未チェック項目なし。追加指示待ち）
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み。**PR #1 は DRAFT のまま維持**（`gh pr list` で確認済み）。**マージ禁止**（2026-08-24 ユーザー指示）
-  - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
-  - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
-  - 本体 `../nablarch-testing` の HEAD は `2e43786`（ブランチ `convert-testdata-excel-to-text`）。参照のみで書き込みなし
-  - nablarch-document への報告書候補: `checks/task-18.md` / `checks/task-21.md` / `checks/task-22.md`
-  - user-deferred paths: なし
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
