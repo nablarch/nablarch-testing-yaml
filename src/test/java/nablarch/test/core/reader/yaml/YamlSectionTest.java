@@ -257,14 +257,30 @@ public class YamlSectionTest {
     // ========================================================================
 
     /**
-     * 記述順を保つ行（{@link LinkedHashMap}）を組み立てる。SnakeYAML のマッピングロード結果に合わせる。
+     * 値を指定して記述順を保つ行（{@link LinkedHashMap}）を組み立てる。
+     * SnakeYAML のマッピングロード結果に合わせる。
+     *
+     * @param keyValues キーと値を交互に並べたもの
      */
-    private static Map<String, Object> row(String... keys) {
+    private static Map<String, Object> rowOf(Object... keyValues) {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
-        for (String key : keys) {
-            map.put(key, "v");
+        for (int i = 0; i < keyValues.length; i += 2) {
+            map.put((String) keyValues[i], keyValues[i + 1]);
         }
         return map;
+    }
+
+    /**
+     * 全ての値を {@code "v"} とした行を {@link #rowOf(Object...)} で組み立てる。
+     * 値そのものが問われないテスト（列名解決等）で使う。
+     */
+    private static Map<String, Object> row(String... keys) {
+        Object[] keyValues = new Object[keys.length * 2];
+        for (int i = 0; i < keys.length; i++) {
+            keyValues[i * 2] = keys[i];
+            keyValues[i * 2 + 1] = "v";
+        }
+        return rowOf(keyValues);
     }
 
     /**
@@ -403,17 +419,6 @@ public class YamlSectionTest {
     // ========================================================================
 
     /**
-     * 値を指定して記述順を保つ行（{@link LinkedHashMap}）を組み立てる。
-     */
-    private static Map<String, Object> rowOf(Object... keyValues) {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        for (int i = 0; i < keyValues.length; i += 2) {
-            map.put((String) keyValues[i], keyValues[i + 1]);
-        }
-        return map;
-    }
-
-    /**
      * [YamlSection] dropBlankRows: 空マッピング行と全ての値が null／空文字の行が取り除かれること。
      *
      * <p>
@@ -458,6 +463,34 @@ public class YamlSectionTest {
 
         // Then
         assertThat("値が 1 つでも非空なら残ること", result.size(), is(1));
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: 値が空白文字（半角スペース）だけの行も残ること。
+     *
+     * <p>
+     * 空判定は {@code String.isEmpty()} で行い、値を trim してからは判定しない。依存先 nablarch-testing の
+     * {@code PoiXlsReader#isBlankLine} が {@code StringUtil.isNullOrEmpty} で判定するのに合わせるため、
+     * 半角スペース 1 個は「値がある」として扱う。<br>
+     * Given: 半角スペース 1 個だけを値に持つ行と、空文字の値を持つ行 からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  半角スペースの行だけが残ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_keepsRowHavingOnlyWhitespaceValue() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(
+                rowOf("COL_A", " ", "COL_B", ""),
+                rowOf("COL_A", "", "COL_B", ""));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("空白文字だけの値は trim されずに非空として扱われ、行が残ること", result.size(), is(1));
+        assertThat("残ったのが半角スペースを持つ行であること",
+                result.get(0), is((Object) rowOf("COL_A", " ", "COL_B", "")));
     }
 
     /**

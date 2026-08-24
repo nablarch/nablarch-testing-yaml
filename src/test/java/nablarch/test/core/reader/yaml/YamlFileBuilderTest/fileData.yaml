@@ -333,3 +333,23 @@ expected_files:
         rows:
           - ["A"]
 
+
+  # ファイルデータには「全ての値が空なら行を落とす」規則を適用しない（テーブル系・list_maps のみ）。
+  # 全フィールドが "" のレコードも 1 件のレコードとして保持されることを固定する。
+  - group_id: allBlankFieldsRecord
+    path: dummy/all_blank_fields.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+          - name: FIELD2
+            type: 半角
+          - name: FIELD3
+            type: 半角
+        rows:
+          - ["", "", ""]

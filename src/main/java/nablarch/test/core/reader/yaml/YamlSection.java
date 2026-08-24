@@ -11,11 +11,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * YAML セクションキー定数と共通ヘルパーメソッド。
+ * YAML セクションキー定数・共通ヘルパーメソッド、およびデータ行の意味規則。
  *
  * <p>
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダ（{@code Yaml*Builder}）・
  * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
+ * </p>
+ *
+ * <p>
+ * 定数と値変換ヘルパーに加えて、テーブル系セクション（{@code setup_tables}／{@code expected_tables}／
+ * {@code expected_complete_tables}）と {@code list_maps} における次の 2 つの意味規則を持つ。
+ * </p>
+ * <ul>
+ *   <li>何を行とみなすか — {@link #dropBlankRows(List)}</li>
+ *   <li>カラム名をどの行から決めるか — {@link #resolveColumns(List)}</li>
+ * </ul>
+ * <p>
+ * この 2 つは組で、{@code dropBlankRows} を先に適用する（順序の根拠は
+ * {@link #dropBlankRows(List)} の javadoc に記す）。ファイルデータ（{@link YamlFileBuilder}）は
+ * どちらの規則も使わない。
  * </p>
  *
  * @author kiyotis
@@ -152,11 +166,15 @@ public final class YamlSection {
      * <p>
      * 列名解決（{@link #resolveColumns(List)}）と値加工（{@link #interpret(String, List)}）より前に
      * 適用すること。依存先 nablarch-testing の {@code PoiXlsReader#readLine}・
-     * {@code TestDataParsingTemplate#readLines} も空行判定を値加工より前に行っており、
-     * それに順序を揃える。
+     * {@code TestDataParsingTemplate#readTestData} も空行判定（{@code isBlankLine}）を値加工
+     * （{@code interpret}）より前に行っており、それに順序を揃える。この順序により、値加工を通すと
+     * 空になる値（例えば {@code NullInterpreter} が Java null へ変換する {@code "null"}）だけを持つ行も、
+     * 行としては保持される。
      * </p>
      *
-     * @param rows データ行のリスト
+     * @param rows データ行のリスト（null 不可）。呼び出し側は {@link #getList(Map, String)} の戻り値を
+     *             渡すこと。キー不在・値 null は {@code getList} が空リストとして吸収するため、
+     *             本メソッドでは null を受け付けない
      * @return 行として存在しないものを取り除いたリスト
      */
     public static List<Object> dropBlankRows(List<Object> rows) {

@@ -138,6 +138,19 @@ setup_tables:
         NUMBER_COL: null
         NUMBER_COL2: ""
 
+  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
+  # 行として保持される。クォートあり "null" は NullInterpreter が Java null へ変換する。
+  # 判定を値加工の後ろへずらすとこの行が消えるので、順序を固定するための門番になる。
+  - group_id: interpretedToNullRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000054"
+        PK_COL2: "PP"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: "null"
+        PK_COL2: "null"
+        VARCHAR2_COL: "null"
+
 
 list_maps:
   - id: testListMap
@@ -226,6 +239,15 @@ list_maps:
       - KEY1: ""
         KEY2: null
         KEY3: ""
+
+  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
+  # 行として保持される（setup_tables 側の interpretedToNullRow と同じ趣旨で list_maps 経路を固定する）。
+  - id: interpretedToNullRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: "val"
+      - KEY1: "null"
+        KEY2: "null"
 
 
 expected_tables:

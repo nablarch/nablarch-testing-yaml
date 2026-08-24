@@ -18,3 +18,18 @@ expected_complete_tables:
         VARCHAR2_COL: "complete"
       - PK_COL1: "0000000097"
         PK_COL2: "XY"
+
+  # 全ての値が null または空文字の行は、fillDefaults=true の経路（expected_complete_tables）でも
+  # 行として存在しないものとして扱われる。先頭・中間の両方に置いてある。
+  # 列名解決からも除外されることを固定するため、空行のキー集合を非空行と変えてある。
+  - group_id: blankValueRowComplete
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: null
+      - PK_COL1: "0000000096"
+        PK_COL2: "WW"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: null
+        PK_COL2: ""
+        VARCHAR2_COL: ""

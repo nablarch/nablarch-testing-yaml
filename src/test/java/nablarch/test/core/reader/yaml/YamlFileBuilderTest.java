@@ -396,6 +396,36 @@ public class YamlFileBuilderTest {
     }
 
     /**
+     * [YamlFileBuilder] buildFileList: 全フィールドの値が "" のレコードも 1 件のレコードとして保持されること。
+     *
+     * <p>
+     * テーブル系セクション・{@code list_maps} では「全ての値が null／空文字の行」を行として存在しない
+     * ものとして扱う（{@link YamlSection#dropBlankRows}）が、ファイルデータにはその規則を適用しない。
+     * 全フィールドが空のレコードはそれ自体が意味を持つデータであり、落としてはならない。
+     * 値行に「全要素が空ならスキップ」を入れるとこのテストが落ちる。<br>
+     * Given: expected_files の allBlankFieldsRecord グループに rows が {@code ["", "", ""]} 1 件のエントリ<br>
+     * When:  buildFileList(yaml, "expected_files", "[allBlankFieldsRecord]", path) を呼ぶ<br>
+     * Then:  レコードが 1 件保持されること
+     * </p>
+     * <p>
+     * 各フィールドの値が null か空文字かは別途検討中のため、ここでは件数のみを固定する。
+     * </p>
+     */
+    @Test
+    public void buildFileList_allBlankFieldRecordIsKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "expected_files", "[allBlankFieldsRecord]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("全フィールドが \"\" のレコードも 1 件として保持されること",
+                result.get(0).toDataRecords().size(), is(1));
+    }
+
+    /**
      * [YamlFileBuilder] buildFileList: 可変長ファイルで length が指定されていない場合、setLengths が呼ばれないこと（QA観点2-軽微）。
      *
      * <p>

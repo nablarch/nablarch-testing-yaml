@@ -410,9 +410,10 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: rows が空マッピング（{}）のみのとき TableData が 1 件返ること。
      *
      * <p>
-     * 行データが 0 件となるのは空マッピングがデータ行として扱われないためであり、カラム名が 0 件と
-     * なるのは列名解決がキーを持つ最初の行を探すところ、どの行もキーを持たないからである
-     * （スキップ自体は {@code buildTableDataList_emptyRowEntrySkipped} が検証する）。<br>
+     * 全行が空マッピングのため、列名解決（{@code YamlSection#resolveColumns}）へ到達する前に
+     * {@code YamlSection#dropBlankRows} が全行を取り除く。列名解決に渡るのは空リストなので
+     * カラム名が 0 件になり、データ行も 0 件になる
+     * （取り除くこと自体は {@code buildTableDataList_emptyRowEntrySkipped} が検証する）。<br>
      * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
      * Then:  TableData が 1 件返り、カラム名が 0 件、行 0 件であること
@@ -1321,5 +1322,100 @@ public class YamlTableDataBuilderTest {
         assertThat(result.get(0).get("KEY1"), is("kept"));
         assertThat("空文字のキーは空文字のまま保持されること", result.get(0).get("KEY2"), is(""));
         assertNull("null のキーは null のまま保持されること", result.get(0).get("KEY3"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: 値加工を通すと全ての値が Java null になる行も、行として保持されること。
+     *
+     * <p>
+     * 空行判定（{@code YamlSection#dropBlankRows}）は値加工（{@code YamlSection#interpret}）より前に
+     * 行う。この順序は依存先 nablarch-testing の {@code TestDataParsingTemplate#readTestData}
+     * （空行判定 → 値加工）に揃えたものであり、この変更の要となる設計判断である。
+     * クォートあり {@code "null"} は {@code NullInterpreter} が Java null へ変換するため、
+     * {@code "null"} だけを持つ行は「判定が値加工より前なら保持され、後なら消える」区別がつく。
+     * 判定を値加工の後ろへずらすとこのテストが落ちる。<br>
+     * Given: setup_tables の interpretedToNullRow グループに 通常行・全ての値が "null" の行 の 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[interpretedToNullRow]", false, path) を呼ぶ<br>
+     * Then:  2 行とも保持され、2 行目の全カラムが Java null になること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_rowInterpretedToAllNullIsKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[interpretedToNullRow]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("値加工後に全て null になる行も行として保持され、2 行返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000054"));
+        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("kept"));
+        assertNull("2 行目の PK_COL1 は NullInterpreter により Java null になること",
+                result.get(0).getValue(1, "PK_COL1"));
+        assertNull("2 行目の PK_COL2 は NullInterpreter により Java null になること",
+                result.get(0).getValue(1, "PK_COL2"));
+        assertNull("2 行目の VARCHAR2_COL は NullInterpreter により Java null になること",
+                result.get(0).getValue(1, "VARCHAR2_COL"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 値加工を通すと全ての値が Java null になる行も、行として保持されること。
+     *
+     * <p>
+     * list_maps 経路でも空行判定を値加工より前に行うことを固定する（趣旨は
+     * {@code buildTableDataList_rowInterpretedToAllNullIsKept} と同じ）。<br>
+     * Given: list_maps の interpretedToNullRowListMap に 通常行・全ての値が "null" の行 の 2 エントリ<br>
+     * When:  buildListMapRows(yaml, "interpretedToNullRowListMap", path) を呼ぶ<br>
+     * Then:  2 件とも保持され、2 件目の全キーが Java null になること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_rowInterpretedToAllNullIsKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "interpretedToNullRowListMap", DIR);
+
+        // Then
+        assertThat("値加工後に全て null になる行も行として保持され、2 件返ること", result.size(), is(2));
+        assertThat(result.get(0).get("KEY1"), is("kept"));
+        assertThat(result.get(0).get("KEY2"), is("val"));
+        assertTrue("2 件目は KEY1 をキーとして持つこと", result.get(1).containsKey("KEY1"));
+        assertNull("2 件目の KEY1 は NullInterpreter により Java null になること", result.get(1).get("KEY1"));
+        assertNull("2 件目の KEY2 は NullInterpreter により Java null になること", result.get(1).get("KEY2"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: expected_complete_tables でも値が全て null／空文字の行が除外されること。
+     *
+     * <p>
+     * fillDefaults=true の経路は {@code fillDefaultValues()} が列名を dbInfo の全カラムへ差し替えるため、
+     * 「全カラムを空で書いた行が無言で消える」という挙動変化がこの経路にも及ぶ。先頭・中間のどちらに
+     * 置いても除外されること、および残った行が列名解決の基準になることを固定する。<br>
+     * Given: expected_complete_tables の blankValueRowComplete グループに
+     *        値が全て空の 2 キーの行・3 キーの通常行・値が全て空の 3 キーの行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_complete_tables", "[blankValueRowComplete]", true, path) を呼ぶ<br>
+     * Then:  全値空の 2 行が除外されて 1 行のみ残り、dbInfo の全カラム数（11）に差し替わること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_blankValueRowInExpectedCompleteTableExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "[blankValueRowComplete]", true, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("先頭・末尾の全値空行が除外されて 1 行のみ残ること", result.get(0).size(), is(1));
+        assertThat("dbInfo の全カラム数（11）に差し替わること", result.get(0).getColumnNames().length, is(11));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000096"));
+        assertThat(result.get(0).getValue(0, "PK_COL2").toString(), is("WW"));
+        assertThat("YAML に書いた値がデフォルト値で上書きされないこと",
+                result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("kept"));
     }
 }
