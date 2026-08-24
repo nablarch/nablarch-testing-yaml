@@ -491,15 +491,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [x] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる
+- [x] A. Acceptance criteria を上から順に実行し、結果（OK/NG と根拠）をまとめる（**2026-08-24 再実行**。#20 完了により旧記録は陳腐化したため取り直し）
   - 5 項目中 5 項目 OK
-    - `mvn clean test` 全 PASS: 177 tests / 0 failures / 0 errors / Skipped 4、BUILD SUCCESS
-    - 移送3タスク（#1〜#3）完了時点の完全一致: `checks/task-02.md`（12件 diff 差分ゼロ）・`checks/task-03.md`（9件 diff 差分ゼロ）に記録済み。複製元は `worktree-agent-a79308e7e5862d004`（`d8ba387`）。旧基準が挙げていた `convert-testdata-excel-to-text`（`fdf55d4`）は `reader/yaml` 配下のファイルを1件も含まない（`git ls-tree -r fdf55d4` で確認）ため、この基準は元々別ブランチを指しており誤りだった
-    - #4 以降の実装差分の task 帰属: 本リポジトリの `git log` は #4〜#13 各タスクの commit（`docs(steering): complete task #N` を含む）と1対1で対応しており、タスク外の差分はない
-    - 本体無書き込み: `git status` 空、HEAD `fdf55d4`（本体側）
-    - push 済み: HEAD `99376b1` = `origin/feature/ntf-yaml`
+    - `mvn -o clean test` 全 PASS: `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0`、BUILD SUCCESS（`2026-08-24T16:51:04+09:00`）
+    - 移送3タスク（#1〜#3）完了時点の完全一致: `checks/task-02.md`（12件 diff 差分ゼロ）・`checks/task-03.md`（9件 diff 差分ゼロ）に記録済み（変更なし・再取得不要）
+    - #4 以降の実装差分の task 帰属: `git log --oneline 0df7407..HEAD`（`0df7407` = task #3 完了コミット）は #4〜#24・#20 各タスクの commit（`complete task #N` を含む fix/test/docs/refactor/chore）と対応しており、タスク外の差分はない（コミット一覧を目視で確認）
+    - 本体無書き込み: 本体 `../nablarch-testing` の `git status --short` 空、HEAD `2e43786`（ブランチ `convert-testdata-excel-to-text`）
+    - push 済み: HEAD `5b28eb9` = `origin/feature/ntf-yaml`（`git rev-parse HEAD` と `git rev-parse origin/feature/ntf-yaml` が一致）
 - [ ] B. 結果をユーザーへ提示し、`/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
-  - **保留（2026-08-21）**: 同一ブランチに #15〜#20 を追加したため step A の実行結果は陳腐化した。sign-off は #20 完了後に step A を再実行してから受ける。
   - **Craft/QA レビューは不要**（Rules の基準: サインオフ。2026-08-24 ユーザー指示）。代わりに **実行コマンドと生の出力** を報告する
 
 **Completion criteria**:
@@ -939,13 +938,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: `#20`（`mvn install` 実行。jar タイムスタンプ 8/18 09:30 → 8/24 16:48 へ更新確認済み）
-- **Next**: `#14` step A の再実行（Acceptance criteria の再実行。以前の記録は `#15`〜`#20` 追加により陳腐化）
+- **Last completed**: `#14` step A（Acceptance criteria 再実行。5項目中5項目 OK）
+- **Next**: `#14` step B（**ユーザー判定待ち**。`/rn:ty` または `/rn:gm`）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `27021cc`）。PR なし
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD は次の commit 後に更新）。PR なし
   - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
   - **新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）**: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
-  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 旧記録時点 `fdf55d4` と異なる）。参照のみで書き込みなし。#14 再実行時に確認すること
-  - `#14`（Evaluation sign-off）は Craft/QA レビュー不要（Rules の基準: サインオフ）。実行コマンドと生の出力を報告する
+  - 本体 `../nablarch-testing` の HEAD は `2e43786`（ブランチ `convert-testdata-excel-to-text`）。参照のみで書き込みなし
   - nablarch-document への報告書候補: `checks/task-18.md` / `checks/task-21.md` / `checks/task-22.md`
   - user-deferred paths: なし
