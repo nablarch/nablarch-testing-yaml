@@ -593,7 +593,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #18: 手順3（XLS-42）— `record_fragment.rows` のスキーマ記述を実装と解説書に合わせる
+### ~~#18: 手順3（XLS-42）— `record_fragment.rows` のスキーマ記述を実装と解説書に合わせる~~
 
 **Purpose**: スキーマの `description` だけが実装・解説書と食い違っているため、実装に合わせて直す。
 
@@ -637,7 +637,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 裏付け: `addValue` は `DataFileFragment.java:102-115` の1箇所のみで、`grep -rn addValue nablarch/test/core/file/` の結果は `:102`（`addValue`）と `:169`（`addValueWithId`）だけ。`VariableLengthFileFragment` / `FixedLengthFileFragment` に override は無い
 - 解説書との差: `rst:883` は `""` 補完を「可変長ファイルでは、…」で始まる節に置いている（同じ文の後半は「固定長ファイルの場合はスペースパディングされた定長レコードとして書き出される」と固定長にも触れており、節の切り方だけが実装より狭い）→ ⑥ nablarch-document の報告書候補
 
-- [ ] Q. 修正後、Craft(writing) と QA を再々実行する
+- [x] Q. 修正後、Craft(writing) と QA を再々実行する — 実行済み。**QA pass / Craft fail**。完了条件5件は両者とも全 OK。Valid は Craft F2（「各配列の」の主語補い）の1件のみで修正済み。他は却下・Invalid・報告書候補・`#22` へ帰属。判定・根拠・triage・round 3 の新実測は `checks/task-18.md` の round 3 セクション
 
 **Completion criteria**:
 
@@ -795,15 +795,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: #17（#18 は step A〜N 完了、O/P/Q が残り）
-- **Next**: #18 step O — 判断A/B/C のユーザー回答を受け、step P で Valid 4件と合わせて1ラウンド修正 → step Q で Craft/QA 再々実行 → チェックオフ
+- **Last completed**: #18
+- **Next**: #21 step A — RED（全値が空文字の行を先頭・中間に置くテストを3経路に追加し、失敗を確認する）
 - **Notes**:
   - ブランチ `feature/ntf-yaml`、push 済み。PR なし
-  - **ユーザー回答待ち3件**（回答があるまで着手しない。全文と推奨は #18 step O、根拠は `checks/task-18.md` の round 2 triage）:
-    1. 判断A — 順序・件数の規範を `:377` に書き戻すか（推奨: 書き戻す）
-    2. 判断B — `:386` の順序記述を落としたままでよいか（推奨: 現状維持）
-    3. 判断C — description が述べる挙動を固定するテストを足すか、足すならどこで（推奨: 新タスク化）
-  - 判断Aの回答が来たら step P で Valid 4件と**同じラウンド**で直す（4件とも `:361` / `:377` / `:386` に集中しており分ける理由がない）
-  - #20 step A の install 判断待ちも未回答のまま（内容は #20 に記載済み）
+  - **ユーザー回答待ちなし**（判断A/B/C は 2026-08-24 に回答済み・反映済み）
+  - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - 報告書候補（`checks/task-18.md` round 2 triage に記録）: 「多い場合は無言で切り捨て」／Craft の軽微指摘4件（冗長・主語・「同順」・「要素数/件数」）／完了条件が実挙動との一致を問うていない点
+  - #22（新規・Prerequisites: #18）は `record_fragment.rows` の description が述べる挙動を実経路で固定するタスク。round 3 の実測結果（`checks/task-18.md` の「新事実」）をそのまま入力に使える
+  - ⑥ nablarch-document への報告書候補は `checks/task-18.md` の「⑥ nablarch-document への報告書候補（round 3 時点の一覧）」に一覧化済み（5件）
