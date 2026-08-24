@@ -182,3 +182,75 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
 
 - **X-1（`#24` 対象外・スコープ外）**: steering `#24` の旧 step C（マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結 = `dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る）は、2026-08-24 のユーザー指示でスコープが3点に確定した際に外れた。**未実施・未検証**。別タスクとして起票が必要
 - **O-D1（既出・本体側）**: `:108` 末尾の「NULL 許容カラムを NULL にしたい場合は省略せず `null` を明示すること」は BOOLEAN 型カラムでは NPE になる疑い（本体 `TableData.java:162-163` の `row.getBoolean(columnName)` が null を返すと `setBoolean(int, boolean)` の unboxing で落ちると読める）。**静的読解のみ・実行未確認**。本体 Excel 経路と共通の挙動
+
+---
+
+## レビュー ラウンド1（2観点: B 整合 / D 検証の妥当性）
+
+**観点A（充足）・観点C（規約）は回さない**（2026-08-24 ユーザー指示）。理由: `#24` は既存 description の是正であり実装変更が無く、外から観測できるものに新しいものが入らない。観点A は対象が (a) の3文と (b) の1語に確定済みで抜けが生じない。観点C は既存 description の文体に揃えるだけで実害が小さい。
+
+各担当は個別の作業ディレクトリ（`scratchpad/rev24-B` / `scratchpad/rev24-D`）で独立に実施。指示に「実測で裏付ける／付属の検証スクリプトを正解として使わず独立に組む／敵対的に見る」を明記。
+
+### D（検証の妥当性）— 総合 fail
+
+**指摘（Valid）**:
+- **D-1**: `:108` に書いた INSERT・比較まわりの主張7点は、コミット当初（`2f060e8`）は実行で確かめられていなかった（INSERT 経路に到達する既存テストが0件）。`#22` が確立した「実経路テスト＋変異確認」の水準を満たしていなかった
+- **D-2**: 主張はすべて実経路テストで固定可能（D 自身が12件のテストと5系統の変異確認で実証済み）
+- **D-3**: `(1)` の定義「全ての行で省略したカラム（＝カラム名決定行に無いカラム）」の「＝」が成り立たない場合がある。後続の行にだけ書いたキーも `(1)` として扱われ、値が捨てられる
+
+**要確認**: NOT NULL の断定形が全 DB で成り立つか（H2 でのみ実測）
+
+### B（整合: B-1 成果物 / B-2 指示文）— B-1 NG・B-2 反例あり
+
+**B-1（Valid）**:
+- **V-1**: `(2)` の「NULL が INSERT される」は Boolean 型カラムでは成り立たない。`SqlRow#getBoolean` の戻り値 `Boolean` を `setBoolean(int, boolean)` へ渡す際の unboxing で `NullPointerException` になる（実測: `java.lang.NullPointerException`）。NULL 許容カラムでも起きるため「NOT NULL 制約のあるカラムでは失敗する」の限定にも当てはまらない
+- **V-2**: D-3 と同一の指摘（(1) の「＝」の不正確さ）
+
+**B-2（指示文の反例）**:
+- **V-3 / V-4**: (a) の根拠3点目「`TableData.java:193` `row.containsKey` … → カラム名決定行にあって当該行で省略したカラムは、**補完値で比較される**」は**偽**（行番号も191への2行ずれ）。実装は逆で、比較経路は `convert` を通らず期待値 null のまま比較される。**この指摘は反映していない**（コミット済みの `:108` はもともと「期待値 null として比較される」で正しかった）
+- (a) の残り3点と (b) 案は真。行番号もすべて一致
+
+**要確認**: `:18` の「カラム名決定行に現れたカラムだけ」はマーカーカラムという例外が1つある
+
+### 反映（Valid のみ）
+
+1. `:108` の `(1)` 定義をカラム名決定行基準に一本化（V-2 / D-3）
+2. `:108` の `(2)` 挙動に Boolean 型の NPE 例外を追記（V-1）
+3. `:108` 内 FK ブロックの「全ての行で省略」表現を `(1)` の新定義に揃えた
+4. `:18` に「マーカーカラムは DB 操作の対象外なので除く」を補った（Q-1）
+5. `:25` の「全ての行で省略」表現も同様に揃えた
+6. **テストを新規追加**: `src/test/java/nablarch/test/core/db/YamlColumnOmissionTest.java`（14件）。`:18` / `:25` / `:108` の主張を `YamlLoader.load` → `YamlTableDataBuilder` → 本体 `TableData#insertData` / `Assertion#assertTableEquals` の実経路で固定。Boolean NPE（V-1）と `null` 明示との同値性の2件も追加
+7. V-3 は反映しない（指摘が偽のため）
+
+### 変異確認（5系統・全14テストが少なくとも1系統で死亡）
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test -Dtest=YamlColumnOmissionTest
+```
+
+| 変異 | 内容 | 殺したテスト数 |
+| --- | --- | --- |
+| M1 | `buildTableData` の値ループで `interpret` の null を `" "` に強制置換 | 8/14 |
+| M2 | `YamlSection#resolveColumns` を「先頭行のキー」から「全行のキーの和集合」へ | 3/14 |
+| M3 | `if (fillDefaults)` を `if (true)` に固定 | 5/14 |
+| M4 | `if (fillDefaults)` を `if (false)` に固定 | 2/14 |
+| M5 | `buildTableData` の `dataColumns` を反転（値と列名の対応をずらす） | 12/14 |
+
+союз（和集合）で 14/14 が少なくとも1系統で FAILURE/ERROR。生存変異ゼロ。各変異後は該当ファイルを元のバックアップへ復元し、`git diff --stat src/main` が `ntf-testdata-yaml-schema.json` のみであることを確認した。
+
+### 反映後の確認
+
+```
+$ python3 -c "import json;json.load(open('src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json',encoding='utf-8'));print('JSON OK')"
+JSON OK
+
+$ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.53 s - in nablarch.test.core.db.YamlColumnOmissionTest
+...
+[INFO] Tests run: 224, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+（209 → 224 は `#24` で追加した `YamlColumnOmissionTest` 14件分。#19 完了時点の210件から起算すると +14 = 224 で一致）
+
+`description` 以外のスキーマ要素は未変更（`git diff` はスキーマ4描述＋新規テストクラス・フィクスチャのみ）。
