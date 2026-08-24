@@ -929,17 +929,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: in progress
+- **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: #19（未達2箇所を到達不能として承認・テスト追加なし）
-- **Next**: `#24` の **step G（レビュー）**。ラウンド1（4観点 A/B/C/D を別担当）を実行中。結果を triage し、Valid のみ1ラウンドで反映する。ラウンド2以降は差分限定2観点・上限3回
+- **Last completed**: #24 レビュー ラウンド1（B 整合 / D 検証の妥当性）— Valid のみ反映済み・push 済み（HEAD `c56207d`）
+- **Next**: `#24` の **step G ラウンド2**（差分限定2観点: 是正が指示範囲に収まっているか／是正が新しい欠陥を生んでいないか）。上限3回のうち残り2回
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `2f060e8`）。PR なし
-  - **`#24` の step A〜F は完了**（`2f060e8`）。スキーマ `description` 4本のみ変更（`:18` / `:25` / `:108` / `:361`）。`mvn -o clean test` = `Tests run: 210, Failures: 0, Errors: 0, Skipped: 0`。判定・根拠・波及先の洗い出しは `checks/task-24.md`
-  - **`#19` は完了**。ユーザー裁定で未達2箇所（`YamlFileBuilder:227-228` / `YamlLoader:60-61` `:65-66`）を到達不能として承認し、step C（テスト追加）は不実施。根拠は `checks/task-19.md` の「裁定」節
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `c56207d`）。PR なし
+  - **`#24` step A〜F は完了**。step G はラウンド1完了・ラウンド2以降が残っている（`checks/task-24.md` にラウンド1の判定・変異確認・反映内容を記録済み）
+  - ラウンド1の要旨: 観点B（整合）は NG（Boolean 型カラムの NPE 未記載、`(1)` 定義の「＝」不成立）、観点D（検証の妥当性）は fail（実経路テスト0件だった）。Valid のみ反映し `YamlColumnOmissionTest`（14件・5系統の変異確認で生存変異ゼロ）を新規追加。`mvn -o clean test` = `Tests run: 224, Failures: 0, Errors: 0, Skipped: 0`
+  - **`#19` は完了**。未達2箇所（`YamlFileBuilder:227-228` / `YamlLoader:60-61` `:65-66`）を到達不能として承認済み（`checks/task-19.md`）
   - **ユーザー判断待ち1件**: **#20 step A の install 判断**（旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は #20 に記載済み）
-  - **新規起票が要るもの（`#24` スコープ外）**: **X-1** — マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結（`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る）。**未実施・未検証**。`#24` の旧 step C だったがスコープ確定（3点）で外れた
-  - 本体 `../nablarch-testing` の HEAD が `fdf55d4` → **`2e43786`** に進んでいる（#14 step A の記録時点と異なる）。yaml 側からの書き込みは無い（参照のみ）が、#14 の再実行時に確認すること
+  - **新規起票が要るもの（`#24` スコープ外）**: **X-1** — マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。**未実施・未検証**
+  - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 step A の記録時点 `fdf55d4` と異なる）。yaml 側からの書き込みは無い（参照のみ）が、#14 の再実行時に確認すること
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - ⑥ nablarch-document への報告書候補: `checks/task-18.md`（5件・`rst:883` の2件はセット）、`checks/task-21.md`（`rst:819` と `rst:1534`）、`checks/task-22.md`（`rst:1534` の全値 null 欠落と、`rst:830`／`:1443-1445` の null 等価性）。**`rst:658` と `rst:819` は正しく、報告候補ではない**（食い違っていたのはスキーマ側＝`#24` で是正済み）
+  - ⑥ nablarch-document への報告書候補: `checks/task-18.md`（5件・`rst:883` の2件はセット）、`checks/task-21.md`（`rst:819` と `rst:1534`）、`checks/task-22.md`（`rst:1534` の全値 null 欠落と、`rst:830`／`:1443-1445` の null 等価性）。**`rst:658` と `rst:819` は正しく、報告候補ではない**
   - user-deferred paths: なし
