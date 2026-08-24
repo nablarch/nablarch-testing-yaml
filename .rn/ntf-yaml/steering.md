@@ -619,15 +619,24 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - `:377` 第3文 →「各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `""` が設定される」（Craft NG-4 = Valid: **値**の不足なのに「不足したフィールド」ではフィールド定義の不足とも読める。「補完」は `:108` で「カラム型ごとのデフォルト値」の意味に使われており二義）
   - QA 指摘「多い場合は無言で切り捨てられる旨を書く」は **Invalid**（ユーザー承認済み）。スキーマには書かず、報告書候補として `checks/task-18.md` の Triage に残す
 - [x] N. 修正後、Craft(writing) と QA を再実行する（Verification は事実主張が変わらないため再実行不要）— 実行済み。**両者とも総合 fail**。完了条件5件は両者とも全 OK で、落ちた理由は完了条件の外側。判定・根拠・triage は `checks/task-18.md` の round 2 セクション
-- [ ] O. **判断待ち（回答が来たらここから再開）**: 以下3件。coordinator の推奨を添えて提示済み
-  - **判断A（本命）: 順序・件数の「規範」を `:377` に書き戻すか**。`#18` で `:377` から「同件数」を、`:361` から第3文を落とした結果、`$defs.record_fragment` に規範が1文も残っていない。解説書は維持している（`testdata_notation.rst:1143` / `:1300` = 「``fields:`` と同じ順序・同じ件数で値を並べる」）。**推奨: 書き戻す**（案: `:377` を「各要素は fields と同じ順序・同じ件数で値を並べること（NTF は fields の順序で対応付ける）。要素数が…より少ない場合は…」の形へ）。書き戻さないと「末尾は省いてよい」と読める
-  - **判断B（軽微）: `:386` の順序記述を落としたままでよいか**。QA F3 の反証は「IDE 補完はカーソル位置ノードの description を出す」だが**未確認**。**推奨: 現状維持**（判断A で `:377` に規範を戻せば順序情報はそこに集約される）
-  - **判断C: description が述べる挙動を実経路で固定するテストを足すか、足すならどこで**。先例 `YamlFileBuilderTest.java:526-542`（#13 で追加）。`#18` の完了条件は description 限定のためスコープ拡大。**推奨: 新タスク化**（`#19` はカバレッジ計測が目的で性質が違う）
-- [ ] P. 判断A の回答を受け、round 2 の **Valid 4件**と合わせて**1ラウンド**で実装エキスパートに修正させる
-  - `:361` 末尾の `。` を削除（schema 内 description 全64件中、`。` 終わりはこの1件のみ。本差分が持ち込んだ）
-  - `:377`「値を指定しなかったフィールド」→ 末尾限定の表現へ（実装は位置対応 `DataFileFragment.java:107`。解説書 `rst:787`「記述しなかった分のカラム」）
-  - `:377`「0件も有効」→「`rows` が0件でも有効」（「要素数0の配列」と読むと `rst:883` の実挙動と正反対になる）
+- [x] O. **判断（2026-08-24 ユーザー回答）**: 3件とも回答済み
+  - **判断A: 書き戻す**（形は指定あり）。`:377` を3文構成にする — 第1文＝規範「各要素は fields と同じ順序・同じ件数で値を並べた配列（NTF は fields の順序で位置対応させる）」／第2文＝挙動「要素数が fields の件数に満たない場合、不足した末尾のフィールドは `""` として扱われる」／第3文＝記法「これを利用し、空配列 `[]` を1要素書くと全フィールドが `""` のレコード1件になる」。**第3文は必須**（第2文だけだと「末尾は省いてよい」という緩和に読める。解説書 `rst:883` は補完を緩和ではなく意図した記法の仕組みとして説明しており、第3文があって初めて `:883` と同じ意味になる）。規範の出典は `rst:1143`（ファイルデータ）と `rst:1300`（メッセージング）
+  - **判断A の前提測定（実施済み・結果は「補完される」）**: 固定長ファイルでも `rows` の要素数不足が `""` 補完されることを固定長フィクスチャで実測した（下記「実測」参照）。よって第2文に「可変長ファイルでは」の限定は付けない。加えて `rst:883` が `""` 補完を「可変長ファイルでは」の節に置いている点は実装より記述範囲が狭く、⑥ nablarch-document の報告書候補に追加する
+  - **判断B: 現状維持**。`:386` は「数値・真偽値も必ず文字列（クォート付き）で記述すること」だけにする（判断A で `:377` に順序の規範が戻るため、`:386` に順序を書くと同一ブロック内の二重定義になる。IDE 補完の挙動は根拠にしない）
+  - **判断C: 新タスク #22 として起こす**。`#18` では実施しない
+- [x] P. 判断A の回答を受け、round 2 の **Valid 4件**と合わせて**1ラウンド**で修正 — 完了（`mvn -o clean test` → `Tests run: 187, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS）
+  - `:361` 末尾の `。` を削除（schema 内 description 全64件を再集計し、`。` 終わりが 0 件になったことを確認）
+  - `:377` を判断A の3文構成へ。第2文で「不足した**末尾**のフィールド」と末尾限定を明示（実装は位置対応 `DataFileFragment.java:107` = `i < line.size() ? line.get(i) : ""`。**出典は `rst:883`**。round 2 triage で引いていた `rst:787` はテーブルデータ〈Excel〉節のため差し替えた）
+  - `:377`「0件も有効」→「`rows` が0件でも有効」。**括弧内「（setup_files では空ファイル、expected_files では出力なしの期待値として使用）」は削除**した（`rows: []` がファイル系でどう出力されるかは未実測。`rst:881` `rst:1146` は 0 バイト空ファイルの表現手段を `records: []` としており表現手段が違う。#15/#16 が実測した `rows: []` はテーブルデータ経路のみ。測っていない挙動は書かない）
   - `:386` に「必ず」を追加（`:108` `:136` と揃える）
+
+**実測（2026-08-24・判断A の前提）**: 固定長・可変長の双方で、`rows` の要素数不足は `""` 補完される。
+
+- 方法: 一時テストクラスから `YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` を実行（実行後に一時ファイルは削除済み）。フィクスチャは `type: fixed`（`FIELD1`/`FIELD2` 各 `半角` 長さ5）と `type: variable`（`NAME`/`VALUE`）で、いずれも `rows` に `["AAAAA"]`（要素1件）と `[]`（空配列）を並べた
+- 結果: `FixedLengthFile` → `row[0]={FIELD2=, FIELD1=AAAAA}` / `row[1]={FIELD2=, FIELD1=}`、`VariableLengthFile` → `row[0]={VALUE=, NAME=tanaka}` / `row[1]={VALUE=, NAME=}`
+- 裏付け: `addValue` は `DataFileFragment.java:102-115` の1箇所のみで、`grep -rn addValue nablarch/test/core/file/` の結果は `:102`（`addValue`）と `:169`（`addValueWithId`）だけ。`VariableLengthFileFragment` / `FixedLengthFileFragment` に override は無い
+- 解説書との差: `rst:883` は `""` 補完を「可変長ファイルでは、…」で始まる節に置いている（同じ文の後半は「固定長ファイルの場合はスペースパディングされた定長レコードとして書き出される」と固定長にも触れており、節の切り方だけが実装より狭い）→ ⑥ nablarch-document の報告書候補
+
 - [ ] Q. 修正後、Craft(writing) と QA を再々実行する
 
 **Completion criteria**:
@@ -691,6 +700,41 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 既存フィクスチャのグループが変更されていない
 - 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
 - `pom.xml` / `argLine` が変更されておらず、他リポジトリへの書き込みが無い
+- `mvn -o clean test` が `Tests run:` 出力つきで BUILD SUCCESS（Failures/Errors/Skipped すべて 0）
+
+---
+
+### #22: `record_fragment.rows` の description が述べる挙動を実経路で固定するテストを追加する
+
+**Purpose**: `#18` で書き直した `$defs.record_fragment.properties.rows.description` が述べる挙動を、YAML ファイルを経由した実際の経路で実測して固定する。
+
+**Prerequisites**: #18
+
+**方針（2026-08-24 ユーザー判断）**: `YamlFileBuilderTest.java:527-543` のヘッダコメントの方針をそのまま踏襲する。すなわち **description の文字列自体は参照しない**。固定するのは文言が拠り所とする実挙動のみで、文言が変わってもテストは落ちない。
+
+**Steps**:
+
+- [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
+- [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
+- [ ] C. 以下3件を最低限の対象として固定する（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` の経路）
+  - 要素数が `fields` より少ない行 → **末尾のフィールドが `""` になる**こと
+  - `rows: [[]]` → **全フィールドが `""` のレコード1件**になること（解説書 `rst:883`）
+  - `rows: []` → **データ行0件**になること
+- [ ] D. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
+- [ ] E. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
+- [ ] F. commit・push
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-22.md)
+- [ ] H. QA expert review (subagent)
+- [ ] I. Craft expert review — coding (subagent)
+- [ ] J. Verification expert review — test (subagent)
+
+**参考（`#18` step P で実測済み。テストの期待値の裏取りに使える）**: 固定長・可変長の双方で要素数不足は `""` 補完される（`FixedLengthFile` → `row[0]={FIELD2=, FIELD1=AAAAA}` / `row[1]={FIELD2=, FIELD1=}`）。`addValue` は `DataFileFragment.java:102-115` の1箇所のみで override 無し。
+
+**Completion criteria**:
+
+- 上記3件がテストとして存在し、`description` の文字列を参照していない
+- 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
+- 既存フィクスチャのグループが変更されていない
 - `mvn -o clean test` が `Tests run:` 出力つきで BUILD SUCCESS（Failures/Errors/Skipped すべて 0）
 
 ---

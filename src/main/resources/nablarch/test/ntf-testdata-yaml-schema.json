@@ -358,7 +358,7 @@
         "rows"
       ],
       "additionalProperties": false,
-      "description": "レコード種別1ブロック。1つのレコードレイアウト（フィールド定義 + データ行）を表す。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。",
+      "description": "レコード種別1ブロック。1つのレコードレイアウト（フィールド定義 + データ行）を表す。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意",
       "properties": {
         "record_type": {
           "type": "string",
@@ -374,7 +374,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行リスト。各要素は fields と同順の値配列。NTF は fields の順序でフィールドと値を対応付ける。各配列の要素数が fields の件数より少ない場合、値を指定しなかったフィールドには `\"\"` が設定される。0件も有効（setup_files では空ファイル、expected_files では出力なしの期待値として使用）",
+          "description": "データ行リスト。各要素は fields と同じ順序・同じ件数で値を並べた配列（NTF は fields の順序で位置対応させる）。要素数が fields の件数に満たない場合、不足した末尾のフィールドは `\"\"` として扱われる。これを利用し、空配列 `[]` を1要素書くと全フィールドが `\"\"` のレコード1件になる。rows が0件でも有効",
           "items": {
             "type": "array",
             "items": {
@@ -383,7 +383,7 @@
                 "null"
               ]
             },
-            "description": "フィールド値のリスト。数値・真偽値も文字列（クォート付き）で記述すること"
+            "description": "フィールド値のリスト。数値・真偽値も必ず文字列（クォート付き）で記述すること"
           }
         }
       }

@@ -69,7 +69,7 @@
 | Finding | 出所 | 判定 | 理由（coordinator が一次情報で確認した事実を含む） |
 |---|---|---|---|
 | `:361` 末尾の `。` が文体違反 | Craft 2a | **Valid → 修正する** | 確認済み: schema 内 description 全64件のうち `。` 終わりは `:361` の1件のみ（`json.load` して全 description の末尾文字を集計。`）`22 / `る`16 / `止`4 ほか）。差分前は `）` 終わりで、本差分が持ち込んだ |
-| `:377`「値を指定しなかったフィールド」は末尾限定 | Craft 1b・QA F4 | **Valid → 修正する** | 確認済み: `DataFileFragment.java:107` = `String value = i < line.size() ? line.get(i) : "";` の位置対応。解説書 `rst:787`「記述しなかった分のカラムには空文字が設定されたものとして扱われる」。ユーザーは `:377` の曖昧さ修正を承認済み |
+| `:377`「値を指定しなかったフィールド」は末尾限定 | Craft 1b・QA F4 | **Valid → 修正する** | 確認済み: `DataFileFragment.java:107` = `String value = i < line.size() ? line.get(i) : "";` の位置対応。出典は当初 `rst:787` を引いていたが、**`rst:787` はテーブルデータ（Excel）節**（直前 `:774`「ヘッダ行（2行目）」・`:771`「日付型カラムの空文字」）であり `record_fragment` はファイル系・メッセージ系のブロックなので誤り。**`rst:883` に差し替えた**（2026-08-24 ユーザー指摘）。指摘内容（末尾限定）自体は `DataFileFragment.java:107` で確認済みで妥当。ユーザーは `:377` の曖昧さ修正を承認済み |
 | `:377`「0件も有効」の係り先が曖昧になった | QA F2 | **Valid → 修正する** | 確認済み: `rst:883` は「YAML形式では ``rows:`` に空配列 ``[]`` を記載した行を書けば、全フィールドが ``""`` のレコードとして保持される」。「要素数0の配列」と読むと実挙動と正反対になる。本差分が直前文を書き換えたことで生じた曖昧さ |
 | `:386` に「必ず」が無い | Craft 2b | **Valid → 修正する** | 確認済み: `grep -n 数値・真偽値` → `:108` `:136` は「必ず」あり、`:386` のみ無し。本差分が編集した文字列そのもの |
 | 順序・件数の**規範**がスキーマから消えた | Craft 1a | **Escalation → ユーザー判断待ち（step O・判断A）** | 確認済み: `rst:1143`「``rows:`` の各行は配列形式で、``fields:`` と同じ順序・同じ件数で値を並べる」／`rst:1300`「``fields:`` と同じ順序・同じ件数の値だけを並べる」。規範を書き戻すのは、ユーザーが `:361` 削除時に述べた「`:377` が件数の扱いまで含めて正確に述べている」という前提の再検討にあたるため、方向の変更はユーザーの判断 |
@@ -77,6 +77,32 @@
 | description が述べる挙動を固定するテストが無い | QA F1 | **Escalation → ユーザー判断待ち（step O・判断C）** | 確認済み: 先例 `YamlFileBuilderTest.java:526-542`（#13 で追加）が「description が述べている挙動を、YAML ファイルを経由した実際の経路で実測して固定する」と明記。テスト追加は `#18` の完了条件（description のみ）の外でスコープ拡大にあたる。coordinator 推奨は新タスク化 |
 | 冗長（1c）／主語の一貫性（1d）／「同順」の語（1e）／「要素数」と「件数」の混在（2c） | Craft | **Invalid（見送り）** | いずれも軽微な文体の指摘で、事実誤りでも完了条件違反でもない。「同順」は本差分以前から存在（`5fb7720` 版の `:377` にも「同順・同件数」）で本差分が持ち込んだものではない。報告書候補として記録 |
 | 完了条件が実挙動との一致を問うていない | QA F5 | **Invalid（指摘は妥当だが本差分の欠陥ではない）** | 完了条件セットの質の問題。目的の達成自体は Method と self-check で実経路を走らせて実測済み（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` で不足フィールドが `""` になることを確認）。報告書候補として記録 |
+
+## step P 適用（round 3・2026-08-24 ユーザー判断を反映）
+
+**判断A の前提測定**: 固定長ファイルでも `rows` の要素数不足は `""` 補完される。
+
+- 方法: 一時テストクラスから `YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` を実行（実行後に一時ファイルは削除済み）。フィクスチャは `type: fixed`（`FIELD1`/`FIELD2` 各 `半角` 長さ5）と `type: variable`（`NAME`/`VALUE`）で、いずれも `rows` に `["AAAAA"]`（要素1件）と `[]`（空配列）を並べた
+- 結果: `FixedLengthFile` → `row[0]={FIELD2=, FIELD1=AAAAA}` / `row[1]={FIELD2=, FIELD1=}`、`VariableLengthFile` → `row[0]={VALUE=, NAME=tanaka}` / `row[1]={VALUE=, NAME=}`
+- 裏付け: `addValue` の定義は `DataFileFragment.java:102-115` の1箇所のみ。`grep -rn addValue src/main/java/nablarch/test/core/file/` は `:102`（`addValue`）と `:169`（`addValueWithId`）のみを返し、`VariableLengthFileFragment` / `FixedLengthFileFragment` に override は無い
+- 結論: `:377` 第2文に「可変長ファイルでは」の限定は付けない
+
+**適用した4点**
+
+| 対象 | 変更後 | 出典・根拠 |
+|---|---|---|
+| `:361` | 末尾の `。` を削除 | schema 内 description 全64件を再集計し `。` 終わりが 0 件になったことを確認（`json.load` して末尾文字を集計） |
+| `:377` | 判断A の3文構成へ（規範／挙動／記法）。第2文は「不足した**末尾**のフィールド」 | 規範の出典 `rst:1143`・`rst:1300`。末尾限定は `DataFileFragment.java:107` = `i < line.size() ? line.get(i) : ""`。`""` 補完と `[]` 記法は `rst:883` |
+| `:377` | 「0件も有効」→「`rows` が0件でも有効」。**括弧内は削除** | 括弧内「setup_files では空ファイル、expected_files では出力なしの期待値として使用」は未実測。`rst:881`「0バイトの空ファイルは、レコード定義を持たないファイルデータブロックとして表現する」・`rst:1146`「0バイトの空ファイルを表現するには、`records:` に空配列 `[]` を記載する」と表現手段が違う。`#15`/`#16` が実測した `rows: []` はテーブルデータ経路のみ（`checks/task-16.md:26` `:104`）でファイル系は未測定。測っていない挙動は書かない |
+| `:386` | 「必ず」を追加 | `:108` `:136` と揃える |
+
+**確認**: `python3 -c "import json; json.load(...)"` → JSON OK。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` → `Tests run: 187, Failures: 0, Errors: 0, Skipped: 0` / BUILD SUCCESS。
+
+**⑥ nablarch-document への報告書候補（追加）**
+
+| 指摘 | 根拠 |
+|---|---|
+| `rst:883` が `""` 補完を「可変長ファイルでは、…」の節に置いているが、実装では固定長ファイルでも同じく補完される（記述範囲が実装より狭い） | 上記実測（`FixedLengthFile` で `row[1]={FIELD2=, FIELD1=}`）と `DataFileFragment.java:102-115`（override 無し）。なお `:883` の同一文の後半は「（固定長ファイルの場合はスペースパディングされた定長レコードとして書き出される）」と固定長にも触れており、節の切り方だけが狭い |
 
 ## Overall Verdict
 
