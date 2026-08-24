@@ -725,7 +725,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #22: `record_fragment.rows` の description が述べる挙動を実経路で固定するテストを追加する
+### ~~#22: `record_fragment.rows` の description が述べる挙動を実経路で固定するテストを追加する~~
 
 **Purpose**: `#18` で書き直した `$defs.record_fragment.properties.rows.description` が述べる挙動を、YAML ファイルを経由した実際の経路で実測して固定する。
 
@@ -735,11 +735,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A1. **（2026-08-24 ユーザー承認済み）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に、`fb58781` で入れた「空マッピング（`{}`）の行および全値が `null` または空文字の行は、行として存在しないものとして扱う」旨を書く。**文言は `YamlSection#dropBlankRows` の実装から起こす。ただし実装と1対1で対応させない**（2026-08-24 ユーザーが当初指示を取り下げ。Rules の規範のとおり、スキーマ検証を通過しうる入力に対する観測可能な挙動だけを書く）。`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる点を含める。`:108` の既存記述「空配列 `[]` は `setup_tables` において全件 DELETE のみ」との関係（**どちらが先に効くか**）も書き分ける。**`record_fragment` の rows には適用しないことも、誤読を防ぐため明示する**（「ファイル系」と等値にしない — V5）
-- [ ] A0. **`#18` step R の F4 適用**（**A1 と同一ラウンドで処理する** — 2026-08-24 ユーザー支持）: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
-- [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
-- [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
-- [ ] C. 以下3件を最低限の対象として固定する（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` の経路）
+- [x] A1. **（2026-08-24 ユーザー承認済み）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に、`fb58781` で入れた「空マッピング（`{}`）の行および全値が `null` または空文字の行は、行として存在しないものとして扱う」旨を書く。**文言は `YamlSection#dropBlankRows` の実装から起こす。ただし実装と1対1で対応させない**（2026-08-24 ユーザーが当初指示を取り下げ。Rules の規範のとおり、スキーマ検証を通過しうる入力に対する観測可能な挙動だけを書く）。`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる点を含める。`:108` の既存記述「空配列 `[]` は `setup_tables` において全件 DELETE のみ」との関係（**どちらが先に効くか**）も書き分ける。**`record_fragment` の rows には適用しないことも、誤読を防ぐため明示する**（「ファイル系」と等値にしない — V5）
+- [x] A0. **`#18` step R の F4 適用**（**A1 と同一ラウンドで処理する** — 2026-08-24 ユーザー支持）: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
+- [x] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
+- [x] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
+- [x] C. 以下3件を最低限の対象として固定する（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` の経路）
   - 要素数が `fields` より少ない行 → **末尾のフィールドが `""` になる**こと
   - `rows: [[]]` → **全フィールドが `""` のレコード1件**になること（解説書 `rst:883`）
   - `rows: []` → **データ行0件**になること
@@ -754,13 +754,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - 値の生成元は `DataFileFragment.java:107`
 
   **固定長（`FixedLengthFile`）で DataRecord 層の `""` を期待値に書かない**。固定長は `FixedLengthFileFragment.java:45-59` の `convertForDataRecord` が `convertValue`（`:67-88`）に加えて `removePadding(key, converted, dummy)`（`:55`）を通し、最終的に `DataFileFragment.java:484` `dataType.removePadding(value)` に落ちる。`removePadding("")` が `""` を返す根拠は nablarch-core-dataformat 側にあるが、当リポジトリが依存する `6-NEXT-SNAPSHOT` には sources jar が無く（`~/.m2/repository/com/nablarch/framework/nablarch-core-dataformat/6-NEXT-SNAPSHOT/` に `*-sources.jar` 無し。旧版 1.3.5 / 2.0.3 の sources を現行版の根拠にはしない）、**クラス・行番号を示せないため未確認**。示せない以上、固定長で `""` を断定しない
-- [ ] D. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
-- [ ] E. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-22.md)
-- [ ] H. QA expert review (subagent)
-- [ ] I. Craft expert review — coding (subagent)
-- [ ] J. Verification expert review — test (subagent)
+- [x] D. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
+- [x] E. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-22.md)
+- [x] H. QA expert review (subagent)
+- [x] I. Craft expert review — coding (subagent)
+- [x] J. Verification expert review — test (subagent)
 
 **レビュー ラウンド1（step A0 + A1）の結果と 2026-08-24 ユーザー裁定** — 判定表・全 Finding は `checks/task-22.md`。ラウンド1の実装は `ee4a55e`。4観点（A 充足／B 整合／C 規約／D 検証の妥当性）を独立サブエージェントで実施し全観点 fail。
 
@@ -826,13 +826,30 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. **(a) の帰結を実物で確認する**（未検証事項）。`:108` の既存文「省略カラムは setup_tables でデフォルト値が補完される」に対し、実際に補完されるのは**列名決定行に含まれないカラム**だけで、列名決定行にあって当該行で値を省略したカラムがどう INSERT されるかを、`TableData` の INSERT 経路を実読して確定する（`TableData.java:191-193` の分岐から先を追う）。確認できるまで記述を書き換えない
-- [ ] B. (a) の確認結果に基づき `:108` の該当文を是正する
-- [ ] C. **(b)**: マーカーカラム `[COL]` だけが非空の行が列名決定行になったときの帰結を確認し記述する。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る、という報告を実物で裏取りしてから書く
-- [ ] D. JSON 妥当性確認（`python3 -c "import json; json.load(...)"`）と `mvn -o clean test` 全 PASS
-- [ ] E. commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-24.md)
-- [ ] G. レビュー要否は Rules の基準で判断する（description を CC が起こすため原則 **必要**）
+- [x] A. **(a) の帰結を実物で確認する**。**2026-08-24 の `#22` レビュー ラウンド2 で観点A・観点B が独立に確認し、coordinator も一次情報で裏を取った**（下記「(a) の裏取り結果」）。本ステップは、この出典チェーンを再点検し INSERT の実行箇所まで通すことに置き換わる
+
+  **(a) の裏取り結果（2026-08-24）— 「列名決定行にあって当該行で省略したカラムは NULL が INSERT される」は事実**:
+  - `YamlTableDataBuilder.java:219-221` — `extractRows` は `columnNames` だけを走査し、行に無いキーは `objectToString(rowMap.get(col))` = `null` を格納する（「不在」ではなく「値 null」になる）
+  - `TableData.java:523-534` — `addRow` は `columnNames` 全件を `map.put(...)` する（値 null でもキーは入る）
+  - `TableData.java:191-193` — `if (!row.containsKey(columnName)) return getDefaultValue(columnName);`（キーがあるのでここは通らない）
+  - `TableData.java:196-199` — `Object orig = row.get(columnName); if (orig == null) { return null; }`（**coordinator が実物確認**）→ デフォルト値ではなく null が返る
+  - 解説書も同じ結論（観点B 報告）: `testdata_notation.rst:658` / `:819`「`rows:` の先頭行のキーの一部を後続の行が持たない場合、そのカラムは `null` を明示的に指定したのと同じ扱いになる」。**食い違っているのはスキーマ側**
+  - 補足: **先頭行**が省略したカラムはカラム名集合ごと落ちるため、`:108` の既存文（デフォルト値補完・FK に `"0"`・比較対象外）はその場合には正しい。誤っているのは「各オブジェクトに含まれない」という**単位の取り方**
+- [x] B. (a) の確認結果に基づき `:108` の該当**3文すべて**を是正する（**2026-08-24 観点D の指摘によりスコープ拡張。coordinator が一次情報で裏取り済み**）。「各オブジェクトに含まれないカラム（省略したカラム）の挙動はセクションにより異なる」に続く3文は、3セクションとも同じ理由で実装と食い違う:
+  - setup_tables「INSERT 時にデフォルト値が補完される」→ 列名決定行にあるカラムを後続行が省略した場合は NULL が INSERT される（step A の裏取り結果）
+  - expected_tables「省略カラムは比較対象外になる」→ **比較対象外にならない**。`Assertion.java:256` が `String[] columns = expected.getColumnNames();` を取り、`:297-302` がその全カラムを `assertEqualsAsString` で1件ずつ比較する（**coordinator が実物確認**）。列名は列名決定行のキーで確定しているため、後続行で省略したカラムは null として比較される
+  - expected_complete_tables「型ごとのデフォルト値を補完してから全カラム比較」→ 補完されるのは `allColumns - columnNames` のカラムだけ。`TableData.java:709-712` の `omittedColumns` がその差集合で、**行単位の省略は補完対象に入らない**（**coordinator が実物確認**）
+- [x] C. **(b)**: マーカーカラム `[COL]` だけが非空の行が列名決定行になったときの帰結を確認し記述する。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る、という報告を実物で裏取りしてから書く
+- [x] D. JSON 妥当性確認（`python3 -c "import json; json.load(...)"`）と `mvn -o clean test` 全 PASS
+- [x] E. commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-24.md)
+- [x] G. レビュー要否は Rules の基準で判断する（description を CC が起こすため原則 **必要**）
+
+**別枠の観察（`#24` の対象外。記録のみ。2026-08-24 観点D）**:
+
+- **O-D1（未確認・本体側）**: `:108` 末尾の助言「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は、**BOOLEAN 型カラムでは NPE になる疑い**がある。`TableData.java:162-164` が `insert.setBoolean(bindIndex++, row.containsKey(col) ? row.getBoolean(col) : (Boolean) getDefaultValue(col))` で、`SqlRow#getBoolean` が null を返すと `SqlPStatement#setBoolean(int, boolean)` の unboxing で落ちると読める。**静的読解のみで実行未確認**。本体 nablarch-testing の挙動で Excel 経路と共通のため YAML 側が持ち込んだ乖離ではない
+- **O-D2（軽微）**: `list_maps` がテストコードへ渡す Map は `TreeMap`（キー昇順）である（`YamlTableDataBuilder.java:193`）。`:136` の「そのまま渡す」は記述順を保つとは書いていないので誤りではないが、キー順は観測されうる
+- **O-D3（軽微）**: `testShots` が空のとき web 経路は旧 ID `testCases` へフォールバックし、両方空のときだけ例外になる（`AbstractHttpRequestTestTemplate.java:220-229`）。`:136` の「エラーになる」は既存 `:132` と同じ簡略化で、ファイル内では整合している
 
 **Completion criteria**:
 

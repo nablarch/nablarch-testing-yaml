@@ -402,7 +402,10 @@ public class YamlFileBuilderTest {
      * テーブル系セクション・{@code list_maps} では「全ての値が null／空文字の行」を行として存在しない
      * ものとして扱う（{@link YamlSection#dropBlankRows}）が、ファイルデータにはその規則を適用しない。
      * 全フィールドが空のレコードはそれ自体が意味を持つデータであり、落としてはならない。
-     * 値行に「全要素が空ならスキップ」を入れるとこのテストが落ちる。<br>
+     * 値行に「全要素が空ならスキップ」を入れるとこのテストが落ちる。
+     * ここで固定するのは空文字を要素数ぶん明示的に並べた {@code ["", "", ""]} の側であり、
+     * 要素数 0 の配列 {@code []} の側は
+     * {@link #buildFileList_emptyRowBecomesOneRecordOfEmptyStrings()} が担保する。<br>
      * Given: expected_files の allBlankFieldsRecord グループに rows が {@code ["", "", ""]} 1 件のエントリ<br>
      * When:  buildFileList(yaml, "expected_files", "[allBlankFieldsRecord]", path) を呼ぶ<br>
      * Then:  レコードが 1 件保持され、3 フィールドとも空文字（{@code null} ではない）で保持されること
@@ -942,8 +945,13 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: 値行の要素数が fields の件数に満たない場合、不足した末尾のフィールドが "" になること。
      *
      * <p>
+     * description が述べる挙動:
+     * {@code $defs.record_fragment.properties.rows.description} の
+     * 「NTF は fields の順序で先頭から対応付ける」および
+     * 「各配列の要素数が fields の件数に満たない場合、不足した末尾のフィールドは {@code ""} として扱われる」。<br>
      * 値行は fields の順序で先頭から対応付けられ、行データが尽きた位置以降は "" で埋められる。
-     * 対応付けを末尾詰めに変えたり、不足分を null で埋めるように変えるとこのテストが落ちる。<br>
+     * 値行の先頭に 1 要素挿入して対応付けをずらすと FIELD1 の判定が落ち、不足分を null で埋めると
+     * FIELD2／FIELD3 の判定が落ちる（どちらも実際に確認済み。{@code checks/task-22.md} の変異確認欄）。<br>
      * Given: expected_files の shortRow グループに、fields 3 件に対し要素 1 件（{@code ["AAAAA"]}）の値行<br>
      * When:  buildFileList(yaml, "expected_files", "[shortRow]", path) を呼び toDataRecords() する<br>
      * Then:  レコード 1 件が返り、FIELD1 が "AAAAA"、FIELD2 と FIELD3 が "" になること
@@ -958,7 +966,7 @@ public class YamlFileBuilderTest {
         List<DataFile> result = buildFileList(yaml, "expected_files", "[shortRow]", DIR);
 
         // Then
-        assertThat(result.size(), is(1));
+        assertThat("1 件取得できること", result.size(), is(1));
         List<DataRecord> records = result.get(0).toDataRecords();
         assertThat("値行 1 件がレコード 1 件になること", records.size(), is(1));
         DataRecord record = records.get(0);
@@ -972,8 +980,14 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: 空配列 [] を 1 要素書くと、全フィールドが "" のレコード 1 件になること。
      *
      * <p>
+     * description が述べる挙動:
+     * {@code $defs.record_fragment.properties.rows.description} の
+     * 「これを利用し、空配列 {@code []} を1要素書くと全フィールドが {@code ""} のレコード1件になる」。<br>
      * 要素数 0 の値行も 1 件の値行として扱われ、全フィールドが "" で埋められる。
-     * 空の値行をスキップするように変えるとこのテストが落ちる。<br>
+     * ここで固定するのは要素数 0 の配列という表記であり、空文字を要素数ぶん明示的に並べた
+     * {@code ["", "", ""]} の側は {@link #buildFileList_allBlankFieldRecordIsKept()} が担保する。
+     * 空の値行をスキップすると件数の判定が落ち、不足分を null で埋めると各フィールドの判定が落ちる
+     * （どちらも実際に確認済み。{@code checks/task-22.md} の変異確認欄）。<br>
      * Given: expected_files の emptyRow グループに、fields 2 件に対し空配列 {@code []} 1 件の rows<br>
      * When:  buildFileList(yaml, "expected_files", "[emptyRow]", path) を呼び toDataRecords() する<br>
      * Then:  レコード 1 件が返り、FIELD1 と FIELD2 がいずれも "" になること
@@ -988,7 +1002,7 @@ public class YamlFileBuilderTest {
         List<DataFile> result = buildFileList(yaml, "expected_files", "[emptyRow]", DIR);
 
         // Then
-        assertThat(result.size(), is(1));
+        assertThat("1 件取得できること", result.size(), is(1));
         List<DataRecord> records = result.get(0).toDataRecords();
         assertThat("空配列 1 件がレコード 1 件になること", records.size(), is(1));
         DataRecord record = records.get(0);
@@ -1001,8 +1015,11 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: rows が 0 件のとき、データ行が 0 件になること。
      *
      * <p>
+     * description が述べる挙動:
+     * {@code $defs.record_fragment.properties.rows.description} の「rows が0件でも有効」。<br>
      * rows が 0 件でもレコード定義は生成され、データ行だけが 0 件になる。
-     * 0 件の rows をレコード定義ごと落としたり、空の値行を 1 件補うように変えるとこのテストが落ちる。<br>
+     * 0 件の rows をレコード定義ごと落とすとレコード定義の判定が落ち、空の値行を 1 件補うと
+     * データ行の判定が落ちる（どちらも実際に確認済み。{@code checks/task-22.md} の変異確認欄）。<br>
      * Given: expected_files の noRows グループに、fields 2 件・{@code rows: []} のエントリ<br>
      * When:  buildFileList(yaml, "expected_files", "[noRows]", path) を呼ぶ<br>
      * Then:  DataFile が 1 件返り、レコード定義は 1 件生成され、toDataRecords() が 0 件であること
@@ -1017,7 +1034,7 @@ public class YamlFileBuilderTest {
         List<DataFile> result = buildFileList(yaml, "expected_files", "[noRows]", DIR);
 
         // Then
-        assertThat(result.size(), is(1));
+        assertThat("1 件取得できること", result.size(), is(1));
         assertThat("レコード定義は生成されること",
                 result.get(0).createLayout().getRecords().size(), is(1));
         assertThat("データ行が 0 件であること", result.get(0).toDataRecords().size(), is(0));

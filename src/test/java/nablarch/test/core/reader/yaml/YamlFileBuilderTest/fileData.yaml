@@ -356,6 +356,8 @@ expected_files:
   # JSON スキーマ $defs.record_fragment.properties.rows.description が述べる挙動の固定用。
   # 可変長（VariableLengthFile）を使う。可変長は DataRecord への変換が恒等写像のため、
   # DataFileFragment が値行に詰めた文字列がそのまま DataRecord の値になる。
+  # emptyRow は「要素数 0 の配列」を固定する。空文字を要素数ぶん明示的に並べた側は
+  # 上の allBlankFieldsRecord が担う。
   - group_id: shortRow
     path: dummy/short_row.csv
     type: variable
