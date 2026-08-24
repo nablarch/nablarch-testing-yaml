@@ -249,6 +249,15 @@ list_maps:
       - KEY1: "null"
         KEY2: "null"
 
+  # 全行が行として存在しないもの（空マッピング／全ての値が null・空文字）の場合、
+  # 残る行が 0 件になり列名も決まらない。setup_tables 側の allEmptyRows と同じ趣旨で list_maps 経路を固定する。
+  - id: allBlankRowsListMap
+    rows:
+      - {}
+      - KEY1: ""
+        KEY2: null
+      - {}
+
 
 expected_tables:
   - group_id: markerColInTable

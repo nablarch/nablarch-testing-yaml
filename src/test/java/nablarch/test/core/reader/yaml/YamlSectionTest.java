@@ -273,6 +273,8 @@ public class YamlSectionTest {
     /**
      * 全ての値を {@code "v"} とした行を {@link #rowOf(Object...)} で組み立てる。
      * 値そのものが問われないテスト（列名解決等）で使う。
+     * 空マッピング（{@code {}}）の行は「キーを持つ行」ではないので、{@link #rowOf(Object...)} を
+     * 引数なしで呼んで組み立てること。
      */
     private static Map<String, Object> row(String... keys) {
         Object[] keyValues = new Object[keys.length * 2];
@@ -296,7 +298,7 @@ public class YamlSectionTest {
     public void resolveColumns_returnsKeysOfFirstKeyedRowInDeclarationOrder() {
         // Given
         List<Object> rows = Arrays.<Object>asList(
-                row(),
+                rowOf(),
                 row("COL_C", "COL_A", "COL_B"),
                 row("COL_A"));
 
@@ -338,7 +340,7 @@ public class YamlSectionTest {
     @Test
     public void resolveColumns_allEmptyMappingRowsReturnsEmptyList() {
         // Given
-        List<Object> rows = Arrays.<Object>asList(row(), row());
+        List<Object> rows = Arrays.<Object>asList(rowOf(), rowOf());
 
         // When
         List<String> result = YamlSection.resolveColumns(rows);
@@ -470,8 +472,8 @@ public class YamlSectionTest {
      *
      * <p>
      * 空判定は {@code String.isEmpty()} で行い、値を trim してからは判定しない。依存先 nablarch-testing の
-     * {@code PoiXlsReader#isBlankLine} が {@code StringUtil.isNullOrEmpty} で判定するのに合わせるため、
-     * 半角スペース 1 個は「値がある」として扱う。<br>
+     * {@code PoiXlsReader#isBlankLine} が各セルを {@code String#isEmpty()} で判定し trim しないのに
+     * 合わせるため、半角スペース 1 個は「値がある」として扱う。<br>
      * Given: 半角スペース 1 個だけを値に持つ行と、空文字の値を持つ行 からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  半角スペースの行だけが残ること

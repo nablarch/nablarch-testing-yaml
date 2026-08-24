@@ -20,16 +20,17 @@ import java.util.Map;
  *
  * <p>
  * 定数と値変換ヘルパーに加えて、テーブル系セクション（{@code setup_tables}／{@code expected_tables}／
- * {@code expected_complete_tables}）と {@code list_maps} における次の 2 つの意味規則を持つ。
+ * {@code expected_complete_tables}）と {@code list_maps} における次の 3 つの意味規則を持つ。
  * </p>
  * <ul>
  *   <li>何を行とみなすか — {@link #dropBlankRows(List)}</li>
  *   <li>カラム名をどの行から決めるか — {@link #resolveColumns(List)}</li>
+ *   <li>どのカラム名を DB 操作対象外のマーカーカラムとみなすか — {@link #isMarker(String)}</li>
  * </ul>
  * <p>
- * この 2 つは組で、{@code dropBlankRows} を先に適用する（順序の根拠は
- * {@link #dropBlankRows(List)} の javadoc に記す）。ファイルデータ（{@link YamlFileBuilder}）は
- * どちらの規則も使わない。
+ * 前の 2 つは組で、{@code dropBlankRows} を先に適用する（順序の根拠は
+ * {@link #dropBlankRows(List)} の javadoc に記す）。{@code isMarker} は列名が決まった後に適用する。
+ * ファイルデータ（{@link YamlFileBuilder}）はいずれの規則も使わない。
  * </p>
  *
  * @author kiyotis
@@ -165,11 +166,12 @@ public final class YamlSection {
      *
      * <p>
      * 列名解決（{@link #resolveColumns(List)}）と値加工（{@link #interpret(String, List)}）より前に
-     * 適用すること。依存先 nablarch-testing の {@code PoiXlsReader#readLine}・
-     * {@code TestDataParsingTemplate#readTestData} も空行判定（{@code isBlankLine}）を値加工
-     * （{@code interpret}）より前に行っており、それに順序を揃える。この順序により、値加工を通すと
-     * 空になる値（例えば {@code NullInterpreter} が Java null へ変換する {@code "null"}）だけを持つ行も、
-     * 行としては保持される。
+     * 適用すること。依存先 nablarch-testing では、{@code PoiXlsReader#readLine} が読み込み段階で
+     * 空行（{@code isBlankLine}）をそのまま読み飛ばす。値加工（{@code interpret}）を持つのは
+     * {@code TestDataParsingTemplate#readTestData} の方で、こちらも {@code isBlankLine} による
+     * 読み飛ばしを {@code interpret} より前に行う。本メソッドはこの順序に揃える。この順序により、
+     * 値加工を通すと空になる値（例えば {@code NullInterpreter} が Java null へ変換する
+     * {@code "null"}）だけを持つ行も、行としては保持される。
      * </p>
      *
      * @param rows データ行のリスト（null 不可）。呼び出し側は {@link #getList(Map, String)} の戻り値を
@@ -215,6 +217,13 @@ public final class YamlSection {
      * {@link #castMap(Object)} が Map でない値に対して空 Map を返すので、両者は同じ判定で扱える。
      * 本パッケージのビルダは {@link #dropBlankRows(List)} で除去済みの行を渡すためこの読み飛ばしには
      * 到達しないが、除去を行わない呼び出しでも列名が 0 件に倒れないようにこの判定を残す。
+     * </p>
+     *
+     * <p>
+     * 同種の判定を残すか否かの線引きは可視性で決めている。本メソッドは public であり
+     * {@link #dropBlankRows(List)} を通していない行を渡されても単体で正しく振る舞う必要があるため、
+     * この判定を残す。一方 {@code YamlTableDataBuilder#extractRows} は private かつ本メソッドと同じ
+     * 呼び出し元からしか到達しないため、判定を持たせず {@code dropBlankRows} に一本化してある。
      * </p>
      *
      * <p>
