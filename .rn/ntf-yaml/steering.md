@@ -810,7 +810,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #24: `:108` のカラム省略まわりの記述の乖離を是正する
+### ~~#24: `:108` のカラム省略まわりの記述の乖離を是正する~~
 
 **Purpose**: `#22` のレビュー ラウンド1 で見つかった、`$defs.table_data.properties.rows` の**既存**記述と実装の乖離を潰す。あわせて `:361` の「ファイル系」表記を直す。いずれも `#21` の空行除去によってカラム名決定行が動くようになったため顕在化した。
 
@@ -833,7 +833,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [x] D. JSON 妥当性確認と `mvn -o clean test` 全 PASS（`Tests run: 210, Failures: 0, Errors: 0, Skipped: 0`）
 - [x] E. commit・push
 - [x] F. self-check (OK/NG per completion criterion, record in checks/task-24.md)
-- [ ] G. レビュー **必要**（description を CC が起こすため。Rules の基準）
+- [x] G. レビュー **必要**（description を CC が起こすため。Rules の基準）
   - **ラウンド1 = 2観点のみ**（**B 整合** / **D 検証の妥当性**）。**A 充足 と C 規約は回さない**（2026-08-24 ユーザー指示）。理由: `#24` は既存 description の是正であり実装変更が無く、外から観測できるものに新しいものが入らない。観点A は対象が (a) の3文と (b) の1語に確定済みで抜けが生じない。観点C は既存 description の文体に揃えるだけで実害が小さい
   - **B 整合** — CC が起こした文が実装と矛盾しないか。次の2つを**別々に**見る
     - **B-1 成果物**: `:108` と `:361` の新しい文言が、`nablarch-testing` の実物と一致するか
@@ -849,13 +849,21 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 | --- | --- | --- | --- |
 | 1 | B 整合（B-1 / B-2） | Valid 4（V-1〜V-4）・要確認1 | B-1 NG・B-2 反例あり |
 | 1 | D 検証の妥当性 | Valid 3（D-1〜D-3）・要確認1 | fail |
+| 2 | 観点1（差分限定範囲） | 1件 | Invalid（:361 は 2f060e8 の承認済みスコープ、比較範囲の誤りによる誤指摘） |
+| 2 | 観点2（新しい欠陥） | 1件 | Valid（Boolean NPE 例外文が原因を行内省略に限定して読める書き方だった） |
+| 3 | 観点1（差分限定範囲） | 0件 | 範囲内 |
+| 3 | 観点2（新しい欠陥） | 0件 | Invalid（新しい欠陥なし。実経路カバレッジを1件補強） |
 
 **ラウンド1 是正内容**: Valid のみ反映。(1) の定義をカラム名決定行基準に一本化、(2) の Boolean 型 NPE 例外を追記、`:18` にマーカーカラム除外を補い、FK ブロック等の波及表現を揃えた。V-3（(a) 根拠3点目「補完値で比較される」）は偽と判定されたため反映していない。あわせて `YamlColumnOmissionTest`（14件）を新規追加し、`:18` / `:25` / `:108` の主張を実経路＋5系統の変異確認で固定（`checks/task-24.md` 参照）。`mvn -o clean test` = `Tests run: 224, Failures: 0, Errors: 0, Skipped: 0`
+
+**ラウンド2 是正内容**: `:108` (2) 段落の Boolean NPE 例外文を、原因の経路（行内省略／クォートなし `null`／`COL:` 省略／クォート付き `"null"`）を問わず「値が null になれば」NPE になる旨へ書き替え、「null を明示しても防げない」ことを明記。実経路テストを1件追加（クォートなし `null` の明示、mutation で NPE が実際に発生・防止すると FAIL することを確認）。`mvn -o clean test` = `Tests run: 225`
+
+**ラウンド3 是正内容**: description の書き替えは無し（新しい欠陥なし）。(2) 段落の4系統のうちクォート付き `"null"` 経由が未固定だったため実経路テストを1件補強。`mvn -o clean test` = `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0`。ラウンド3で新しい欠陥が出なかったため step G 完了
 
 **範囲外の欠陥（`#24` では直さず課題として起票）**:
 
 - **X-1**: 旧 step C（マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る）は、スコープ確定で `#24` から外れた。**未実施・未検証**。別タスクとして起票が必要
-- **O-D1（未確認・本体側）**: `:108` 末尾の助言「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は、**BOOLEAN 型カラムでは NPE になる疑い**がある。本体 `TableData.java:162-163` が `insert.setBoolean(bindIndex++, row.containsKey(col) ? row.getBoolean(col) : (Boolean) getDefaultValue(col))` で、`SqlRow#getBoolean` が null を返すと `setBoolean(int, boolean)` の unboxing で落ちると読める。**静的読解のみで実行未確認**。本体 Excel 経路と共通のため YAML 側が持ち込んだ乖離ではない
+- **O-D1（ラウンド2/3 で実経路確認済み・本体側の記述、未修正）**: `:108` 末尾の FK ブロックの助言「NULL 許容カラムを NULL にしたい場合は省略せず `null`（クォートなし）を明示すること」は、**BOOLEAN 型カラムでは NPE になる**（本体 `TableData.java:163-164` の `setBoolean` unboxing。ラウンド2/3 で `YamlColumnOmissionTest` に実経路テスト3系統を追加し実測確認済み）。この文言自体は `c56207d` 以前から存在し `#24` の対象コミットが持ち込んだものではないため、`#24` では修正していない。別課題として起票が必要。本体 Excel 経路と共通のため YAML 側が持ち込んだ乖離ではない
 - **O-D2（軽微）**: `list_maps` がテストコードへ渡す Map は `TreeMap`（キー昇順）である（`YamlTableDataBuilder.java:193`）。`:136` の「そのまま渡す」は記述順を保つとは書いていないので誤りではないが、キー順は観測されうる
 - **O-D3（軽微）**: `testShots` が空のとき web 経路は旧 ID `testCases` へフォールバックし、両方空のときだけ例外になる（`AbstractHttpRequestTestTemplate.java:220-229`）。`:136` の「エラーになる」は既存 `:132` と同じ簡略化で、ファイル内では整合している
 
@@ -931,15 +939,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-24
-- **Last completed**: #24 レビュー ラウンド1（B 整合 / D 検証の妥当性）— Valid のみ反映済み・push 済み（HEAD `c56207d`）
-- **Next**: `#24` の **step G ラウンド2**（差分限定2観点: 是正が指示範囲に収まっているか／是正が新しい欠陥を生んでいないか）。上限3回のうち残り2回
+- **Last completed**: `#24` 完了（step A〜G すべて済み。step G はラウンド3まで実施し、ラウンド3で新しい欠陥が出なかったため終了）。push 済み（HEAD `f39d95c`）
+- **Next**: `#20` step A（**ユーザー判断待ち**。着手前に回答が要る）
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `c56207d`）。PR なし
-  - **`#24` step A〜F は完了**。step G はラウンド1完了・ラウンド2以降が残っている（`checks/task-24.md` にラウンド1の判定・変異確認・反映内容を記録済み）
-  - ラウンド1の要旨: 観点B（整合）は NG（Boolean 型カラムの NPE 未記載、`(1)` 定義の「＝」不成立）、観点D（検証の妥当性）は fail（実経路テスト0件だった）。Valid のみ反映し `YamlColumnOmissionTest`（14件・5系統の変異確認で生存変異ゼロ）を新規追加。`mvn -o clean test` = `Tests run: 224, Failures: 0, Errors: 0, Skipped: 0`
+  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `f39d95c`）。PR なし
+  - **`#24` 完了**（`checks/task-24.md` にラウンド1〜3すべての判定・変異確認・反映内容を記録済み）。最終 `mvn -o clean test` = `Tests run: 226, Failures: 0, Errors: 0, Skipped: 0`
+    - ラウンド1: 観点B（整合）NG・観点D（検証の妥当性）fail → Valid のみ反映、`YamlColumnOmissionTest` 14件新規追加
+    - ラウンド2: 観点1（差分限定範囲）Invalid（`:361` は承認済みスコープ、比較範囲の誤りによる誤指摘）・観点2（新しい欠陥）Valid（Boolean NPE 例外文が原因を行内省略に限定して読める書き方だった → 是正・テスト+1）
+    - ラウンド3: 観点1 範囲内・観点2 新しい欠陥なし（クォート付き `"null"` 系統のテストカバレッジを+1補強のみ）
+    - **O-D1（範囲外・別課題起票が必要）**: `:108` 内 FK ブロックの「NULL 許容カラムを NULL にしたい場合は `null`（クォートなし）を明示すること」は Boolean 型カラムでは NPE になる（`c56207d` 以前から存在する記述。ラウンド2/3 で実経路テスト3系統により実測確認済み・未修正）
+    - **X-1（範囲外・別課題起票が必要）**: マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。未実施・未検証
   - **`#19` は完了**。未達2箇所（`YamlFileBuilder:227-228` / `YamlLoader:60-61` `:65-66`）を到達不能として承認済み（`checks/task-19.md`）
-  - **ユーザー判断待ち1件**: **#20 step A の install 判断**（旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は #20 に記載済み）
-  - **新規起票が要るもの（`#24` スコープ外）**: **X-1** — マーカーカラム `[COL]` だけが非空の行がカラム名決定行になったときの帰結。**未実施・未検証**
+  - **ユーザー判断待ち1件（次のアクション）**: **#20 step A の install 判断**（旧 State の禁止事項「yaml で `mvn install` しない」と指示書 手順5 の install 要求が衝突。内容は #20 に記載済み）
   - 本体 `../nablarch-testing` の HEAD が `2e43786`（#14 step A の記録時点 `fdf55d4` と異なる）。yaml 側からの書き込みは無い（参照のみ）が、#14 の再実行時に確認すること
   - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
   - ⑥ nablarch-document への報告書候補: `checks/task-18.md`（5件・`rst:883` の2件はセット）、`checks/task-21.md`（`rst:819` と `rst:1534`）、`checks/task-22.md`（`rst:1534` の全値 null 欠落と、`rst:830`／`:1443-1445` の null 等価性）。**`rst:658` と `rst:819` は正しく、報告候補ではない**
