@@ -182,6 +182,19 @@ setup_tables:
         TIMESTAMP_COL: "2024-01-01 01:01:01"
         BOOL_COL: null
 
+  # Boolean 型カラムにクォート付き "null" を明示した場合（文字列としてロードされ、
+  # NullInterpreter が null へ変換した後に同じ NullPointerException になることの確認用）
+  - group_id: s11
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+        BOOL_COL: "null"
+
 expected_tables:
   # (1) 全行で省略したカラムは比較対象に入らない
   - group_id: e1

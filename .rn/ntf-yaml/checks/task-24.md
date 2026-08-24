@@ -300,3 +300,51 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
 - 観点1: 指摘1件・Invalid（事実誤認と判定、却下）
 - 観点2: 指摘1件・Valid（反映済み）
 - ラウンド2で新しい欠陥（Valid）が出たため、指示書の完了条件「ラウンド2で新しい欠陥が出なければ完了」に該当せず、**ラウンド3が必要**（上限3回のうち残り1回）
+
+---
+
+## レビュー ラウンド3（差分限定2観点。上限3回のうち最終回）
+
+対象差分: `a99e373`（ラウンド2の指摘反映コミット）単体。
+
+### 観点1（差分が指示範囲に収まっているか）— 範囲内
+
+`git diff --numstat a99e373~1 a99e373` をコーディネーターが独立に再実行し確認: `checks/task-24.md`（+46/-0）・スキーマ（+1/-1、`:108` の description 1行のみ）・`YamlColumnOmissionTest.java`（+16/-0）・`omission.yaml`（+13/-0）の4ファイルのみ。`:18`/`:25`/`:361` を含め他の description・構造要素・実装コード（`src/main/java`）に変更なし。指摘なし。
+
+### 観点2（是正が新しい欠陥を生んでいないか）— 欠陥なし（Invalid）
+
+以下を実測で検証し、いずれも矛盾・誤りなしと判定:
+
+1. **クォート付き `"null"` → NPE の主張**: `:108` の (2) 段落が挙げる4系統（行内省略／クォートなし `null`／`COL:` 省略／クォート付き `"null"`）のうち、クォート付き `"null"` 系統だけが実経路テストで未固定だった。`NullInterpreter`（大文字小文字を区別せず `"null"` を null へ変換）が `yamlInterpreters` に実際に登録されていることを確認したうえで、`YamlColumnOmissionTest#setupThrowsNpeWhenBooleanColumnIsQuotedNullString`（フィクスチャ `s11`、`BOOL_COL: "null"`）を新規追加し、実経路で NullPointerException になることを固定した
+2. **FK ブロックとの字面矛盾**: FK ブロックの「NULL 許容カラムを NULL にしたい場合は `null`（クォートなし）を明示すること」は Boolean 型カラムに対しては字面上矛盾する（明示しても NPE になるため）。ただしこの文言は `c56207d` 以前から存在し、`a99e373` が新たに生んだ／悪化させたものではない（既出 `O-D1` と同一事象）。**範囲外として報告のみ、修正しない**
+3. **(1) の定義との整合**: 既存テストで Boolean カラムが (1)（カラム名決定行に無い）に該当する場合は `Boolean.FALSE` が補完され NPE にならないことを確認（`:25` の記述と整合）。(2) 段落の NPE 例外文は (2) の原因列挙に明示的に限定されており、(1) との混同は無い
+
+**反映**: `YamlColumnOmissionTest.java` に `setupThrowsNpeWhenBooleanColumnIsQuotedNullString` を追加、`omission.yaml` に `s11` を追加（スキーマの description は変更なし）。
+
+### 反映後の確認
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test
+[INFO] Tests run: 226, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+（225 → 226 は `setupThrowsNpeWhenBooleanColumnIsQuotedNullString` 1件分。コーディネーターが独立に再実行し一致を確認）
+
+### ラウンド3 総括
+
+- 観点1: 指摘0件（範囲内）
+- 観点2: 指摘0件（Invalid＝新しい欠陥なし）。ただし主張の実経路カバレッジを1件補強（テスト追加のみ、description は無変更）
+- ラウンド3で新しい欠陥が出なかったため、指示書の完了条件を満たし **`#24` step G 完了**
+
+---
+
+## `#24` step G 総括（ラウンド1〜3）
+
+| ラウンド | 観点1（範囲） | 観点2（新欠陥） | 反映内容 |
+| --- | --- | --- | --- |
+| 1 | 観点A/B/C/D の4観点構成（初回のみ） | — | B（(1)定義・Boolean NPE 例外・:18 マーカー補足）と D（実経路テスト14件）を反映 |
+| 2 | Invalid（:361 は 2f060e8 の承認済みスコープ、誤指摘） | Valid（Boolean NPE 例外文の原因限定を是正） | `:108` (2) 段落の書き替え＋テスト1件 |
+| 3 | 範囲内 | Invalid（欠陥なし。カバレッジ補強のみ） | テスト1件追加（クォート付き `"null"` 系統） |
+
+最終 `mvn -o clean test`: **Tests run: 226, Failures: 0, Errors: 0, Skipped: 0**（#24 開始時 210件 → step D で+14=224 → ラウンド2で+1=225 → ラウンド3で+1=226）。

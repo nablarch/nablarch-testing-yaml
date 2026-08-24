@@ -302,6 +302,24 @@ public class YamlColumnOmissionTest {
     }
 
     /**
+     * (2) の例外はクォート付き {@code "null"} 経由でも起きる: Boolean 型カラムにクォート付き
+     * {@code "null"} を明示した場合、文字列としてロードされたあと NullInterpreter が Java null へ
+     * 変換し、クォートなし小文字 {@code null} を明示した場合や行内省略と同じ NullPointerException に
+     * なる。:108 の「クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、
+     * NullInterpreter が null へ変換する」「クォート付き `"null"`（NullInterpreter 変換後）」の記述を
+     * 実経路で固定する。
+     */
+    @Test
+    public void setupThrowsNpeWhenBooleanColumnIsQuotedNullString() {
+        try {
+            setUp("s11");
+            fail("Boolean 型カラムにクォート付き \"null\" を書いても NullPointerException が出なかった");
+        } catch (NullPointerException e) {
+            // 期待どおり
+        }
+    }
+
+    /**
      * (2) と「クォートなしの null を明示した場合」は同じ扱いになる
      * （{@code YamlSection} の値解決を通ると、キー省略も {@code COL: null} も同じ Java null になる）。
      */
