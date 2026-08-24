@@ -352,3 +352,55 @@ expected_files:
             type: 半角
         rows:
           - ["", "", ""]
+
+  # JSON スキーマ $defs.record_fragment.properties.rows.description が述べる挙動の固定用。
+  # 可変長（VariableLengthFile）を使う。可変長は DataRecord への変換が恒等写像のため、
+  # DataFileFragment が値行に詰めた文字列がそのまま DataRecord の値になる。
+  - group_id: shortRow
+    path: dummy/short_row.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+          - name: FIELD2
+            type: 半角
+          - name: FIELD3
+            type: 半角
+        rows:
+          - ["AAAAA"]
+
+  - group_id: emptyRow
+    path: dummy/empty_row.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+          - name: FIELD2
+            type: 半角
+        rows:
+          - []
+
+  - group_id: noRows
+    path: dummy/no_rows.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+          - name: FIELD2
+            type: 半角
+        rows: []
