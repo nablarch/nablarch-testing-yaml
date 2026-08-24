@@ -41,6 +41,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - 不要としたステップでは、レビューの代わりに **実行コマンドと生の出力、適用後の全文、diff** を報告する
   - 現行タスクへの当てはめ: #21 必要 / #22 必要 / #20 不要 / #14 不要 / **#19 はステップで割れる**（step A・B = 不要／step C = 必要。詳細は #19 に記載）
   - 基準の当てはめに迷う新タスクが出たときだけユーザーに聞く
+- **スキーマ `description` が対応すべき先は「実装の分岐」ではなく「スキーマ検証を通過しうる入力に対する、外から観測できる挙動」である**（2026-08-24 ユーザー裁定。`description` 全般に適用）。到達不能な内部規則は書かない。実装側の到達不能な防衛分岐（`YamlSection#castMap` の非 Map 分岐など）はそのまま残してよい
 - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
 
 # Tasks
@@ -734,7 +735,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A1. **（2026-08-24 ユーザー承認済み）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に、`fb58781` で入れた「空マッピング（`{}`）の行および全値が `null` または空文字の行は、行として存在しないものとして扱う」旨を書く。**文言は `YamlSection#dropBlankRows` の実装から起こし、実装と1対1で対応させる**（`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる点を含む）。`:108` の既存記述「空配列 `[]` は `setup_tables` において全件 DELETE のみ」との関係（**どちらが先に効くか**）も書き分ける。**ファイル系（`record_fragment`）には適用しないことも、誤読を防ぐため明示する**
+- [ ] A1. **（2026-08-24 ユーザー承認済み）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に、`fb58781` で入れた「空マッピング（`{}`）の行および全値が `null` または空文字の行は、行として存在しないものとして扱う」旨を書く。**文言は `YamlSection#dropBlankRows` の実装から起こす。ただし実装と1対1で対応させない**（2026-08-24 ユーザーが当初指示を取り下げ。Rules の規範のとおり、スキーマ検証を通過しうる入力に対する観測可能な挙動だけを書く）。`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる点を含める。`:108` の既存記述「空配列 `[]` は `setup_tables` において全件 DELETE のみ」との関係（**どちらが先に効くか**）も書き分ける。**`record_fragment` の rows には適用しないことも、誤読を防ぐため明示する**（「ファイル系」と等値にしない — V5）
 - [ ] A0. **`#18` step R の F4 適用**（**A1 と同一ラウンドで処理する** — 2026-08-24 ユーザー支持）: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
 - [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
 - [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
@@ -761,35 +762,37 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] I. Craft expert review — coding (subagent)
 - [ ] J. Verification expert review — test (subagent)
 
-**レビュー ラウンド1（step A0 + A1）の結果 — 2026-08-24。全観点 fail。ユーザー裁定待ち**:
+**レビュー ラウンド1（step A0 + A1）の結果と 2026-08-24 ユーザー裁定** — 判定表・全 Finding は `checks/task-22.md`。ラウンド1の実装は `ee4a55e`。4観点（A 充足／B 整合／C 規約／D 検証の妥当性）を独立サブエージェントで実施し全観点 fail。
 
-実装は `ee4a55e`（push 済み）。4観点（A 充足／B 整合／C 規約／D 検証の妥当性）を独立サブエージェントで実施。判定表・全 Finding は `checks/task-22.md`。
+**step A0（`:377` の1語差し替え）は4観点とも OK**。裁定・修正の対象は step A1（`:108` / `:136` の description）のみ。
 
-**ユーザー裁定待ち3件**（これが揃うまで修正ラウンドに入らない）:
+**ユーザー裁定3件（2026-08-24・確定）**:
 
-1. **判断1 — スカラ行の記述**（**4観点すべてが独立に挙げた、指示への反例**）。新 description の「マッピングでない行（スカラ等）は行が無いものとして取り除かれる」は `isBlankRow`（`YamlSection.java:201-209` ＋ `castMap` `:113-117`）とは1対1だが、**同じスキーマの `items` がその入力を禁止している** — `$defs.table_data.properties.rows.items` = `{"type":"object"}`（`:109-117`）、`list_map_data` も同じ（`:137-145`）。`YamlLoader.load` はロードごとに検証し違反で `YamlSchemaValidationException`（`YamlLoader.java:121-125`）。本リポジトリのテスト自身が「スキーマ検証で弾かれるためフィクスチャでは書けない」と明記（`YamlTableDataBuilderTest.java:791`）。**反例の構造**: 対応させるべきは「実装の分岐」ではなく「スキーマ検証を通過しうる入力に対する観測可能な挙動」。**案A（推奨）= 除去対象の列挙から落とす／案B = 残して「（スキーマ検証で先に弾かれるため YAML には書けない。API 直接呼び出し時の内部規則）」と到達性を明記**
-2. **判断2 — expected 系での 0 行の意味**（**推奨: 1句足す**）。指示は `:108` の `[]`（setup_tables 全件 DELETE）との先後関係だけを求めたが、`$defs.table_data` は3セクション共通。全行除去で 0 件になると expected 系では「対象テーブルに行が存在しないこと」の検証になる — `TableData.loadData()` は列名0件のとき `dbInfo.getColumns(tableName)` で DB 全カラムを読む（`:339-346`）。固定テストは `YamlTestDataParserTest.java:396 emptyExpectedTable_failsWhenDbHasRows`
-3. **判断3 — 範囲外の乖離2件の送り先**（**推奨: 別タスク**。`#22` の完了条件の外）。(a) `:108` の既存文「省略カラムは setup_tables でデフォルト値が補完される」は不正確 — 補完されるのは**列名決定行に含まれないカラム**だけで、列名決定行にあって当該行で省略したカラムは NULL が INSERT される（`TableData.java:189-193` の `!row.containsKey(columnName)` 分岐）。(b) マーカーカラム `[COL]` だけが非空の行が列名決定行になると `dataColumns` が0件になり全デフォルト値の1行が INSERT される。`list_maps` では空 Map が1件渡る
+1. **判断1 = 案A**。「マッピングでない行（スカラ等）」を除去対象の列挙から**落とす**。ユーザーの「実装と1対1で対応させる」という当初指示が誤りだったと明示的に取り下げられた。スカラ行は `$defs.table_data.properties.rows.items` = `{"type":"object"}`（`:109-117`）／`list_map_data` 同（`:137-145`）と `YamlLoader.java:121-125` のロード毎 `JSON_SCHEMA.validate` により `YamlSchemaValidationException` で弾かれ、description が説明すべき挙動ではない。**`castMap` / `isBlankRow` の実装は変更しない**（到達不能な防衛分岐として残す）。以後の規範は Rules に登録済み
+2. **判断2 = 承認（1句足す）**。`$defs.table_data` は setup_tables / expected_tables / expected_complete_tables の3セクション共通であり、全行除去で 0 件になったとき expected 系では「対象テーブルに行が存在しないこと」の検証になる。根拠 `TableData.java:341-347`（`if (colNames.length == 0) { colNames = dbInfo.getColumns(tableName); }`）。**文面は逐語指定しない**（逐語指定の失敗が判断1のため）。実物から起こしてレビューで見る
+3. **判断3 = 別タスク（`#24`）へ送る**。`#22` では直さない。起票条件は `#24` に記載
 
-**裁定不要・修正ラウンドで直す Valid 8件**（すべて coordinator が実物で裏取り済み）:
+**裁定不要・修正ラウンドで直す Valid 指摘**（すべて coordinator が実物で裏取り済み。ユーザーは「9件（V2・V4・V5・V7・V8・V9・V10・V14 ほか）」と数えた。「ほか」に当たる1件は判断2 の expected 系0行の追記として処理する）:
 
 | # | 指摘 | 出典 |
 |---|---|---|
-| V2 | 「`null` も `"null"` もともに **NullInterpreter により** 変換される」は機構として誤り。裸 `null` は `interpret` が早期 return するためチェーンに入らない | `YamlSection.java:248-250` |
-| V4 | 「カラム名は除去後に残った行から決まる」→「残った**先頭の行**のキー。後続行にしか無いキーは無視される」 | `YamlSection.java:227-235` / `YamlTableDataBuilder.java:214-225` |
-| V5 | 「ファイル系（`record_fragment`）」は誤り。`record_fragment` は `file_data` のほか `message_data` / `expected_request_message_data` / `group_message_data` からも `$ref`（4箇所） | schema `:184` `:210` `:243` `:274` |
+| V2 | 「`null` も `"null"` もともに **NullInterpreter により** 変換される」は機構として誤り。クォートなし `null` は `interpret` が `value == null` で早期 return するためチェーンに入らない | `YamlSection.java:247-249` |
+| V4 | 「カラム名は除去後に残った行から決まる」→「残った**先頭の行**のキー。後続行にしか無いキーは無視される」 | `YamlSection.java:227-235`（`resolveColumns`）/ `YamlTableDataBuilder.java:214-221`（`extractRows` は `columnNames` のキーしか読まない） |
+| V5 | 「ファイル系（`record_fragment`）」は誤り。`record_fragment` を使う `$defs` は `file_data` / `message_data` / `expected_request_message_data` / `group_message_data` の4つで、到達するトップレベルは `setup_files` / `expected_files` / `messages` / `expected_request_header_messages` / `expected_request_body_messages` / `response_header_messages` / `response_body_messages` の7セクション | schema `:184` `:210` `:243` `:274` と `properties` の `$ref`（python で実測） |
 | V7 | 同一ファイル内で「テーブル系」の定義が矛盾。`:361`「テーブル系（table_data / list_map_data）」に対し `:108` は「テーブル系と list_maps」＝排他扱い | schema `:361` / `:108` / `:136` |
-| V8 | `:136` に `testShots` の 0 件エラーとの接続が無い（`:132` は「0件はエラー」と記載） | `AbstractHttpRequestTestTemplate.java:224-229` |
-| V9 | `NullInterpreter` は `equalsIgnoreCase` なので `"NULL"` / `"Null"` も Java null | `NullInterpreter.java:15` |
-| V10 | 裸 `null` には `~` と「キーだけ書いて値を省略（`COL:`）」も含まれる | SnakeYAML の null 表記 |
-| V14 | 文章面: `:136` が `:108` の写しで固有差分が薄い／同じ事実の二重記述／「裸の `null`」という第三の表記／`:108` が 841→1385字（+65%）で膨張／「列名解決」「値加工」が実装由来の語で「カラム」統一から逸脱 | schema 実測・`checks/task-22.md` Craft 欄 |
+| V8 | `:136` に `testShots` の 0 件エラーとの接続が無い（`:132` は「0件はエラー」と記載） | `AbstractHttpRequestTestTemplate.java:225-229`（`testCases.isEmpty()` で `IllegalStateException`） |
+| V9 | `NullInterpreter` は `equalsIgnoreCase` なので `NULL` / `Null` も Java null になる | `NullInterpreter.java:15` |
+| V10 | **一部誤り（2026-08-24 実測で訂正）**。「クォートなし `null` には `~` も含まれる」は**偽**。当リポジトリの `snakeyaml-engine 3.0.1` は既定 `JsonSchema` で解決するため `~` は文字列 `~` になる。null になるのは `null`（クォートなし）と**値を省略した `COL:`** の2つ | 実測: `LoadSettings.builder().setAllowDuplicateKeys(false).build()`（`YamlLoader.java:104-106` と同一）で `A: null`→null / `B: ~`→String「~」/ `C:`→null / `D: "null"`→String / `E: NULL`→String / `F: Null`→String / `G: ""`→String「」。`settings.getSchema()` = `org.snakeyaml.engine.v2.schema.JsonSchema` |
+| V14 | 文章面: `:136` が `:108` の写しで固有差分が薄い／同じ事実の二重記述／「裸の `null`」という第三の表記／`:108` が 890→1430字で膨張／「列名解決」「値加工」が実装由来の語で「カラム」統一から逸脱／「空配列 []」だけバッククォート無し | schema 実測・`checks/task-22.md` Craft 欄 |
+
+**修正ラウンドで守る制約（`指示/doc-記載漏れの是正.md:25` の明文方針）**: 「**ダメなケースを数え上げて書き並べない。** 数え上げは終わらないうえ、書いた分だけ『書いていないケースは許される』という誤読を生む。」→ null にならない表記（`~` 等）は列挙せず、**null になる表記を肯定形で書く**にとどめる。
 
 **却下（Invalid）と理由**:
 
 - 「`:377` に戻した文言に前例が無い」（観点C）… 事実誤り。`git show 35f70c7:...` の `:386` に「fields の順序で**先頭から対応付けられる**」がある（coordinator が実物確認）。観点C の `git log -S'先頭から対応付ける'` は語尾違いで拾えていない
 - A0 の括弧を削る提案（観点C）… 文言はユーザー逐語指定。範囲外
 - 「半角スペースだけの値は残る」の明記（観点A・B）… 「空文字 `""`」は字義どおりで読み違えの余地がない。3観点のうち2つが「導出可能」判定。膨張を避ける
-- `fields` より要素数が多い場合の余剰切り捨てが `:377` に無記載（観点D）… A0 の範囲外（A0 は1語の差し替え）。実挙動としては事実（`DataFileFragment.java:105` が `names.size()` 分しか回さない）
+- 「`fields` より要素数が多い場合の余剰切り捨てが `:377` に無記載」（観点D）… **YML-14 として 2026-08-21 のユーザー判断で「対応不要（不正入力）」として閉じている**（`指示/doc-記載漏れの是正.md:23`）。範囲の問題ではなく方針として閉じた件（2026-08-24 ユーザー指示により却下理由を差し替え）
 
 **レビュー要否（2026-08-24 ユーザー指示・ステップ単位）**:
 
@@ -804,6 +807,39 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 追加した各テストについて「壊す変更で落ちた」確認コマンドと結果が記録されている
 - 既存フィクスチャのグループが変更されていない
 - `mvn -o clean test` が `Tests run:` 出力つきで BUILD SUCCESS（Failures/Errors/Skipped すべて 0）
+
+---
+
+### #24: `:108` のカラム省略まわりの記述の乖離2件を是正する
+
+**Purpose**: `#22` のレビュー ラウンド1 で見つかった、`$defs.table_data.properties.rows` の**既存**記述と実装の乖離2件を潰す。2件とも `#21` の空行除去によって列名決定行が動くようになったため顕在化した。
+
+**Prerequisites**: #22
+
+**注**: 番号 `#23` は本体 nablarch-testing の課題番号として `#15` の表題で既出のため、衝突を避けて欠番とする。
+
+**起票時のユーザー条件（2026-08-24）**:
+
+- **(a) は「未検証」として起票する**。レビュー役が実物で確認したのは `TableData.java:190-192` の `!row.containsKey(columnName)` → `getDefaultValue` までであり、「**列名決定行にあって当該行で省略したカラムは NULL が INSERT される**」という帰結は追っていない。**本タスクの1手順目を、この帰結の実物確認にすること**
+- **(b) はそのまま起票してよい**
+- 2件とも「空行除去で列名決定行が動くようになったため顕在化した」経緯を記録に含めること
+
+**Steps**:
+
+- [ ] A. **(a) の帰結を実物で確認する**（未検証事項）。`:108` の既存文「省略カラムは setup_tables でデフォルト値が補完される」に対し、実際に補完されるのは**列名決定行に含まれないカラム**だけで、列名決定行にあって当該行で値を省略したカラムがどう INSERT されるかを、`TableData` の INSERT 経路を実読して確定する（`TableData.java:190-192` の分岐から先を追う）。確認できるまで記述を書き換えない
+- [ ] B. (a) の確認結果に基づき `:108` の該当文を是正する
+- [ ] C. **(b)**: マーカーカラム `[COL]` だけが非空の行が列名決定行になったときの帰結を確認し記述する。`dataColumns` が0件になり全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る、という報告を実物で裏取りしてから書く
+- [ ] D. JSON 妥当性確認（`python3 -c "import json; json.load(...)"`）と `mvn -o clean test` 全 PASS
+- [ ] E. commit・push
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-24.md)
+- [ ] G. レビュー要否は Rules の基準で判断する（description を CC が起こすため原則 **必要**）
+
+**Completion criteria**:
+
+- (a) の帰結が実物の出典（ファイル:行番号）つきで確定している
+- `:108` の記述が (a)(b) いずれについても実装と食い違わない
+- `description` 以外のスキーマ要素が変更されていない
+- `mvn -o clean test` が BUILD SUCCESS
 
 ---
 
@@ -865,23 +901,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-24
-- **Last completed**: #21
-- **Next**: `#22` の **step A0 + A1 修正ラウンド**。ただし **着手前にユーザー裁定が3件要る**（下記 Notes）。裁定が揃うまで修正ラウンドに入らない
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD は `wip:` コミット）。PR なし
-  - `#22` step A0 + A1 は実装・push 済み（`ee4a55e`）。**4観点レビュー（A充足／B整合／C規約／D検証の妥当性）で全観点 fail**。判定・Finding・triage は `checks/task-22.md`
-  - **ユーザー裁定待ち（修正ラウンドを塞いでいる3件。詳細は `#22` の「レビュー ラウンド1 の結果」節）**:
-    1. **判断1 — スカラ行の記述**（4観点すべてが独立に指摘した反例）。「マッピングでない行（スカラ等）は取り除かれる」はスキーマ自身の `items: {"type":"object"}`（`:109-117` / `:137-145`）＋`YamlLoader.java:121-125` により到達不能で、実際は `YamlSchemaValidationException`。**案A（推奨）= 列挙から落とす／案B = 残して到達性を明記**
-    2. **判断2 — expected 系での 0 行の意味を書くか**（推奨: 書く）。`TableData.loadData()` `:339-346` により expected_tables / expected_complete_tables では 0 行が「対象テーブルに行が無いこと」の検証になる（`YamlTestDataParserTest.java:396`）
-    3. **判断3 — 範囲外の乖離2件の送り先**（推奨: 別タスク）。(a) `:108`「省略カラムは setup_tables でデフォルト補完」は列名決定行に無いカラムだけに当てはまる（`TableData.java:189-193`）。(b) マーカーのみ非空の行が列名決定行になると全デフォルト値の1行が INSERT される／`list_maps` では空 Map が1件渡る
-  - 裁定不要で修正する Valid 8件（V2 / V4 / V5 / V7 / V8 / V9 / V10 / V14）は `#22` の同節に出典つきで記録済み
-  - 裁定後の順序: **修正ラウンド → 同じ4観点で再レビュー → step A〜E（テスト追加）→ step C 用の2ラウンド目レビュー**。修正ラウンドは3回上限のうち1回目
-  - `#22` step C の期待値は **可変長 × `toDataRecords()`** で固定すると決定済み（出典チェーンは `#22` step C に記載）。固定長は `removePadding("")` の出典を示せないため断定しない
-  - Craft/QA レビューの要否は Rules の基準で判断する（都度聞かない）。**判断単位はステップ**。#22 必要 / #20 不要 / #14 不要 / #19 は step A・B 不要・step C 必要
-  - **#19 は step B と step C の間でユーザー判断を待つ**（実測結果を報告して停止。勝手に step C へ進まない）
-  - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
-  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - ⑥ nablarch-document への報告書候補は `checks/task-18.md`（5件・`rst:883` の2件はセットで報告）、`checks/task-21.md`（`rst:819` と `rst:1534` の2件）、および**新規1件** — `testdata_notation.rst:1534` は「すべての値が空文字」までで裸 `null`・マーカーカラム値・非マッピング行に触れておらず、スキーマ側の記述と食い違う（`checks/task-22.md` Design 観点(4)）
-  - user-deferred paths: なし
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`
