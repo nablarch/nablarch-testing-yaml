@@ -734,14 +734,25 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A1. **（ユーザー判断待ち・未承認）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に「空マッピング `{}` の行、および全ての値が `null`／空文字の行は行として存在しないものとして読み飛ばされる（`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる）」旨を足し、`:108` の「ともに…変換される」の一文を行レベルの差に触れる形へ直す。**ユーザーの承認を得るまで着手しない**
-- [ ] A0. **`#18` step R の F4 適用**: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
+- [ ] A1. **（2026-08-24 ユーザー承認済み）** `#21` から回ってきたスキーマ description の追随。`$defs.table_data.properties.rows`（`:108`）と `$defs.list_map_data.properties.rows`（`:135`）に、`fb58781` で入れた「空マッピング（`{}`）の行および全値が `null` または空文字の行は、行として存在しないものとして扱う」旨を書く。**文言は `YamlSection#dropBlankRows` の実装から起こし、実装と1対1で対応させる**（`"null"`（クォートあり）は値として非空のため行は残り、値が Java null になる点を含む）。`:108` の既存記述「空配列 `[]` は `setup_tables` において全件 DELETE のみ」との関係（**どちらが先に効くか**）も書き分ける。**ファイル系（`record_fragment`）には適用しないことも、誤読を防ぐため明示する**
+- [ ] A0. **`#18` step R の F4 適用**（**A1 と同一ラウンドで処理する** — 2026-08-24 ユーザー支持）: `$defs.record_fragment.properties.rows.description`（スキーマ `:377`）の「（NTF は fields の順序で**位置対応させる**）」を「（NTF は fields の順序で**先頭から対応付ける**）」へ戻す。根拠は削除前の `:386`（`git show 35f70c7:src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で確認済み = 「fields の順序で先頭から対応付けられる。」）。`description` 以外は触らない。JSON 妥当性を `python3 -c "import json; json.load(open(...))"` で確認する
 - [ ] A. `YamlFileBuilderTest` に、`#13` の先例（`:527-543` のヘッダコメント）と同じ体裁のセクションを起こす
 - [ ] B. フィクスチャ（`YamlFileBuilderTest/fileData.yaml`）に**新規グループ**を足す。既存グループは変更しない
 - [ ] C. 以下3件を最低限の対象として固定する（`YamlFileBuilder#buildDataFileList` → `DataFile#toDataRecords()` の経路）
   - 要素数が `fields` より少ない行 → **末尾のフィールドが `""` になる**こと
   - `rows: [[]]` → **全フィールドが `""` のレコード1件**になること（解説書 `rst:883`）
   - `rows: []` → **データ行0件**になること
+
+  **期待値 `""` の出典（2026-08-24 ユーザー訂正）**: 判断A でも新事実3 でもなく、依存先 nablarch-testing（`2e43786`、作業ツリー clean）の `DataFileFragment.java:107`
+  `String value = i < line.size() ? line.get(i) : "";`（`addValueWithId` は `:175` に同一。実物で確認済み）。`names.size()` 分だけ回し、行データが尽きた位置に `""` を入れる。固定長／可変長・型によらない共通処理。判断A も新事実3 もこの1行の系である。**指示書・報告にはこの出典を使う。**
+
+  **期待値を固定する層（同ユーザー条件・coordinator 決定）**: **`toDataRecords()`（DataRecord 層）で固定し、フィクスチャは可変長（`VariableLengthFile`）を使う。** 可変長経路は変換が恒等写像なので、DataRecord 層の値がそのまま `:107` の `""` になる。出典チェーン（すべて `2e43786` で実物確認済み）:
+  - `DataFile.java:155-161` `toDataRecords()` → 各 fragment の `toDataRecords()` を連結
+  - `DataFileFragment.java:385-392` → `:401-405` `toDataRecord()` → `convertForDataRecord(value)` の結果を `putAll`
+  - `VariableLengthFileFragment.java:31-38` `convertForDataRecord` → `:43-45` `convertValue` = `return stringExpression;`（**恒等**）
+  - 値の生成元は `DataFileFragment.java:107`
+
+  **固定長（`FixedLengthFile`）で DataRecord 層の `""` を期待値に書かない**。固定長は `FixedLengthFileFragment.java:45-59` の `convertForDataRecord` が `convertValue`（`:67-88`）に加えて `removePadding(key, converted, dummy)`（`:55`）を通し、最終的に `DataFileFragment.java:484` `dataType.removePadding(value)` に落ちる。`removePadding("")` が `""` を返す根拠は nablarch-core-dataformat 側にあるが、当リポジトリが依存する `6-NEXT-SNAPSHOT` には sources jar が無く（`~/.m2/repository/com/nablarch/framework/nablarch-core-dataformat/6-NEXT-SNAPSHOT/` に `*-sources.jar` 無し。旧版 1.3.5 / 2.0.3 の sources を現行版の根拠にはしない）、**クラス・行番号を示せないため未確認**。示せない以上、固定長で `""` を断定しない
 - [ ] D. 変異確認（`指示/00-共通ルール.md:62`）: 追加した各テストについて、その分岐を壊す変更を1つ入れると落ちることを実際に確認し、元に戻す。**コマンドと結果を報告に含める**
 - [ ] E. `mvn -o clean test` 全 PASS 確認（`Tests run:` の行を確認）
 - [ ] F. commit・push
@@ -749,6 +760,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] H. QA expert review (subagent)
 - [ ] I. Craft expert review — coding (subagent)
 - [ ] J. Verification expert review — test (subagent)
+
+**レビュー要否（2026-08-24 ユーザー指示・ステップ単位）**:
+
+- **step A0 + A1（スキーマ description）… 回す**。外から観測できる公開本文に新しい規範が入り、文言を CC 側が起こすため。**ラウンド1は4観点**（A 充足／B 整合／C 規約／D 検証の妥当性）。**対象にはユーザーの指示文そのものを含める**（「指示された案に反例がないか」）。観点B は `dropBlankRows` の実装と description の一致を**実物で照合**する。観点D は「その description で、実装が持つ全ケースを言い切れているか」を見る
+- **step C（テスト追加）… 回す**。テストの設計が CC 側にあるため。「意味のあるテスト」の条件（`指示/00-共通ルール.md`）を満たすこと。壊す変更を入れたら落ちることを実際に確認し、**コマンドと結果を報告に書く**
 
 **参考（`#18` step P で実測済み。テストの期待値の裏取りに使える）**: 固定長・可変長の双方で要素数不足は `""` 補完される（`FixedLengthFile` → `row[0]={FIELD2=, FIELD1=AAAAA}` / `row[1]={FIELD2=, FIELD1=}`）。`addValue` は `DataFileFragment.java:102-115` の1箇所のみで override 無し。
 
@@ -819,19 +835,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-24
-- **Last completed**: #21
-- **Next**: #22。ただし **着手前にユーザー回答が2件要る**（下記 Notes の1・2）。回答が揃うまで step A0／A1 とも着手しない
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み（HEAD `35355a0`）。PR なし。作業ツリーはクリーン
-  - **ユーザー回答待ち（#22 の着手を塞いでいる2件）**:
-    1. **新事実3 の扱い**（`checks/task-18.md` の「新事実」3）。内容は「固定長で `rows` の要素数が `fields` に満たないとき、`半角` 型の不足フィールドは `null` ではなく空文字（`toDataRecords()` の値が `[]{String}`）」。`#22` step C の3件のうち2件が不足フィールドの値を `""` と断定する内容のため、回答まで進めない。**coordinator の見立ては「進めてよい」** — 期待値 `""` の出どころは新事実3 ではなく承認済みの判断A（スキーマ `:377` に反映済み）で、新事実3 はそれを補強しているだけ
-    2. **`#22` step A1 の承認**（スキーマ `:108` / `:135` に空行スキップの規範を足す。`#21` から回ってきた指摘）
-  - `#22` step A0（`:377` の「位置対応させる」→「先頭から対応付ける」）は承認済みだが、「単独ラウンドは不要・スキーマに触れるときに同時に直す」の指示に従い step A1 と同ラウンドで処理するため保留中。A0 だけ先行させることも可
-  - Craft/QA レビューの要否は Rules の基準で判断する（都度聞かない）。**判断単位はステップ**。#22 必要 / #20 不要 / #14 不要 / #19 は step A・B 不要・step C 必要
-  - **#19 は step B と step C の間でユーザー判断を待つ**（実測結果を報告して停止。勝手に step C へ進まない）
-  - #20 step A の install 判断待ちは未回答のまま（内容は #20 に記載済み）
-  - #14（Evaluation sign-off）step B は #20 完了後に step A を再実行してから受ける
-  - ⑥ nablarch-document への報告書候補は `checks/task-18.md`（5件・`rst:883` の2件はセットで報告）と `checks/task-21.md`（`rst:819` と `rst:1534` の2件）に記録
-  - user-deferred paths: なし
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
