@@ -960,15 +960,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-26
-- **Last completed**: #25 まで全25タスク完了（変更なし）。加えて、取り消された Step 4 指示書に基づく5コミット（`0db2221..4aea833`＝`#26` の成果物と Phase 2 `#26`〜`#46` の追加）を `git revert` で全件打ち消し、`0db2221` の内容に戻した（revert コミット `983b5ef`）
-- **Next**: なし。**新しい指示書の受領待ち**（ユーザーが Step 4 の指示書を差し替える。`ntf-step4-02-nablarch-testing-yaml.md` は取り消し済みなので参照しない）
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`。**PR #1 は DRAFT のまま維持**（マージ禁止・ユーザー指示）
-  - 取り消しの背景: 指示の形が「解説書と実装を読み比べて不一致を洗い出す」だったのを「解説書に書いてあることをテストで押さえる」へ改める。旧 `#26` の調査結果（Excel 実測・プローブ）は根拠ごと破棄済み、復活させない
-  - 申し送りファイル: `.rn/ntf-yaml/report-nablarch-document-discrepancies.md`（4件。宛先は `nablarch-document` チーム。本リポジトリでは対応不可）
-  - 新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
-  - 本体 `../nablarch-testing` は参照のみで書き込みなし
-  - リポジトリ外の未処理: `/tmp/b.md`・`/tmp/f2_*.txt|md`・`/tmp/bb.yaml`（別作業「Step 4-01 nablarch-testing」の中間物）。削除可否はユーザー判断待ち
-  - user-deferred paths: なし
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
