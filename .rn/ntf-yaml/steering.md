@@ -1202,7 +1202,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 指示書 §4 の完了条件8項目を1つずつ実測し、結果をユーザーに提示する
+- [x] A. 指示書 §4 の完了条件8項目を1つずつ実測し、結果をユーザーに提示する（2026-08-26 提示済み。8項目すべて OK）
 - [ ] B. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
 
 **Completion criteria**:
@@ -1214,12 +1214,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 # State
 
-(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
-session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
-so only a genuinely suspended session reads `paused`.)
-
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-27
+- **Last completed**: #33 カバレッジ C0/C1 計測と Step 4 報告書の作成（`ecdfbb3`）
+- **Next**: #34 Evaluation sign-off — 完了条件8項目の実測結果は提示済み（すべて OK）。**ユーザーの判定（`/rn:ty` 承認 / `/rn:gm` 差し戻し）待ち**
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`（`ecdfbb3`）。`origin/feature/ntf-yaml` と一致。作業ツリーは clean
+  - 報告書は `.rn/ntf-yaml/report-step4.md`。指示書 §6 の5項目＋未是正の食い違い（§6）＋指示書との差分（§7）
+  - **ユーザー判断待ち2件**（どちらも指示書18件の外。直すなら #34 の前にタスクを足す）:
+    1. スキーマ `ntf-testdata-yaml-schema.json:53`（`properties.messages`）・`:200`（`$defs.message_data.id`）の `description` が「id は `sendSyncTestData/{requestId}/message` 形式」と述べ、解説書 `5b5c91e` の `implementation/testdata_notation.rst:1151`（識別子は `setUpMessages`・`expectedMessages` の固定値。`sendSyncTestData` はデータブロックの識別子ではない）と食い違う。#32 の 3-10 が実測で反証済み。**Step 4 の是正が誤りにしたものではなく、着手前から存在する食い違い**
+    2. `src/test/resources/unit-test.xml:170`-`:174` の `filePathSetting` が `fileExtensions` に `sendSyncTestData` = `xls` を設定しており、解説書 `setup/common.rst:264`（important）の「設定しない」に反する。`basePathSettings` には `sendSyncTestData` が無い
+  - 既決（2026-08-26 ユーザー判断）: 指示書 2-5 の名指し3件の外だったスキーマ `$defs.record_fragment.record_type` は、2-3 の波及先として #30 で是正済み。判断理由は「自分の是正が事実に反することにした記述を残さない」
+  - `@Ignore` は1件のみ（`YamlTableDataBuilderTest.java:751`。3-2 の負のテスト）。**実装は直していない。範囲の判断はディレクターが全モジュール分を集めてから行う**
+  - converter（`60d9a2d`・未変更）で Step 4 起因の失敗は `YamlTestCoreAdapterTest#isResourceExisting_reflectsFileExistence` の1件のみ（2-2 起因）。逆に5件が解消。**指示書と #27 check が「2-1 起因」とした4件は `ab0064e` の時点で既に落ちており誤り**（#33 で帰属実測して反証済み）
+  - Step 4 では4観点レビューを回さない（指示書 §7）。代わりにコーディネーターが各タスクでコミット済み差分を独立に読み、`mvn -o clean test` を自分で実行して検証している。記録は `.rn/ntf-yaml/checks/task-26.md`〜`task-33.md` の「コーディネーター独立レビュー」節
+  - `.m2` の状態が通常と異なる（#33 の手順上の事象。`nablarch-testing-converter` も install されている）。最後に本モジュールの HEAD を install し直し済み
