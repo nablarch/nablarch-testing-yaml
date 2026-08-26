@@ -1083,7 +1083,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #30: 2-5 — スキーマ `description` 3件を解説書に合わせる
+### ~~#30: 2-5 — スキーマ `description` 4件を解説書に合わせる~~
 
 **Purpose**: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `description` は SSoT の適用範囲である（2026-08-25 ユーザー確定）。解説書と食い違う4件（指示書 2-5 の名指し3件＋2-3 の波及先1件）を是正する。
 
@@ -1091,17 +1091,17 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `:410`（`length`）— 「`"-"` フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する」を、除去されるのが**改行と、その前後の空白**であり改行を含まない値の前後空白は残ることが分かる文言へ是正する（`implementation/testdata_notation.rst:1059`）
-- [ ] B. `:108`（`rows`。テーブル系）— FK 制約の文言が BOOLEAN 型カラムで矛盾する点を是正する（`implementation/testdata_notation.rst:820`-`:833`）。空行除去の条件は #26 で是正済みであることを確認する
-- [ ] C. `:136`（`rows`。`list_map`）— 空行除去の条件が #26 で是正済みであることを確認する
-- [ ] B2. `:108`・`:136` の `description` に残る `NullInterpreter` 前提の記述を #29（2-4）の是正後の挙動に合わせる。`:108`「クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、NullInterpreter が null へ変換する」「クォート付き `"null"`（NullInterpreter 変換後）」、`:136`「`"null"` / `NULL` は…マップの値が Java null になる」は、解説書 `setup/common.rst:81` が `NullInterpreter` を禁じているため YAML 経路では成立しない（#29 で `YamlColumnOmissionTest` の期待値が実際に反転した）。**`:108`・`:136` は指示書 2-5 の名指し3件に含まれる**
-- [ ] B3. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:174` の javadoc が「値加工を通すと空になる値（例えば `NullInterpreter` が Java null へ変換する `"null"`）」と `NullInterpreter` を例に挙げている。#29 の是正で YAML 経路では成立しないため直す（`:365` と同じく、自分の是正で事実に反することになった記述）
-- [ ] C2. `:365`（`$defs.record_fragment.record_type`）— 「メッセージング系（messages / expected_request_* / response_*）では NTF 内部で常に `"default"` に置換されるため実行時の挙動に影響しない」を #28 の是正後の挙動に合わせる。`$defs.record_fragment` は `messages` と送信同期4セクションの両方から参照される共用定義であり、送信同期4セクションでは記載値がそのままレコード種別になる（`implementation/testdata_notation.rst:1163`）。`:208`（`$defs.message_data.records`）は `messages` 専用の定義に付いており是正後も正しいため**変更しない**。**指示書 2-5 の名指し3件の外**であり、2-3 の波及先として 2026-08-26 ユーザー判断で追加した
-- [ ] D. `notation.rst:1059` の `fields[].length: "-"`（全レコードの最大バイト長への自動拡張と、値中の改行とその前後の空白の除去）の挙動を押さえるテストを足す（`schemaFullCoverage.yaml:87` にデータはあるがテストが無い。A の根拠として同時に押さえる）
-- [ ] E. **変異確認**: 追加した各テストについて期待値を崩すと落ちることの確認
-- [ ] F. `mvn -o clean test` 緑を確認
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-30.md)
+- [x] A. `:410`（`length`）— 「`"-"` フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する」を、除去されるのが**改行と、その前後の空白**であり改行を含まない値の前後空白は残ることが分かる文言へ是正する（`implementation/testdata_notation.rst:1059`）
+- [x] B. `:108`（`rows`。テーブル系）— FK 制約の文言が BOOLEAN 型カラムで矛盾する点を是正する（`implementation/testdata_notation.rst:820`-`:833`）。空行除去の条件は #26 で是正済みであることを確認する
+- [x] C. `:136`（`rows`。`list_map`）— 空行除去の条件が #26 で是正済みであることを確認する
+- [x] B2. `:108`・`:136` の `description` に残る `NullInterpreter` 前提の記述を #29（2-4）の是正後の挙動に合わせる。`:108`「クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、NullInterpreter が null へ変換する」「クォート付き `"null"`（NullInterpreter 変換後）」、`:136`「`"null"` / `NULL` は…マップの値が Java null になる」は、解説書 `setup/common.rst:81` が `NullInterpreter` を禁じているため YAML 経路では成立しない（#29 で `YamlColumnOmissionTest` の期待値が実際に反転した）。**`:108`・`:136` は指示書 2-5 の名指し3件に含まれる**
+- [x] B3. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:174` の javadoc が「値加工を通すと空になる値（例えば `NullInterpreter` が Java null へ変換する `"null"`）」と `NullInterpreter` を例に挙げている。#29 の是正で YAML 経路では成立しないため直す（`:365` と同じく、自分の是正で事実に反することになった記述）
+- [x] C2. `:365`（`$defs.record_fragment.record_type`）— 「メッセージング系（messages / expected_request_* / response_*）では NTF 内部で常に `"default"` に置換されるため実行時の挙動に影響しない」を #28 の是正後の挙動に合わせる。`$defs.record_fragment` は `messages` と送信同期4セクションの両方から参照される共用定義であり、送信同期4セクションでは記載値がそのままレコード種別になる（`implementation/testdata_notation.rst:1163`）。`:208`（`$defs.message_data.records`）は `messages` 専用の定義に付いており是正後も正しいため**変更しない**。**指示書 2-5 の名指し3件の外**であり、2-3 の波及先として 2026-08-26 ユーザー判断で追加した
+- [x] D. `notation.rst:1059` の `fields[].length: "-"`（全レコードの最大バイト長への自動拡張と、値中の改行とその前後の空白の除去）の挙動を押さえるテストを足す（`schemaFullCoverage.yaml:87` にデータはあるがテストが無い。A の根拠として同時に押さえる）
+- [x] E. **変異確認**: 追加した各テストについて期待値を崩すと落ちることの確認
+- [x] F. `mvn -o clean test` 緑を確認
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-30.md)
 
 **Completion criteria**:
 
@@ -1153,6 +1153,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] 3-9. `expected_tables` に group_id `a`・`b`・`a` の順で並べても group_id `a` の収集結果は2件になる（Excel のように1件で打ち切られない）（`notation.rst:339`）
 - [ ] 3-10. `messages` の `id` に予約値 `setUpMessages`・`expectedMessages` を書いて取得できる（`notation.rst:1149`）
 - [ ] 3-11. モックアップクラスの電文は、リクエストIDと同じ名前のディレクトリ配下の固定名 `message.yaml` が読み込み単位になる。`<リクエストID>.yaml` では読まれない（`implementation/deal_unit_test/mom.rst:72`）
+  - 申し送り（#29 実測）: `src/test/resources/unit-test.xml:170`-`:174` の `filePathSetting` が `fileExtensions` に `sendSyncTestData` = `xls` を設定している。解説書 `setup/common.rst:263`（important）は「`fileExtensions` には `sendSyncTestData` を設定しない。YAML 形式ではリクエストIDと同じ名前のディレクトリを参照するため、拡張子を設定するとテストデータが見つからず、テストの実行時に例外が発生する」と定める。**18件のいずれにも該当しないため #29 では未変更。** 3-11 がこれに阻まれる場合は、設定を変えずに済む書き方（`TestDataParser` を直接使う等）でテストを書き、阻まれた事実を報告する。**設定を変える判断はしない**
 - [ ] 3-12. `TestDataParser` を直接使うとき、第2引数 `<ファイル名>/<読み込み単位の名前>` が `<ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml` に解決される（`implementation/class_unit_test/component.rst:313`）
 - [ ] 3-13. `rows:` に `args[0]: "x"` と書くと返る Map のキーが文字列 `"args[0]"` になる（`[` `]` を含むキーがマーカーカラムとして除外されない）（`notation.rst:503`-`:507`）
 - [ ] X. 落ちたものは実装を直さず `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")` にして記録する。**範囲の判断を持たない**
