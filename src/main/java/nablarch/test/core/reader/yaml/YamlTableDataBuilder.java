@@ -35,7 +35,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * YAML トップレベル Map（{@link YamlLoader#load} が返す順序保持 Map）を走査し、構造の写し取りと
  * 値加工（特殊記法 {@code ${...}} の解釈・{@code ${binaryFile:}} の basePath 解決・マーカーカラム除外・
  * デフォルト値補完・グループ ID 絞り込み）を一括で行う。空マッピング（{@code {}}）の行と全ての値が
- * {@code null} または空文字の行は、列名解決より前に {@link YamlSection#dropBlankRows} で取り除く。
+ * 空文字の行は、列名解決より前に {@link YamlSection#dropBlankRows} で取り除く（Java null は空文字では
+ * ないため非空として扱い、{@code COL: null} や {@code COL:} だけの行は残る）。
  * カラム名は取り除いた後の先頭行のキー（マーカー含む・YAML 記述順）から決定する。
  * </p>
  *
@@ -86,8 +87,9 @@ public final class YamlTableDataBuilder {
                         "Missing required field 'table' in " + sectionKey + " entry. groupId=" + groupId
                                 + ", basePath=" + basePath);
             }
-            // 行として存在しないもの（空マッピング、および全ての値が null／空文字の行）を
+            // 行として存在しないもの（空マッピング、および全ての値が空文字の行）を
             // 列名解決・値加工より前に取り除く（依存先 nablarch-testing の空行判定と同じ順序）。
+            // Java null は空文字ではないため非空として扱い、その行は残る。
             List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
             List<String> columnNames = resolveColumns(rows);
             List<List<String>> rawRows = extractRows(rows, columnNames);
@@ -165,7 +167,8 @@ public final class YamlTableDataBuilder {
      * <p>
      * 出力 Map のキー順は従来どおり {@link TreeMap} でソートする（本体読み込みの振る舞い不変）。
      * マーカーカラム（{@code [COL]}）は DB 操作対象外として除外する。行として存在しないもの
-     * （空マッピング、および全ての値が null／空文字の行）は列名解決より前に取り除く。
+     * （空マッピング、および全ての値が空文字の行）は列名解決より前に取り除く（Java null は空文字では
+     * ないため非空として扱い、その行は残る）。
      * </p>
      *
      * @param yaml     YAML トップレベル Map

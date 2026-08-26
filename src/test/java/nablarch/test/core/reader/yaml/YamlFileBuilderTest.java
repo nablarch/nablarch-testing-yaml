@@ -399,7 +399,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: 全フィールドの値が "" のレコードも 1 件のレコードとして保持されること。
      *
      * <p>
-     * テーブル系セクション・{@code list_maps} では「全ての値が null／空文字の行」を行として存在しない
+     * テーブル系セクション・{@code list_maps} では「全ての値が空文字の行」を行として存在しない
      * ものとして扱う（{@link YamlSection#dropBlankRows}）が、ファイルデータにはその規則を適用しない。
      * 全フィールドが空のレコードはそれ自体が意味を持つデータであり、落としてはならない。
      * 値行に「全要素が空ならスキップ」を入れるとこのテストが落ちる。
