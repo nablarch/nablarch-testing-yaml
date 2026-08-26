@@ -1247,16 +1247,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **Status**: paused
 - **Date**: 2026-08-27
 - **Last completed**: #35 報告書 §6 の未是正2件の是正（`a008066`）
-- **Next**: #34 Evaluation sign-off — 完了条件8項目（2026-08-26 提示・すべて OK）に加え、#35 の是正結果を 2026-08-27 に再提示済み。**ユーザーの判定（`/rn:ty` 承認 / `/rn:gm` 差し戻し）待ち**
+- **Next**: #34 Evaluation sign-off ステップ D — 完了条件8項目（2026-08-26 提示・すべて OK）と #35 の是正結果（2026-08-27 再提示）に対する**ユーザーの判定（`/rn:ty` 承認 / `/rn:gm` 差し戻し）待ち**。他にやることは無い
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`。`origin/feature/ntf-yaml` と一致。作業ツリーは clean
-  - 報告書は `.rn/ntf-yaml/report-step4.md`。指示書 §6 の5項目＋18件の外の食い違いの是正（§6・**是正済み**）＋指示書との差分（§7）
-  - 是正済み（`#35`・2026-08-27 のユーザー指示）: ①スキーマ `ntf-testdata-yaml-schema.json:53`・`:200` の `description` を `implementation/testdata_notation.rst:1151`（`5b5c91e`）に合わせた ②`unit-test.xml` の `filePathSetting` から `fileExtensions`（`sendSyncTestData` = `xls`）を削除し、門番テスト `YamlTestDataParserTest#fileExtensionsHasNoSendSyncTestData` を追加（削除前 FAILURE・削除後 SUCCESS を実測）。`basePathSettings` は変更していない
-  - `mvn -o clean test` は `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（267 + 門番テスト1件）
-  - 既決（2026-08-27 ユーザー判断）: 指示書 完了条件7の「`tmp/` を残さない」は条件の書き方の誤り。`unit-test.xml:167` の `basePathSettings` が `move` = `file:tmp` のため、テストスイート自身が毎回 `tmp/` を作る。空ディレクトリで `git status` には出ないので**対応不要**
-  - 既決（2026-08-27 ユーザー確認）: 報告書 §7 の訂正3件（`FW_HEADER` 17件／`testdata_notation.rst:1151`／converter 4件の帰属）はユーザーが独立に実測して確認済み。**指示書側の誤り**で確定
-  - 既決（2026-08-26 ユーザー判断）: 指示書 2-5 の名指し3件の外だったスキーマ `$defs.record_fragment.record_type` は、2-3 の波及先として #30 で是正済み。判断理由は「自分の是正が事実に反することにした記述を残さない」
-  - `@Ignore` は1件のみ（`YamlTableDataBuilderTest.java:751`。3-2 の負のテスト）。**実装は直していない。範囲の判断はディレクターが全モジュール分を集めてから行う**
-  - converter（`60d9a2d`・未変更）で Step 4 起因の失敗は `YamlTestCoreAdapterTest#isResourceExisting_reflectsFileExistence` の1件のみ（2-2 起因）。逆に5件が解消。**指示書と #27 check が「2-1 起因」とした4件は `ab0064e` の時点で既に落ちており誤り**（#33 で帰属実測して反証済み）
-  - Step 4 では4観点レビューを回さない（指示書 §7）。代わりにコーディネーターが各タスクでコミット済み差分を独立に読み、`mvn -o clean test` を自分で実行して検証している。記録は `.rn/ntf-yaml/checks/task-26.md`〜`task-33.md` の「コーディネーター独立レビュー」節
-  - `.m2` の状態が通常と異なる（#33 の手順上の事象。`nablarch-testing-converter` も install されている）。最後に本モジュールの HEAD を install し直し済み
+  - ブランチ `feature/ntf-yaml`（`67bd37b`）。`origin/feature/ntf-yaml` と一致。作業ツリーは clean。未追跡ファイルは無い
+  - 報告書は `.rn/ntf-yaml/report-step4.md`（§6 は「是正済み」）。#35 の記録は `.rn/ntf-yaml/checks/task-35.md`
+  - `mvn -o clean test` は `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`。mvn は `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64` 必須（Rules）
+  - **未決（ディレクター判断）**: `@Ignore` 1件（`YamlTableDataBuilderTest.java:751`。3-2 の負のテスト）。実装は直していない。全モジュール分を集めてから判断される
+  - **未決（本体課題）**: converter（`60d9a2d`・未変更）で Step 4 起因の失敗1件（`YamlTestCoreAdapterTest#isResourceExisting_reflectsFileExistence`、2-2 起因）。Step 4 と無関係に落ち続けている4件は `ab0064e` の時点で既に落ちており、指示書と `#27` check の「2-1 起因」は誤り（`#33` で反証済み）
+  - 既決（2026-08-27）: 完了条件7の「`tmp/` を残さない」は条件の書き方の誤り。`unit-test.xml:167` の `basePathSettings` が `move` = `file:tmp` のため、テストスイート自身が毎回 `tmp/` を作る。空ディレクトリで `git status` に出ないので対応不要
+  - 既決（2026-08-27）: 報告書 §7 の訂正3件（`FW_HEADER` 17件／`testdata_notation.rst:1151`／converter 4件の帰属）はユーザーが独立に実測して確認済み。**指示書側の誤り**で確定
+  - 既決（2026-08-26）: 指示書 2-5 の名指し3件の外だったスキーマ `$defs.record_fragment.record_type` は、2-3 の波及先として `#30` で是正済み
+  - Step 4 では4観点レビューを回していない（指示書 §7）。代わりにコーディネーターが各タスクの差分を独立に読み `mvn -o clean test` を実行。記録は `checks/task-26.md`〜`task-33.md`・`task-35.md`
+  - `.m2` には `nablarch-testing-converter` も install されている（`#33` の手順上の事象）。最後に本モジュールの `8eacaa7` を install し直したが、**現 HEAD（`67bd37b`）は install していない**
