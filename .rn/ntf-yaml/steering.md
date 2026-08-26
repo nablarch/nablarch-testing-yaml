@@ -8,6 +8,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 および pom 設定のみを行う。
 移送後、解説書・JSON Schema との食い違いが見つかった箇所は、ユーザー確認を経たタスク（#5〜#13）として是正する。
 
+**Step 4（#26〜#34）**: ディレクター指示書 `nablarch-document@2101ce0` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-02-nablarch-testing-yaml.md` に確定済みで載っている18件
+（実装の是正5件・テスト追加13件）を実施し、解説書に書いてあることをテストで押さえる。
+探索も、解説書を読み比べて不一致を洗い出す作業も含まない。
+
 # Acceptance criteria
 
 - `mvn test` 全テスト PASS（yaml リポジトリ単体で緑）
@@ -15,6 +20,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - #4 以降の実装差分は、すべて steering の承認済みタスクに帰属し、タスク外の差分が無い（根拠: `git diff --stat 0df7407..HEAD -- src/main` の14ファイルについてファイル→タスク→checks/記録の対応を実測。未採番だった5コミットは `#25` として追番・記録済み（`checks/task-25.md`）。`git diff d8ba387..HEAD` は d8ba387 がこのリポジトリに存在せず取得不能——2026-08-24 `git cat-file -t d8ba387` で `Not a valid object name` を確認、移送元 worktree ブランチが消滅済みのため）
 - 本体（nablarch-testing）に一切書き込みをしていない
 - push 済み
+- **Step 4**: 指示書 §4 の完了条件8項目をすべて満たす（第2節5件の是正／第3節13件のテスト存在・落ちたものは `@Ignore`＋印つき理由／足した・直したテストの変異確認／既存テスト期待値変更の全件記録／C0・C1 計測／`mvn test` 緑／`git status --short` 空・`tmp/`・`javac.*.args` 無し／push）
 
 # Assumptions
 
@@ -43,6 +49,18 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - 基準の当てはめに迷う新タスクが出たときだけユーザーに聞く
 - **スキーマ `description` が対応すべき先は「実装の分岐」ではなく「スキーマ検証を通過しうる入力に対する、外から観測できる挙動」である**（2026-08-24 ユーザー裁定。`description` 全般に適用）。到達不能な内部規則は書かない。実装側の到達不能な防衛分岐（`YamlSection#castMap` の非 Map 分岐など）はそのまま残してよい
 - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
+
+**Step 4（#26〜#34）に適用する Rules**（出典: 指示書 `nablarch-document@2101ce0` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-02-nablarch-testing-yaml.md`）
+
+- **参照点（ピン）** — 解説書 `nablarch-document`: `5b5c91e`（`git show 5b5c91e:<path>` で読む。**作業ツリーの HEAD を読まない**）／本モジュール: `0db2221`（作業ツリーで作業してよい）／`nablarch-testing`: `3c4bd2a`（変更しない）／`nablarch-testing-converter`: `60d9a2d`（変更しない）
+- **本モジュールの `src/main` は変更してよい**（指示書 §1。タグ0件・未リリースで後方互換の対象利用者が存在しないため）。上の Rules「実装の変更は一切しない」は移送タスク #1〜#3 に係るものであり、Step 4 には適用しない
+- **解説書を直さない**（指示書 §5）。「解説書が誤っている」と判断した項目は、根拠（`file:line` と参照コミット）を添えて報告して**止める**
+- **`nablarch-testing` を直さない。`nablarch-testing-converter` を直さない**（指示書 §5）。2-2 で落ちる converter のテストは報告するだけ
+- **解説書に無い書き方を追いかけない。Excel の実装に合わせない**（指示書 §5）。合わせる先は解説書である
+- **第2節（実装の是正5件）は直す。第3節（テスト追加13件）で落ちたものは直さず `@Ignore` にして記録する**（指示書 §1）。理由は機械的に集められる印を付ける — `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")`。何を直すかは全モジュール分を集めてからディレクターが判断するため、**範囲の判断を持たない**
+- **足したテスト・直したテストそれぞれについて、期待値をわざと崩すと落ちることを1度確認する**（指示書 §4-3）。「テストが通る」だけでは何かを押さえた証拠にならない。確認したことを報告に書く
+- **Step 4 では4観点レビュー（QA / Design / Craft / Verification）を回さない**（指示書 §7）。作業が18件に確定していて探索を含まないことによる。観点D（検証の妥当性）は完了条件3「期待値をわざと崩すと落ちること」で代替し、ディレクターが担当範囲を全量読み直して独立に検証する。上の Rules「Craft/QA レビューの要否」の当てはめは Step 4 タスクには適用しない
 
 # Tasks
 
@@ -951,6 +969,241 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - `mvn -o clean test` が BUILD SUCCESS の状態で install されている
 - jar のタイムスタンプが更新されている
+
+---
+
+### #26: 2-1 — 空行判定が Java null を空扱いしている
+
+**Purpose**: 解説書（`5b5c91e` の `implementation/testdata_notation.rst:1500`）が定めるスキップ条件は「空マッピング `{}`」と「すべての値が空文字」の2つだけである。`YamlSection#isBlankRow` が Java null も空として扱っているため、`COL: null` や `COL:` だけの行が消える。解説書に合わせる。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] A. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:201`-`:208` の `isBlankRow` を、空文字だけを空と見なし Java null を非空として扱うよう是正する（javadoc も合わせる）
+- [ ] B. 波及: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json:108` と `:136` の `description` から「全ての値が null または」を落とし、解説書 `:1500` の文言に合わせる
+- [ ] C. 既存テストの期待値見直し — `YamlSectionTest#dropBlankRows_*`（5件）・`YamlTableDataBuilderTest#buildTableDataList_blankValueRow*`（5件）・同 `#buildListMapRows_blankValueRow*`（2件）を**全件数え直し**、どれを変えどれを変えなかったかを記録する
+- [ ] D. 是正を押さえるテストを足す（`COL: null` だけの行・`COL:` だけの行が残ること／空マッピング `{}` と全値空文字はスキップされること）
+- [ ] E. **変異確認**: A の是正前は落ち是正後は通るテストを特定し、さらに追加/変更した各テストについて期待値をわざと崩すと落ちることを1度実行して確認し、コマンドと結果を記録する
+- [ ] F. `mvn -o clean test` 緑を確認（`Tests run:` 行を読む）
+- [ ] G. commit・push
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-26.md)
+
+**Completion criteria**:
+
+- `isBlankRow` が空文字のみを空と見なし、Java null を非空として扱う
+- スキーマ `:108`・`:136` の `description` が解説書 `:1500` と食い違わない
+- 既存テスト12件（5+5+2）について、変更したもの・しなかったものが件数付きで記録されている
+- 是正前に落ち是正後に通るテストが存在する
+- 追加/変更した各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #27: 2-2 — `isResourceExisting` の判定単位を Excel と揃える
+
+**Purpose**: `TestDataParser#isResourceExisting` の呼び出し元（`TestSupport#getPathResourceExisting`・`RestTestSupport`）は**入れ物単位**（Excel の `basePath/<クラス名>.xls`）の意味で使っているが、YAML 実装は読み込み単位（シート相当）の存在を答えている。YAML の入れ物は `basePath/<クラス名>` ディレクトリである（`implementation/class_unit_test/component.rst:313`）。入れ物単位に揃える。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] A. `YamlLoader.java:142`-`:143` / `YamlTestDataParser.java:103` を入れ物単位（`basePath/<クラス名>` ディレクトリの存在）に是正する
+- [ ] B. `YamlTestDataParser.java:109`（`getSetupTableData` の内部ガード）を、Excel が同位置で使う `isDataExisting` 相当（読み込み単位＝ファイルの存在）の判定に置き換える。`BasicTestDataParser.java:52`（`3c4bd2a`）参照
+- [ ] C. `tools/master_data_tool.rst:28` が述べる挙動（Excel 形式のファイルに YAML 用パーサを設定すると投入0件になり、例外も警告も出ない）が壊れていないことをテストで確かめる
+- [ ] D. 入れ物単位／読み込み単位それぞれを押さえるテストを足す（`setUpDb.yaml` を置いていないクラスで入れ物が真になること／存在しない入れ物が偽になること）
+- [ ] E. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [ ] F. `mvn -o clean test` 緑を確認
+- [ ] G. **converter は直さない**。`nablarch-testing-converter@60d9a2d` の `YamlTestCoreAdapterTest.java:365`-`:370`（`isResourceExisting_reflectsFileExistence`）が落ちることを実測し、落ちたテスト名と理由を記録する（本モジュール外のため完了条件の対象外）
+- [ ] H. commit・push
+- [ ] I. self-check (OK/NG per completion criterion, record in checks/task-27.md)
+
+**Completion criteria**:
+
+- `isResourceExisting` が `basePath/<クラス名>` ディレクトリの存在を答える
+- `getSetupTableData` の内部ガードが読み込み単位の判定に置き換わっている
+- `master_data_tool.rst:28` の挙動を押さえるテストがある
+- 是正前に落ち是正後に通るテストが存在する
+- 追加/変更した各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+- converter で落ちたテストが実測され記録されている（converter のコードは変更しない）
+
+---
+
+### #28: 2-3 — 送信同期4キーで `record_type` の記載値を保持する
+
+**Purpose**: 解説書 `implementation/testdata_notation.rst:1163`（`5b5c91e` で改訂済み）は、`MESSAGE`（`setUpMessages`・`expectedMessages`）では記載値を使わず `"default"` に、同期応答メッセージ送信で使う4データタイプでは記載値をそのままレコード種別にすると定める。現行は `YamlFileBuilder.java:187`-`:189` が `messaging` 経路すべてで `"default"` に固定している。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] A. `YamlFileBuilder#buildFragmentsInternal`（`:187`-`:189`）を、送信同期4キー（`EXPECTED_REQUEST_HEADER_MESSAGES`・`EXPECTED_REQUEST_BODY_MESSAGES`・`RESPONSE_HEADER_MESSAGES`・`RESPONSE_BODY_MESSAGES`）では記載値を保持し、`messages` では `"default"` のままとするよう是正する。`getMessage` と `getMessageWithoutCache` はどちらも `YamlMessageBuilder#buildMessagePool` を通るため**セクションキーで区別**する（`YamlTestDataParser.java:157`・`:164`-`:166`）
+- [ ] B. 既存テストの期待値見直し — `record_type: HEADER` を書いたフィクスチャ・`record_type: FW_HEADER` を書いたフィクスチャを**全件数え直し**、どれを変えどれを変えなかったかを記録する。特に `YamlFileBuilderTest#buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped`・`YamlMessageBuilderTest#buildMessagePool_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getMessage_fwHeaderRecordTypeIsNotSkipped` の4件は名前どおりの意味が変わる
+- [ ] C. `implementation/testdata_notation.rst:1299`-`:1301`（`record_type` に予約値はない）は変わらない。`FW_HEADER` が送信同期4キーで単に `FW_HEADER` というレコード種別になることを押さえるテストを足す
+- [ ] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [ ] E. `mvn -o clean test` 緑を確認
+- [ ] F. commit・push
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-28.md)
+
+**Completion criteria**:
+
+- 送信同期4データタイプで `record_type` の記載値が保持される
+- `messages`（`setUpMessages`・`expectedMessages`）は `"default"` のまま
+- `record_type` を書いた既存フィクスチャについて、変更したもの・しなかったものが件数付きで記録されている
+- 是正前に落ち是正後に通るテストが存在する
+- 追加/変更した各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #29: 2-4 — テスト用 `yamlInterpreters` を解説書に合わせる
+
+**Purpose**: 解説書 `setup/common.rst:77` は `yamlInterpreters` に指定するのは `DateTimeInterpreter` と `CompositeInterpreter`→`BasicJapaneseCharacterInterpreter` の2つだけと定め、`:81`（important）は `NullInterpreter` を指定してはならないと定める。現行 `src/test/resources/unit-test.xml:56`-`:76` は `NullInterpreter` と `LineSeparatorInterpreter` を含む。
+
+**Prerequisites**: #26
+
+**Steps**:
+
+- [ ] A. `src/test/resources/unit-test.xml` の `yamlInterpreters` から `NullInterpreter`・`LineSeparatorInterpreter` を外す
+- [ ] B. 解説書 `setup/common.rst:244`-`:257` が新設した `yamlMessagingInterpreters`（`CompositeInterpreter`→`BasicJapaneseCharacterInterpreter` のみ）に照らし、本モジュールのテストが電文用パーサを別に組んでいるかを実測し、組んでいればそちらも合わせる
+- [ ] C. 設定変更で挙動が変わるテストを洗い出し、期待値を解説書側に合わせる（文字列 `"null"` が Java null にならないこと等）
+- [ ] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [ ] E. `mvn -o clean test` 緑を確認
+- [ ] F. commit・push
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-29.md)
+
+**Completion criteria**:
+
+- `unit-test.xml` の `yamlInterpreters` が `DateTimeInterpreter` と `CompositeInterpreter` の2つだけ
+- 電文用パーサの有無が実測され、あれば `yamlMessagingInterpreters` 相当に揃っている
+- 是正前に落ち是正後に通るテストが存在する
+- 追加/変更した各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #30: 2-5 — スキーマ `description` 3件を解説書に合わせる
+
+**Purpose**: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `description` は SSoT の適用範囲である（2026-08-25 ユーザー確定）。解説書と食い違う3件を是正する。
+
+**Prerequisites**: #26
+
+**Steps**:
+
+- [ ] A. `:410`（`length`）— 「`"-"` フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する」を、除去されるのが**改行と、その前後の空白**であり改行を含まない値の前後空白は残ることが分かる文言へ是正する（`implementation/testdata_notation.rst:1059`）
+- [ ] B. `:108`（`rows`。テーブル系）— FK 制約の文言が BOOLEAN 型カラムで矛盾する点を是正する（`implementation/testdata_notation.rst:820`-`:833`）。空行除去の条件は #26 で是正済みであることを確認する
+- [ ] C. `:136`（`rows`。`list_map`）— 空行除去の条件が #26 で是正済みであることを確認する
+- [ ] D. `notation.rst:1059` の `fields[].length: "-"`（全レコードの最大バイト長への自動拡張と、値中の改行とその前後の空白の除去）の挙動を押さえるテストを足す（`schemaFullCoverage.yaml:87` にデータはあるがテストが無い。A の根拠として同時に押さえる）
+- [ ] E. **変異確認**: 追加した各テストについて期待値を崩すと落ちることの確認
+- [ ] F. `mvn -o clean test` 緑を確認
+- [ ] G. commit・push
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-30.md)
+
+**Completion criteria**:
+
+- `:410`・`:108`・`:136` の `description` が解説書と食い違わない
+- `length: "-"` の挙動（最大バイト長への自動拡張・改行とその前後空白の除去・改行なし値の前後空白は残る）を押さえるテストがある
+- 追加した各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #31: 3-1〜3-6 — 記法・特殊記法のテスト追加（6件）
+
+**Purpose**: 解説書に記述があり既存テスト226件が押さえていない記法6件をテストで押さえる。**落ちたものは直さず `@Ignore` にして記録する。**
+
+**Prerequisites**: #26, #27, #28, #29, #30
+
+**Steps**:
+
+- [ ] 3-1. YAML 1.2 Core Schema で解釈されるため、クォートなしの `no`・`yes`・`on`・`off` がキーでも値でも文字列のままになる（`notation.rst:92`・`:1399`、`implementation/deal_unit_test/batch.rst:352` の実例 `- no: "1"`）
+- [ ] 3-2. `${<文字種>,3}` が14文字種それぞれで該当文字種3文字になる（サロゲートペアは3コードポイント）。**列挙外の文字種名は変換されないという負のテストも必ず書く**（`notation.rst:1313`-`:1320`）
+- [ ] 3-3. `"${半角数字,2}-${半角数字,4}"` が7文字になり3文字目が `-` のまま残る（`notation.rst:1322`）
+- [ ] 3-4. `"\n"` が LF 1文字（`U+000A`）になる（`notation.rst:1441`-`:1443`）
+- [ ] 3-5. `"20210123123456"` が `2021-01-23 12:34:56.000`、`"20210123"` が `2021-01-23 00:00:00.000` に評価される（`notation.rst:1326`-`:1331`）
+- [ ] 3-6. `"${attach:ファイルパス}"` がアップロードファイルの指定として読める（`notation.rst:1337`）
+- [ ] X. 落ちたものは実装を直さず `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")` にして記録する。**範囲の判断を持たない**
+- [ ] Y. **変異確認**: 通った各テストについて期待値をわざと崩すと落ちることを1度確認し、コマンドと結果を記録する
+- [ ] Z. `mvn -o clean test` 緑を確認・commit・push・self-check（`checks/task-31.md`）
+
+**Completion criteria**:
+
+- 3-1〜3-6 の6件すべてについてテストが存在する
+- 落ちたものは `@Ignore` ＋ `NTF-DOC:` 印つきの理由で記録されている（実装は直していない）
+- 3-2 の負のテスト（列挙外の文字種名は変換されない）が書かれている
+- 通った各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #32: 3-7〜3-13 — キー解決・グループ・電文配置のテスト追加（7件）
+
+**Purpose**: 解説書に記述があり既存テスト226件が押さえていない挙動7件をテストで押さえる。**落ちたものは直さず `@Ignore` にして記録する。**
+
+**Prerequisites**: #31
+
+**Steps**:
+
+- [ ] 3-7. グループIDは完全一致で突合される。`case01` を指定したとき `case010` を持つエントリは収集されない（`notation.rst:255`-`:269`）
+- [ ] 3-8. `setup_tables_extra` のような前方一致するトップレベルキーは `setup_tables` として読まれず、スキーマ違反になる（`notation.rst:205`）
+- [ ] 3-9. `expected_tables` に group_id `a`・`b`・`a` の順で並べても group_id `a` の収集結果は2件になる（Excel のように1件で打ち切られない）（`notation.rst:339`）
+- [ ] 3-10. `messages` の `id` に予約値 `setUpMessages`・`expectedMessages` を書いて取得できる（`notation.rst:1149`）
+- [ ] 3-11. モックアップクラスの電文は、リクエストIDと同じ名前のディレクトリ配下の固定名 `message.yaml` が読み込み単位になる。`<リクエストID>.yaml` では読まれない（`implementation/deal_unit_test/mom.rst:72`）
+- [ ] 3-12. `TestDataParser` を直接使うとき、第2引数 `<ファイル名>/<読み込み単位の名前>` が `<ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml` に解決される（`implementation/class_unit_test/component.rst:313`）
+- [ ] 3-13. `rows:` に `args[0]: "x"` と書くと返る Map のキーが文字列 `"args[0]"` になる（`[` `]` を含むキーがマーカーカラムとして除外されない）（`notation.rst:503`-`:507`）
+- [ ] X. 落ちたものは実装を直さず `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")` にして記録する。**範囲の判断を持たない**
+- [ ] Y. **変異確認**: 通った各テストについて期待値をわざと崩すと落ちることを1度確認し、コマンドと結果を記録する
+- [ ] Z. `mvn -o clean test` 緑を確認・commit・push・self-check（`checks/task-32.md`）
+
+**Completion criteria**:
+
+- 3-7〜3-13 の7件すべてについてテストが存在する
+- 落ちたものは `@Ignore` ＋ `NTF-DOC:` 印つきの理由で記録されている（実装は直していない）
+- 通った各テストについて、期待値を崩すと落ちることを確認した記録がある
+- `mvn -o clean test` が BUILD SUCCESS
+
+---
+
+### #33: カバレッジ C0/C1 計測と Step 4 報告書の作成
+
+**Purpose**: 指示書「4. 完了条件」5 と「6. 報告」を満たす。
+
+**Prerequisites**: #32
+
+**Steps**:
+
+- [ ] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で C0/C1 を計測する（`pom.xml` / `argLine` は変更しない）
+- [ ] B. `src/main` の是正でカバレッジが下がった箇所があれば挙げる
+- [ ] C. 報告書を `.rn/ntf-yaml/report-step4.md` に1ファイルでまとめる。順序は指示書 §6 のとおり — ①第2節5件の是正結果（変更ファイルと `file:line`、直す前に落ちたテスト名）②第3節13件の結果（通った／`@Ignore` の内訳。`@Ignore` は理由の文言をそのまま載せる）③期待値をわざと崩す確認の結果（対象テスト名と崩した内容）④既存テストの期待値を変えた箇所の全件（2-1・2-3 それぞれ件数を数えて）⑤カバレッジ C0/C1 の計測結果と converter で落ちたテスト
+- [ ] D. 後始末 — `git status --short` が空。`tmp/` と `javac.*.args` を残さない。一時ファイル・作業用スクリプト・ログを消す
+- [ ] E. commit・push
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-33.md)
+
+**Completion criteria**:
+
+- C0/C1 が計測され、下がった箇所が挙がっている
+- `.rn/ntf-yaml/report-step4.md` に §6 の5項目がこの順で載っている
+- `git status --short` が空、`tmp/` と `javac.*.args` が無い
+- push 済み
+
+---
+
+### #34: Evaluation sign-off（Step 4）
+
+**Purpose**: 指示書「4. 完了条件」8項目を実測で通し、ユーザーの評価ゲートを取る。
+
+**Prerequisites**: #33
+
+**Steps**:
+
+- [ ] A. 指示書 §4 の完了条件8項目を1つずつ実測し、結果をユーザーに提示する
+- [ ] B. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+
+**Completion criteria**:
+
+- 完了条件8項目の実測結果が提示されている
+- ユーザーの判定が出ている
 
 ---
 
