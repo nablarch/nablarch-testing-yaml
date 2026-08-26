@@ -1030,7 +1030,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #28: 2-3 — 送信同期4キーで `record_type` の記載値を保持する
+### ~~#28: 2-3 — 送信同期4キーで `record_type` の記載値を保持する~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:1163`（`5b5c91e` で改訂済み）は、`MESSAGE`（`setUpMessages`・`expectedMessages`）では記載値を使わず `"default"` に、同期応答メッセージ送信で使う4データタイプでは記載値をそのままレコード種別にすると定める。現行は `YamlFileBuilder.java:187`-`:189` が `messaging` 経路すべてで `"default"` に固定している。
 
@@ -1038,13 +1038,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `YamlFileBuilder#buildFragmentsInternal`（`:187`-`:189`）を、送信同期4キー（`EXPECTED_REQUEST_HEADER_MESSAGES`・`EXPECTED_REQUEST_BODY_MESSAGES`・`RESPONSE_HEADER_MESSAGES`・`RESPONSE_BODY_MESSAGES`）では記載値を保持し、`messages` では `"default"` のままとするよう是正する。`getMessage` と `getMessageWithoutCache` はどちらも `YamlMessageBuilder#buildMessagePool` を通るため**セクションキーで区別**する（`YamlTestDataParser.java:157`・`:164`-`:166`）
-- [ ] B. 既存テストの期待値見直し — `record_type: HEADER` を書いたフィクスチャ・`record_type: FW_HEADER` を書いたフィクスチャを**全件数え直し**、どれを変えどれを変えなかったかを記録する。特に `YamlFileBuilderTest#buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped`・`YamlMessageBuilderTest#buildMessagePool_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getMessage_fwHeaderRecordTypeIsNotSkipped` の4件は名前どおりの意味が変わる
-- [ ] C. `implementation/testdata_notation.rst:1299`-`:1301`（`record_type` に予約値はない）は変わらない。`FW_HEADER` が送信同期4キーで単に `FW_HEADER` というレコード種別になることを押さえるテストを足す
-- [ ] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
-- [ ] E. `mvn -o clean test` 緑を確認
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-28.md)
+- [x] A. `YamlFileBuilder#buildFragmentsInternal`（`:187`-`:189`）を、送信同期4キー（`EXPECTED_REQUEST_HEADER_MESSAGES`・`EXPECTED_REQUEST_BODY_MESSAGES`・`RESPONSE_HEADER_MESSAGES`・`RESPONSE_BODY_MESSAGES`）では記載値を保持し、`messages` では `"default"` のままとするよう是正する。`getMessage` と `getMessageWithoutCache` はどちらも `YamlMessageBuilder#buildMessagePool` を通るため**セクションキーで区別**する（`YamlTestDataParser.java:157`・`:164`-`:166`）
+- [x] B. 既存テストの期待値見直し — `record_type: HEADER` を書いたフィクスチャ・`record_type: FW_HEADER` を書いたフィクスチャを**全件数え直し**、どれを変えどれを変えなかったかを記録する。特に `YamlFileBuilderTest#buildFragmentsForSendSync_fwHeaderRecordTypeIsNotSkipped`・`YamlMessageBuilderTest#buildMessagePool_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped`・`YamlTestDataParserTest#getMessage_fwHeaderRecordTypeIsNotSkipped` の4件は名前どおりの意味が変わる
+- [x] C. `implementation/testdata_notation.rst:1299`-`:1301`（`record_type` に予約値はない）は変わらない。`FW_HEADER` が送信同期4キーで単に `FW_HEADER` というレコード種別になることを押さえるテストを足す
+- [x] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [x] E. `mvn -o clean test` 緑を確認
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-28.md)
 
 **Completion criteria**:
 
