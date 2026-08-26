@@ -182,8 +182,8 @@ setup_tables:
         TIMESTAMP_COL: "2024-01-01 01:01:01"
         BOOL_COL: null
 
-  # Boolean 型カラムにクォート付き "null" を明示した場合（文字列としてロードされ、
-  # NullInterpreter が null へ変換した後に同じ NullPointerException になることの確認用）
+  # Boolean 型カラムにクォート付き "null" を明示した場合（NullInterpreter を指定しないため
+  # 文字列のまま扱われ、Java null にならず NullPointerException にもならないことの確認用）
   - group_id: s11
     table: TEST_TABLE
     rows:

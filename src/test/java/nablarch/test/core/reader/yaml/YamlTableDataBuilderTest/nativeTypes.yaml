@@ -11,8 +11,10 @@ list_maps:
   - id: interpreterTest
     rows:
       - QUOTED_NULL: "null"
+        BARE_NULL: null
         SPACE_COL: " "
-        CR_COL: "\\r"
+        LITERAL_CR_COL: "\\r"
+        YAML_CR_COL: "\r"
 
   - id: dateTimeTest
     rows:

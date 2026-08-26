@@ -5,8 +5,7 @@ import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.util.interpreter.DateTimeInterpreter;
-import nablarch.test.core.util.interpreter.NullInterpreter;
-import nablarch.test.core.util.interpreter.QuotationTrimmer;
+import nablarch.test.core.util.interpreter.InterpretationContext;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
@@ -82,6 +81,30 @@ public class YamlTableDataBuilderTest {
 
     private List<Map<String, String>> buildListMapRows(Map<String, Object> yaml, String id, String path) {
         return builder.buildListMapRows(yaml, id, path);
+    }
+
+    /**
+     * 値加工を通すと必ず空文字になるビルダを生成する。
+     *
+     * <p>
+     * 空行判定（{@code dropBlankRows}）が値加工（{@code interpret}）より前に行われることを
+     * 確かめるための門番。yamlInterpreters には値を空にするインタープリタが存在しないため、
+     * テスト内で専用のインタープリタを組み立てる。
+     * </p>
+     */
+    private YamlTableDataBuilder newBlankingBuilder() {
+        List<TestDataInterpreter> interpreters =
+                Collections.<TestDataInterpreter>singletonList(new BlankingInterpreter());
+        return new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(),
+                InterpreterResolver.withBinaryFile(interpreters));
+    }
+
+    /** どんな値も空文字に変換するテスト用インタープリタ。 */
+    private static class BlankingInterpreter implements TestDataInterpreter {
+        @Override
+        public String interpret(InterpretationContext context) {
+            return "";
+        }
     }
 
     // ========================================================================
@@ -492,17 +515,19 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: クォートあり "null" は Java null として取得されること。
+     * [YamlTableDataBuilder] buildListMapRows: クォートあり "null" は文字列のまま取得され、
+     * クォートなしの null と区別できること。
      *
      * <p>
-     * YAML の "null"（クォートあり）も Java null になります（NullInterpreter が変換）<br>
-     * Given: list_maps に QUOTED_NULL: "null"（クォートあり）<br>
+     * yamlInterpreters は NullInterpreter を含まないため、null を解釈するのは YAML のパーサだけになる。
+     * クォートなしの null だけが Java null になり、クォートあり "null" は文字列として残る<br>
+     * Given: list_maps に QUOTED_NULL: "null"（クォートあり）と BARE_NULL: null（クォートなし）<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
-     * Then:  QUOTED_NULL の値が null であること
+     * Then:  QUOTED_NULL は文字列 "null"、BARE_NULL は Java null になること
      * </p>
      */
     @Test
-    public void buildListMapRows_quotedNullIsJavaNull() {
+    public void buildListMapRows_quotedNullIsKeptAsString() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
@@ -511,14 +536,16 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertNull("\"null\"（クォートあり）は Java null になること", result.get(0).get("QUOTED_NULL"));
+        assertThat("\"null\"（クォートあり）は文字列のまま残ること",
+                result.get(0).get("QUOTED_NULL"), is("null"));
+        assertNull("null（クォートなし）は Java null になること", result.get(0).get("BARE_NULL"));
     }
 
     /**
      * [YamlTableDataBuilder] buildListMapRows: " " はクォート除去後にスペース1文字になること。
      *
      * <p>
-     * " "（スペースをダブルクォートで囲む）→ QuotationTrimmer が外側クォートを除去してスペース1文字<br>
+     * " "（スペースをダブルクォートで囲む）→ YAML のパーサがクォートを構文として処理し、スペース1文字になる<br>
      * Given: list_maps に SPACE_COL: " "<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
      * Then:  SPACE_COL の値がスペース1文字であること
@@ -538,17 +565,18 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "\\r" は CR（キャリッジリターン）文字に変換されること。
+     * [YamlTableDataBuilder] buildListMapRows: 改行文字は YAML のパーサだけが解釈すること。
      *
      * <p>
-     * "\\r" → LineSeparatorInterpreter が CR（0x0D）に変換（デフォルト設定）<br>
-     * Given: list_maps に CR_COL: "\\r"<br>
+     * yamlInterpreters は LineSeparatorInterpreter を含まないため、YAML のエスケープ "\r" だけが
+     * CR（0x0D）になり、バックスラッシュと r の 2 文字を書いた "\\r" は文字どおり残る<br>
+     * Given: list_maps に YAML_CR_COL: "\r"（YAML のエスケープ）と LITERAL_CR_COL: "\\r"（2 文字）<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
-     * Then:  CR_COL の値が CR 文字（"\r"）であること
+     * Then:  YAML_CR_COL は CR 文字、LITERAL_CR_COL は "\\r" の 2 文字のままであること
      * </p>
      */
     @Test
-    public void buildListMapRows_escapedCrIsCarriageReturn() {
+    public void buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
@@ -557,7 +585,10 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat("\"\\\\r\" は CR 文字に変換されること", result.get(0).get("CR_COL"), is("\r"));
+        assertThat("YAML のエスケープ \"\\r\" は CR 文字になること",
+                result.get(0).get("YAML_CR_COL"), is("\r"));
+        assertThat("バックスラッシュと r の 2 文字は変換されず そのまま残ること",
+                result.get(0).get("LITERAL_CR_COL"), is("\\r"));
     }
 
     /**
@@ -708,10 +739,8 @@ public class YamlTableDataBuilderTest {
         DateTimeInterpreter dateTimeInterpreter = new DateTimeInterpreter();
         dateTimeInterpreter.setSystemTimeProvider(repositoryResource.getComponent("dateProvider"));
         dateTimeInterpreter.setSetUpDateTime("2010-09-14 12:34:56.0");
-        List<TestDataInterpreter> interpreters = Arrays.asList(
-                new NullInterpreter(),
-                dateTimeInterpreter
-        );
+        List<TestDataInterpreter> interpreters = Collections.<TestDataInterpreter>singletonList(
+                dateTimeInterpreter);
         YamlTableDataBuilder builderWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), InterpreterResolver.withBinaryFile(interpreters));
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
@@ -1365,39 +1394,41 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: 値加工を通すと全ての値が Java null になる行も、行として保持されること。
+     * [YamlTableDataBuilder] buildTableDataList: 値加工を通すと全ての値が空文字になる行も、行として保持されること。
      *
      * <p>
      * 空行判定（{@code YamlSection#dropBlankRows}）は値加工（{@code YamlSection#interpret}）より前に
      * 行う。この順序は依存先 nablarch-testing の {@code TestDataParsingTemplate#readTestData}
-     * （空行判定 → 値加工）に揃えたものであり、この変更の要となる設計判断である。
-     * クォートあり {@code "null"} は {@code NullInterpreter} が Java null へ変換するため、
-     * {@code "null"} だけを持つ行は「判定が値加工より前なら保持され、後なら消える」区別がつく。
-     * 判定を値加工の後ろへずらすとこのテストが落ちる。<br>
-     * Given: setup_tables の interpretedToNullRow グループに 通常行・全ての値が "null" の行 の 2 エントリ<br>
-     * When:  buildTableDataList(yaml, "setup_tables", "[interpretedToNullRow]", false, path) を呼ぶ<br>
-     * Then:  2 行とも保持され、2 行目の全カラムが Java null になること
+     * （空行判定 → 値加工）に揃えたものであり、この変更の要となる設計判断である。値を必ず空文字にする
+     * インタープリタを通せば、非空の値だけを持つ行は「判定が値加工より前なら保持され、後なら消える」
+     * 区別がつく。判定を値加工の後ろへずらすとこのテストが落ちる。<br>
+     * Given: setup_tables の interpretedToBlankRow グループに 通常行・全ての値が非空の行 の 2 エントリと、
+     *        全ての値を空文字にするインタープリタだけを持つビルダ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[interpretedToBlankRow]", false, path) を呼ぶ<br>
+     * Then:  2 行とも保持され、2 行目の全カラムが空文字になること
      * </p>
      */
     @Test
-    public void buildTableDataList_rowInterpretedToAllNullIsKept() {
+    public void buildTableDataList_rowInterpretedToAllBlankIsKept() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        YamlTableDataBuilder blankingBuilder = newBlankingBuilder();
 
         // When
-        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[interpretedToNullRow]", false, DIR);
+        List<TableData> result = blankingBuilder.buildTableDataList(
+                yaml, "setup_tables", "[interpretedToBlankRow]", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat("値加工後に全て null になる行も行として保持され、2 行返ること", result.get(0).size(), is(2));
-        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000054"));
-        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("kept"));
-        assertNull("2 行目の PK_COL1 は NullInterpreter により Java null になること",
-                result.get(0).getValue(1, "PK_COL1"));
-        assertNull("2 行目の PK_COL2 は NullInterpreter により Java null になること",
-                result.get(0).getValue(1, "PK_COL2"));
-        assertNull("2 行目の VARCHAR2_COL は NullInterpreter により Java null になること",
-                result.get(0).getValue(1, "VARCHAR2_COL"));
+        assertThat("値加工後に全て空文字になる行も行として保持され、2 行返ること", result.get(0).size(), is(2));
+        assertThat("1 行目も値加工を通るため空文字になること",
+                result.get(0).getValue(0, "PK_COL1").toString(), is(""));
+        assertThat("2 行目の PK_COL1 は値加工により空文字になること",
+                result.get(0).getValue(1, "PK_COL1").toString(), is(""));
+        assertThat("2 行目の PK_COL2 は値加工により空文字になること",
+                result.get(0).getValue(1, "PK_COL2").toString(), is(""));
+        assertThat("2 行目の VARCHAR2_COL は値加工により空文字になること",
+                result.get(0).getValue(1, "VARCHAR2_COL").toString(), is(""));
     }
 
     /**
@@ -1433,31 +1464,33 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 値加工を通すと全ての値が Java null になる行も、行として保持されること。
+     * [YamlTableDataBuilder] buildListMapRows: 値加工を通すと全ての値が空文字になる行も、行として保持されること。
      *
      * <p>
      * list_maps 経路でも空行判定を値加工より前に行うことを固定する（趣旨は
-     * {@code buildTableDataList_rowInterpretedToAllNullIsKept} と同じ）。<br>
-     * Given: list_maps の interpretedToNullRowListMap に 通常行・全ての値が "null" の行 の 2 エントリ<br>
-     * When:  buildListMapRows(yaml, "interpretedToNullRowListMap", path) を呼ぶ<br>
-     * Then:  2 件とも保持され、2 件目の全キーが Java null になること
+     * {@code buildTableDataList_rowInterpretedToAllBlankIsKept} と同じ）。<br>
+     * Given: list_maps の interpretedToBlankRowListMap に 通常行・全ての値が非空の行 の 2 エントリと、
+     *        全ての値を空文字にするインタープリタだけを持つビルダ<br>
+     * When:  buildListMapRows(yaml, "interpretedToBlankRowListMap", path) を呼ぶ<br>
+     * Then:  2 件とも保持され、2 件目の全キーが空文字になること
      * </p>
      */
     @Test
-    public void buildListMapRows_rowInterpretedToAllNullIsKept() {
+    public void buildListMapRows_rowInterpretedToAllBlankIsKept() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        YamlTableDataBuilder blankingBuilder = newBlankingBuilder();
 
         // When
-        List<Map<String, String>> result = buildListMapRows(yaml, "interpretedToNullRowListMap", DIR);
+        List<Map<String, String>> result =
+                blankingBuilder.buildListMapRows(yaml, "interpretedToBlankRowListMap", DIR);
 
         // Then
-        assertThat("値加工後に全て null になる行も行として保持され、2 件返ること", result.size(), is(2));
-        assertThat(result.get(0).get("KEY1"), is("kept"));
-        assertThat(result.get(0).get("KEY2"), is("val"));
+        assertThat("値加工後に全て空文字になる行も行として保持され、2 件返ること", result.size(), is(2));
+        assertThat("1 件目も値加工を通るため空文字になること", result.get(0).get("KEY1"), is(""));
         assertTrue("2 件目は KEY1 をキーとして持つこと", result.get(1).containsKey("KEY1"));
-        assertNull("2 件目の KEY1 は NullInterpreter により Java null になること", result.get(1).get("KEY1"));
-        assertNull("2 件目の KEY2 は NullInterpreter により Java null になること", result.get(1).get("KEY2"));
+        assertThat("2 件目の KEY1 は値加工により空文字になること", result.get(1).get("KEY1"), is(""));
+        assertThat("2 件目の KEY2 は値加工により空文字になること", result.get(1).get("KEY2"), is(""));
     }
 
     /**

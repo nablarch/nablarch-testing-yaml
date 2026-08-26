@@ -62,7 +62,8 @@ public class YamlFileBuilderTest {
 
     @Before
     public void before() {
-        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
+        // YAML 形式のインタープリタリスト（解説書が定める 2 つだけ）を使う。
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("yamlInterpreters");
         builder = new YamlFileBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
 

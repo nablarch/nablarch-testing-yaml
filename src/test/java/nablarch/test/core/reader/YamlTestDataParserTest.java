@@ -1539,8 +1539,65 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // #16: yamlInterpreters（QuotationTrimmer なし）
+    // #16: yamlInterpreters（解説書が定める 2 つだけ）
     // ========================================================================
+
+    /**
+     * [#16] yamlInterpreters: 解説書が定める 2 つ（DateTimeInterpreter・CompositeInterpreter）だけが
+     * 指定されていること。
+     *
+     * <p>
+     * null・空文字・ダブルクォート・改行文字は YAML のパーサが構文として解釈するため、Excel 形式で必要な
+     * NullInterpreter・QuotationTrimmer・LineSeparatorInterpreter は指定しない。とりわけ
+     * NullInterpreter を指定すると、文字列として記述した "null" も Java の null になり、両者を
+     * 区別できなくなる。<br>
+     * Given: unit-test-yaml.xml（経由 unit-test.xml）が定義する yamlInterpreters<br>
+     * When:  リポジトリから yamlInterpreters を取得する<br>
+     * Then:  DateTimeInterpreter・CompositeInterpreter の 2 件だけであること
+     * </p>
+     */
+    @Test
+    public void yamlInterpretersAreOnlyDocumentedTwo() {
+        // Given / When
+        List<nablarch.test.core.util.interpreter.TestDataInterpreter> yamlInterpreters =
+                repositoryResource.getComponent("yamlInterpreters");
+
+        // Then
+        assertNotNull("yamlInterpreters コンポーネントが定義されていること", yamlInterpreters);
+        assertThat("yamlInterpreters は 2 件だけであること", yamlInterpreters.size(), is(2));
+        assertThat("1 件目は DateTimeInterpreter であること", yamlInterpreters.get(0),
+                is(instanceOf(nablarch.test.core.util.interpreter.DateTimeInterpreter.class)));
+        assertThat("2 件目は CompositeInterpreter であること", yamlInterpreters.get(1),
+                is(instanceOf(nablarch.test.core.util.interpreter.CompositeInterpreter.class)));
+    }
+
+    /**
+     * [#16] yamlInterpreters: null の記法が YAML のパーサの解釈どおりに扱われること。
+     *
+     * <p>
+     * NullInterpreter を指定しないため、クォート付きの "null" は文字列のまま残り、クォートなしの
+     * null（および値を省略した COL:）だけが Java null になる。両者が区別できることを固定する。<br>
+     * Given: list_maps に BARE_NULL: null / OMITTED_NULL:（値省略）/ QUOTED_NULL: "null" /
+     *        UPPER_QUOTED_NULL: "NULL" を持つ行<br>
+     * When:  yamlInterpreters で初期化した YamlTestDataParser で getListMap を呼ぶ<br>
+     * Then:  クォートなしの 2 つは Java null、クォート付きの 2 つは文字列のまま取得されること
+     * </p>
+     */
+    @Test
+    public void quotedNullIsKeptAsStringAndDistinguishableFromBareNull() {
+        // Given / When
+        List<Map<String, String>> result = sut.getListMap(
+                DIR, "YamlTestDataParserTest/quotedValues", "nullNotationTest");
+
+        // Then
+        assertThat("行数が 1 件であること", result.size(), is(1));
+        assertNull("クォートなしの null は Java null になること", result.get(0).get("BARE_NULL"));
+        assertNull("値を省略した COL: は Java null になること", result.get(0).get("OMITTED_NULL"));
+        assertThat("クォート付きの \"null\" は文字列のまま残ること",
+                result.get(0).get("QUOTED_NULL"), is("null"));
+        assertThat("クォート付きの \"NULL\" は文字列のまま残ること",
+                result.get(0).get("UPPER_QUOTED_NULL"), is("NULL"));
+    }
 
     /**
      * [#16] yamlInterpreters: QuotationTrimmer を含まないインタープリタリストで
@@ -1554,8 +1611,8 @@ public class YamlTestDataParserTest {
      *
      * <p>
      * Given: YAML でダブルクォート記法 "hello"/"world"/"" を含む list_maps<br>
-     * When:  yamlInterpreters（NullInterpreter/DateTimeInterpreter/
-     *         LineSeparatorInterpreter/BasicJapaneseCharacterInterpreter）で
+     * When:  yamlInterpreters（DateTimeInterpreter/CompositeInterpreter→
+     *         BasicJapaneseCharacterInterpreter）で
      *         初期化した YamlTestDataParser で getListMap を呼ぶ<br>
      * Then:  クォートなしの値 hello/world/"" が取得されること（二重処理なし）
      * </p>

@@ -50,19 +50,32 @@
     </component>
   </list>
 
-  <!-- YAML 用インタープリタリスト（QuotationTrimmer を含まない）
-       YAML 1.2 ではライブラリがダブルクォートを構文として処理済みで返すため、
-       QuotationTrimmer は不要かつ二重処理になる。 -->
+  <!-- YAML形式のテストデータ記法の解釈を行うクラス群
+       null・空文字・ダブルクォート・改行文字は YAML のパーサが構文として解釈するため、
+       Excel 形式で必要な NullInterpreter・QuotationTrimmer・LineSeparatorInterpreter は指定しない。
+       とりわけ NullInterpreter を指定すると、文字列として記述した "null" も Java の null になり、
+       両者を区別できなくなる。 -->
   <list name="yamlInterpreters">
-    <!-- null変換 -->
-    <component class="nablarch.test.core.util.interpreter.NullInterpreter"/>
     <!-- システム時刻記法 -->
     <component
             class="nablarch.test.core.util.interpreter.DateTimeInterpreter">
       <property name="systemTimeProvider" ref="dateProvider"/>
     </component>
-    <!-- 改行コードを変換する -->
-    <component class="nablarch.test.core.util.interpreter.LineSeparatorInterpreter"/>
+    <!-- 文字列増幅 -->
+    <component
+            class="nablarch.test.core.util.interpreter.CompositeInterpreter">
+      <property name="interpreters">
+        <list>
+          <component
+                  class="nablarch.test.core.util.interpreter.BasicJapaneseCharacterInterpreter"/>
+        </list>
+      </property>
+    </component>
+  </list>
+
+  <!-- YAML形式の電文用テストデータ記法の解釈を行うクラス群
+       電文では ${systemTime} 等のシステム時刻記法を使わないため、文字列増幅の1つだけを指定する。 -->
+  <list name="yamlMessagingInterpreters">
     <!-- 文字列増幅 -->
     <component
             class="nablarch.test.core.util.interpreter.CompositeInterpreter">

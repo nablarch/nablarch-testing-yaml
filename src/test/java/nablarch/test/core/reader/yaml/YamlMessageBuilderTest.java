@@ -52,7 +52,8 @@ public class YamlMessageBuilderTest {
 
     @Before
     public void before() {
-        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
+        // 電文用のインタープリタリスト（解説書が定める CompositeInterpreter の 1 つだけ）を使う。
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("yamlMessagingInterpreters");
         builder = new YamlMessageBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
 
@@ -1251,5 +1252,29 @@ public class YamlMessageBuilderTest {
         // Then
         assertNotNull(result);
         assertThat("raw() の resolve は常に空リストを返すこと", result.isEmpty(), is(true));
+    }
+
+    /**
+     * [YamlMessageBuilder] 電文用のインタープリタリストが解説書の定める 1 つだけであること。
+     *
+     * <p>
+     * null・空文字・ダブルクォート・改行文字は YAML のパーサが構文として解釈するため、Excel 形式で
+     * 必要な NullInterpreter・QuotationTrimmer は指定しない。<br>
+     * Given: unit-test-yaml.xml（経由 unit-test.xml）が定義する yamlMessagingInterpreters<br>
+     * When:  リポジトリから yamlMessagingInterpreters を取得する<br>
+     * Then:  CompositeInterpreter の 1 件だけであること
+     * </p>
+     */
+    @Test
+    public void yamlMessagingInterpretersIsOnlyDocumentedOne() {
+        // Given / When
+        List<TestDataInterpreter> messagingInterpreters =
+                repositoryResource.getComponent("yamlMessagingInterpreters");
+
+        // Then
+        assertNotNull("yamlMessagingInterpreters コンポーネントが定義されていること", messagingInterpreters);
+        assertThat("yamlMessagingInterpreters は 1 件だけであること", messagingInterpreters.size(), is(1));
+        assertThat("1 件目は CompositeInterpreter であること", messagingInterpreters.get(0),
+                is(instanceOf(nablarch.test.core.util.interpreter.CompositeInterpreter.class)));
     }
 }

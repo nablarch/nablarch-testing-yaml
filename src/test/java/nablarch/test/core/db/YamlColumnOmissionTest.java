@@ -302,21 +302,19 @@ public class YamlColumnOmissionTest {
     }
 
     /**
-     * (2) の例外はクォート付き {@code "null"} 経由でも起きる: Boolean 型カラムにクォート付き
-     * {@code "null"} を明示した場合、文字列としてロードされたあと NullInterpreter が Java null へ
-     * 変換し、クォートなし小文字 {@code null} を明示した場合や行内省略と同じ NullPointerException に
-     * なる。:108 の「クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、
-     * NullInterpreter が null へ変換する」「クォート付き `"null"`（NullInterpreter 変換後）」の記述を
-     * 実経路で固定する。
+     * クォート付き {@code "null"} は Java null にならないため (2) の例外に当たらない: yamlInterpreters は
+     * NullInterpreter を含まないため、クォート付き {@code "null"} は文字列のまま Boolean 型カラムへ
+     * 渡され、NullPointerException にならずに INSERT できる。クォートなし小文字 {@code null} を明示した
+     * 場合（{@code setupThrowsNpeWhenBooleanColumnIsExplicitNull}）との違いを固定する。
      */
     @Test
-    public void setupThrowsNpeWhenBooleanColumnIsQuotedNullString() {
-        try {
-            setUp("s11");
-            fail("Boolean 型カラムにクォート付き \"null\" を書いても NullPointerException が出なかった");
-        } catch (NullPointerException e) {
-            // 期待どおり
-        }
+    public void setupSucceedsWhenBooleanColumnIsQuotedNullString() throws Exception {
+        // When: NullPointerException にならずに INSERT できること
+        setUp("s11");
+
+        // Then: Java null ではない値が INSERT されること
+        assertThat("クォート付き \"null\" は Java null にならないこと",
+                raw("00001", "BOOL_COL"), is((Object) Boolean.FALSE));
     }
 
     /**

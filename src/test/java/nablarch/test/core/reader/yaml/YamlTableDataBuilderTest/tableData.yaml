@@ -137,18 +137,18 @@ setup_tables:
         NUMBER_COL: ""
         NUMBER_COL2: ""
 
-  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
-  # 行として保持される。クォートあり "null" は NullInterpreter が Java null へ変換する。
+  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が空になる行も
+  # 行として保持される。値を必ず空文字にするインタープリタ（テスト内で組み立てる）を通して確認する。
   # 判定を値加工の後ろへずらすとこの行が消えるので、順序を固定するための門番になる。
-  - group_id: interpretedToNullRow
+  - group_id: interpretedToBlankRow
     table: TEST_TABLE
     rows:
       - PK_COL1: "0000000054"
         PK_COL2: "PP"
         VARCHAR2_COL: "kept"
-      - PK_COL1: "null"
-        PK_COL2: "null"
-        VARCHAR2_COL: "null"
+      - PK_COL1: "to_be_blanked"
+        PK_COL2: "to_be_blanked"
+        VARCHAR2_COL: "to_be_blanked"
 
   # 値が全て Java null の行は「全ての値が空文字」ではないため行として保持される。
   # クォートなしの null と、キーだけ書いて値を省略した COL: の両方をロード時点の Java null として置く。
@@ -251,14 +251,14 @@ list_maps:
         KEY2: ""
         KEY3: ""
 
-  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
-  # 行として保持される（setup_tables 側の interpretedToNullRow と同じ趣旨で list_maps 経路を固定する）。
-  - id: interpretedToNullRowListMap
+  # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が空になる行も
+  # 行として保持される（setup_tables 側の interpretedToBlankRow と同じ趣旨で list_maps 経路を固定する）。
+  - id: interpretedToBlankRowListMap
     rows:
       - KEY1: "kept"
         KEY2: "val"
-      - KEY1: "null"
-        KEY2: "null"
+      - KEY1: "to_be_blanked"
+        KEY2: "to_be_blanked"
 
   # 値が全て Java null の行は「全ての値が空文字」ではないため行として保持される（list_maps 経路）。
   # クォートなしの null と、キーだけ書いて値を省略した KEY2: の両方を置く。
