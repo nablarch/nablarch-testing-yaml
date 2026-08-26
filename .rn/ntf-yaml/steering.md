@@ -1085,7 +1085,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ### #30: 2-5 — スキーマ `description` 3件を解説書に合わせる
 
-**Purpose**: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `description` は SSoT の適用範囲である（2026-08-25 ユーザー確定）。解説書と食い違う3件を是正する。
+**Purpose**: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `description` は SSoT の適用範囲である（2026-08-25 ユーザー確定）。解説書と食い違う4件（指示書 2-5 の名指し3件＋2-3 の波及先1件）を是正する。
 
 **Prerequisites**: #26
 
@@ -1094,6 +1094,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] A. `:410`（`length`）— 「`"-"` フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する」を、除去されるのが**改行と、その前後の空白**であり改行を含まない値の前後空白は残ることが分かる文言へ是正する（`implementation/testdata_notation.rst:1059`）
 - [ ] B. `:108`（`rows`。テーブル系）— FK 制約の文言が BOOLEAN 型カラムで矛盾する点を是正する（`implementation/testdata_notation.rst:820`-`:833`）。空行除去の条件は #26 で是正済みであることを確認する
 - [ ] C. `:136`（`rows`。`list_map`）— 空行除去の条件が #26 で是正済みであることを確認する
+- [ ] C2. `:365`（`$defs.record_fragment.record_type`）— 「メッセージング系（messages / expected_request_* / response_*）では NTF 内部で常に `"default"` に置換されるため実行時の挙動に影響しない」を #28 の是正後の挙動に合わせる。`$defs.record_fragment` は `messages` と送信同期4セクションの両方から参照される共用定義であり、送信同期4セクションでは記載値がそのままレコード種別になる（`implementation/testdata_notation.rst:1163`）。`:208`（`$defs.message_data.records`）は `messages` 専用の定義に付いており是正後も正しいため**変更しない**。**指示書 2-5 の名指し3件の外**であり、2-3 の波及先として 2026-08-26 ユーザー判断で追加した
 - [ ] D. `notation.rst:1059` の `fields[].length: "-"`（全レコードの最大バイト長への自動拡張と、値中の改行とその前後の空白の除去）の挙動を押さえるテストを足す（`schemaFullCoverage.yaml:87` にデータはあるがテストが無い。A の根拠として同時に押さえる）
 - [ ] E. **変異確認**: 追加した各テストについて期待値を崩すと落ちることの確認
 - [ ] F. `mvn -o clean test` 緑を確認
@@ -1102,7 +1103,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Completion criteria**:
 
-- `:410`・`:108`・`:136` の `description` が解説書と食い違わない
+- `:410`・`:108`・`:136`・`:365` の `description` が解説書と食い違わない（`:365` は 2-3 の波及先。`:208` は変更しない）
 - `length: "-"` の挙動（最大バイト長への自動拡張・改行とその前後空白の除去・改行なし値の前後空白は残る）を押さえるテストがある
 - 追加した各テストについて、期待値を崩すと落ちることを確認した記録がある
 - `mvn -o clean test` が BUILD SUCCESS
