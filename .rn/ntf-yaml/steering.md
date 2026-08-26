@@ -1140,7 +1140,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #32: 3-7〜3-13 — キー解決・グループ・電文配置のテスト追加（7件）
+### ~~#32: 3-7〜3-13 — キー解決・グループ・電文配置のテスト追加（7件）~~
 
 **Purpose**: 解説書に記述があり既存テスト226件が押さえていない挙動7件をテストで押さえる。**落ちたものは直さず `@Ignore` にして記録する。**
 
@@ -1148,17 +1148,17 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] 3-7. グループIDは完全一致で突合される。`case01` を指定したとき `case010` を持つエントリは収集されない（`notation.rst:255`-`:269`）
-- [ ] 3-8. `setup_tables_extra` のような前方一致するトップレベルキーは `setup_tables` として読まれず、スキーマ違反になる（`notation.rst:205`）
-- [ ] 3-9. `expected_tables` に group_id `a`・`b`・`a` の順で並べても group_id `a` の収集結果は2件になる（Excel のように1件で打ち切られない）（`notation.rst:339`）
-- [ ] 3-10. `messages` の `id` に予約値 `setUpMessages`・`expectedMessages` を書いて取得できる（`notation.rst:1149`）
-- [ ] 3-11. モックアップクラスの電文は、リクエストIDと同じ名前のディレクトリ配下の固定名 `message.yaml` が読み込み単位になる。`<リクエストID>.yaml` では読まれない（`implementation/deal_unit_test/mom.rst:72`）
+- [x] 3-7. グループIDは完全一致で突合される。`case01` を指定したとき `case010` を持つエントリは収集されない（`notation.rst:255`-`:269`）
+- [x] 3-8. `setup_tables_extra` のような前方一致するトップレベルキーは `setup_tables` として読まれず、スキーマ違反になる（`notation.rst:205`）
+- [x] 3-9. `expected_tables` に group_id `a`・`b`・`a` の順で並べても group_id `a` の収集結果は2件になる（Excel のように1件で打ち切られない）（`notation.rst:339`）
+- [x] 3-10. `messages` の `id` に予約値 `setUpMessages`・`expectedMessages` を書いて取得できる（`notation.rst:1149`）
+- [x] 3-11. モックアップクラスの電文は、リクエストIDと同じ名前のディレクトリ配下の固定名 `message.yaml` が読み込み単位になる。`<リクエストID>.yaml` では読まれない（`implementation/deal_unit_test/mom.rst:72`）
   - 申し送り（#29 実測）: `src/test/resources/unit-test.xml:170`-`:174` の `filePathSetting` が `fileExtensions` に `sendSyncTestData` = `xls` を設定している。解説書 `setup/common.rst:263`（important）は「`fileExtensions` には `sendSyncTestData` を設定しない。YAML 形式ではリクエストIDと同じ名前のディレクトリを参照するため、拡張子を設定するとテストデータが見つからず、テストの実行時に例外が発生する」と定める。**18件のいずれにも該当しないため #29 では未変更。** 3-11 がこれに阻まれる場合は、設定を変えずに済む書き方（`TestDataParser` を直接使う等）でテストを書き、阻まれた事実を報告する。**設定を変える判断はしない**
-- [ ] 3-12. `TestDataParser` を直接使うとき、第2引数 `<ファイル名>/<読み込み単位の名前>` が `<ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml` に解決される（`implementation/class_unit_test/component.rst:313`）
-- [ ] 3-13. `rows:` に `args[0]: "x"` と書くと返る Map のキーが文字列 `"args[0]"` になる（`[` `]` を含むキーがマーカーカラムとして除外されない）（`notation.rst:503`-`:507`）
-- [ ] X. 落ちたものは実装を直さず `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")` にして記録する。**範囲の判断を持たない**
-- [ ] Y. **変異確認**: 通った各テストについて期待値をわざと崩すと落ちることを1度確認し、コマンドと結果を記録する
-- [ ] Z. `mvn -o clean test` 緑を確認・commit・push・self-check（`checks/task-32.md`）
+- [x] 3-12. `TestDataParser` を直接使うとき、第2引数 `<ファイル名>/<読み込み単位の名前>` が `<ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml` に解決される（`implementation/class_unit_test/component.rst:313`）
+- [x] 3-13. `rows:` に `args[0]: "x"` と書くと返る Map のキーが文字列 `"args[0]"` になる（`[` `]` を含むキーがマーカーカラムとして除外されない）（`notation.rst:503`-`:507`）
+- [x] X. 落ちたものは実装を直さず `@Ignore("NTF-DOC: <解説書パス>:<行> — 期待 X / 実際 Y")` にして記録する。**範囲の判断を持たない**
+- [x] Y. **変異確認**: 通った各テストについて期待値をわざと崩すと落ちることを1度確認し、コマンドと結果を記録する
+- [x] Z. `mvn -o clean test` 緑を確認・commit・push・self-check（`checks/task-32.md`）
 
 **Completion criteria**:
 
