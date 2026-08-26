@@ -960,14 +960,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-25
-- **Last completed**: 全25タスク完了後のアドホック対応 — 解説書（nablarch-document）への申し送りを `report-nablarch-document-discrepancies.md` にまとめ commit・push
-- **Next**: なし（未チェック項目なし。追加指示待ち）
-- **Notes**:
-  - ブランチ `feature/ntf-yaml`、push 済み。**PR #1 は DRAFT のまま維持**（マージ禁止・ユーザー指示）
-  - 申し送りファイル: `.rn/ntf-yaml/report-nablarch-document-discrepancies.md`（4件。宛先は `nablarch-document` チーム。本リポジトリでは対応不可）
-  - 新規起票が要るもの（`#24` スコープ外、`checks/task-24.md` 参照）: **O-D1** — `:108` FK ブロックの null 明示助言は Boolean 型カラムで NPE になる（実測確認済み・未修正）。**X-1** — マーカーカラム `[COL]` だけの行がカラム名決定行になったときの帰結（未検証）
-  - install 後、converter 側は赤くなる想定（別途こちらから converter へ再開指示を出す）。**yaml から converter へ手を出さない**
-  - 本体 `../nablarch-testing` の HEAD は `2e43786`（ブランチ `convert-testdata-excel-to-text`）。参照のみで書き込みなし
-  - user-deferred paths: なし
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
