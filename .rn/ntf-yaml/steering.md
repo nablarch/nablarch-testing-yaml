@@ -1057,7 +1057,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #29: 2-4 — テスト用 `yamlInterpreters` を解説書に合わせる
+### ~~#29: 2-4 — テスト用 `yamlInterpreters` を解説書に合わせる~~
 
 **Purpose**: 解説書 `setup/common.rst:77` は `yamlInterpreters` に指定するのは `DateTimeInterpreter` と `CompositeInterpreter`→`BasicJapaneseCharacterInterpreter` の2つだけと定め、`:81`（important）は `NullInterpreter` を指定してはならないと定める。現行 `src/test/resources/unit-test.xml:56`-`:76` は `NullInterpreter` と `LineSeparatorInterpreter` を含む。
 
@@ -1065,13 +1065,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `src/test/resources/unit-test.xml` の `yamlInterpreters` から `NullInterpreter`・`LineSeparatorInterpreter` を外す
-- [ ] B. 解説書 `setup/common.rst:244`-`:257` が新設した `yamlMessagingInterpreters`（`CompositeInterpreter`→`BasicJapaneseCharacterInterpreter` のみ）に照らし、本モジュールのテストが電文用パーサを別に組んでいるかを実測し、組んでいればそちらも合わせる
-- [ ] C. 設定変更で挙動が変わるテストを洗い出し、期待値を解説書側に合わせる（文字列 `"null"` が Java null にならないこと等）
-- [ ] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
-- [ ] E. `mvn -o clean test` 緑を確認
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-29.md)
+- [x] A. `src/test/resources/unit-test.xml` の `yamlInterpreters` から `NullInterpreter`・`LineSeparatorInterpreter` を外す
+- [x] B. 解説書 `setup/common.rst:244`-`:257` が新設した `yamlMessagingInterpreters`（`CompositeInterpreter`→`BasicJapaneseCharacterInterpreter` のみ）に照らし、本モジュールのテストが電文用パーサを別に組んでいるかを実測し、組んでいればそちらも合わせる
+- [x] C. 設定変更で挙動が変わるテストを洗い出し、期待値を解説書側に合わせる（文字列 `"null"` が Java null にならないこと等）
+- [x] D. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [x] E. `mvn -o clean test` 緑を確認
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-29.md)
 
 **Completion criteria**:
 
@@ -1094,6 +1094,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - [ ] A. `:410`（`length`）— 「`"-"` フィールドの値は NTF が格納時に改行コードおよび前後空白を除去する」を、除去されるのが**改行と、その前後の空白**であり改行を含まない値の前後空白は残ることが分かる文言へ是正する（`implementation/testdata_notation.rst:1059`）
 - [ ] B. `:108`（`rows`。テーブル系）— FK 制約の文言が BOOLEAN 型カラムで矛盾する点を是正する（`implementation/testdata_notation.rst:820`-`:833`）。空行除去の条件は #26 で是正済みであることを確認する
 - [ ] C. `:136`（`rows`。`list_map`）— 空行除去の条件が #26 で是正済みであることを確認する
+- [ ] B2. `:108`・`:136` の `description` に残る `NullInterpreter` 前提の記述を #29（2-4）の是正後の挙動に合わせる。`:108`「クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、NullInterpreter が null へ変換する」「クォート付き `"null"`（NullInterpreter 変換後）」、`:136`「`"null"` / `NULL` は…マップの値が Java null になる」は、解説書 `setup/common.rst:81` が `NullInterpreter` を禁じているため YAML 経路では成立しない（#29 で `YamlColumnOmissionTest` の期待値が実際に反転した）。**`:108`・`:136` は指示書 2-5 の名指し3件に含まれる**
+- [ ] B3. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:174` の javadoc が「値加工を通すと空になる値（例えば `NullInterpreter` が Java null へ変換する `"null"`）」と `NullInterpreter` を例に挙げている。#29 の是正で YAML 経路では成立しないため直す（`:365` と同じく、自分の是正で事実に反することになった記述）
 - [ ] C2. `:365`（`$defs.record_fragment.record_type`）— 「メッセージング系（messages / expected_request_* / response_*）では NTF 内部で常に `"default"` に置換されるため実行時の挙動に影響しない」を #28 の是正後の挙動に合わせる。`$defs.record_fragment` は `messages` と送信同期4セクションの両方から参照される共用定義であり、送信同期4セクションでは記載値がそのままレコード種別になる（`implementation/testdata_notation.rst:1163`）。`:208`（`$defs.message_data.records`）は `messages` 専用の定義に付いており是正後も正しいため**変更しない**。**指示書 2-5 の名指し3件の外**であり、2-3 の波及先として 2026-08-26 ユーザー判断で追加した
 - [ ] D. `notation.rst:1059` の `fields[].length: "-"`（全レコードの最大バイト長への自動拡張と、値中の改行とその前後の空白の除去）の挙動を押さえるテストを足す（`schemaFullCoverage.yaml:87` にデータはあるがテストが無い。A の根拠として同時に押さえる）
 - [ ] E. **変異確認**: 追加した各テストについて期待値を崩すと落ちることの確認
