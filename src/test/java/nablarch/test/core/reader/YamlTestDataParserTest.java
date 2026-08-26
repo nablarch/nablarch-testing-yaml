@@ -102,37 +102,58 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // isResourceExisting
+    // isResourceExisting（入れ物単位）
     // ========================================================================
 
     /**
-     * isResourceExisting: YAML ファイルが存在する場合は true を返すこと。
+     * isResourceExisting: 入れ物（basePath/クラス名 ディレクトリ）が存在する場合は true を返すこと。
      *
      * <p>
-     * Given: YamlTestDataParserTest/existingForTest.yaml が配置されている<br>
+     * Given: 入れ物ディレクトリ YamlTestDataParserTest と、その配下の existingForTest.yaml<br>
      * When:  isResourceExisting(dir, "YamlTestDataParserTest/existingForTest") を呼ぶ<br>
      * Then:  true が返ること
      * </p>
      */
     @Test
-    public void isResourceExistingReturnsTrueWhenFileExists() {
+    public void isResourceExistingReturnsTrueWhenContainerExists() {
         // Given / When / Then
         assertTrue(sut.isResourceExisting(DIR, "YamlTestDataParserTest/existingForTest"));
     }
 
     /**
-     * isResourceExisting: YAML ファイルが存在しない場合は false を返すこと。
+     * isResourceExisting: 判定単位が入れ物であること（読み込み単位の YAML が無くても
+     * 入れ物ディレクトリがあれば true）を担保する。
      *
      * <p>
-     * Given: 存在しないファイル名<br>
+     * これにより、{@code setUpDb.yaml} を置いていないテストクラスでも
+     * {@code TestSupport#getPathOf} がテストデータのパスを解決できる。
+     * </p>
+     *
+     * <p>
+     * Given: 入れ物ディレクトリ YamlTestDataParserTest は存在するが setUpDb.yaml は存在しない<br>
+     * When:  isResourceExisting(dir, "YamlTestDataParserTest/setUpDb") を呼ぶ<br>
+     * Then:  true が返ること
+     * </p>
+     */
+    @Test
+    public void isResourceExistingReturnsTrueWhenReadUnitMissingButContainerExists() {
+        // Given / When / Then
+        assertTrue(sut.isResourceExisting(DIR, "YamlTestDataParserTest/setUpDb"));
+    }
+
+    /**
+     * isResourceExisting: 入れ物ディレクトリが存在しない場合は false を返すこと。
+     *
+     * <p>
+     * Given: 存在しない入れ物名<br>
      * When:  isResourceExisting を呼ぶ<br>
      * Then:  false が返ること
      * </p>
      */
     @Test
-    public void isResourceExistingReturnsFalseWhenFileNotExists() {
+    public void isResourceExistingReturnsFalseWhenContainerNotExists() {
         // Given / When / Then
-        assertFalse(sut.isResourceExisting(DIR, "YamlTestDataParserTest/noSuchFile"));
+        assertFalse(sut.isResourceExisting(DIR, "NoSuchTestClass/existingForTest"));
     }
 
     // ========================================================================
@@ -895,25 +916,113 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // getSetupTableData: ファイル不存在時は空リストを返す
+    // getSetupTableData: 内部ガードは読み込み単位で判定する
     // ========================================================================
 
     /**
-     * getSetupTableData: YAML ファイルが存在しない場合は空リストを返すこと。
+     * getSetupTableData: 入れ物ディレクトリが存在しても、読み込み単位の YAML ファイルが存在しない場合は
+     * 空リストを返すこと（内部ガードが読み込み単位で判定されることを担保する）。
      *
      * <p>
-     * Given: 存在しない YAML ファイルのリソース名<br>
+     * Given: 入れ物ディレクトリ YamlTestDataParserTest は存在するが noSuchFile.yaml は存在しない<br>
      * When:  getSetupTableData を呼ぶ<br>
-     * Then:  空リストが返ること
+     * Then:  例外を送出せず空リストが返ること
      * </p>
      */
     @Test
-    public void getSetupTableDataReturnsEmptyWhenFileNotExists() {
-        // Given / When
+    public void getSetupTableDataReturnsEmptyWhenReadUnitNotExists() {
+        // Given: 入れ物は存在する
+        assertTrue(sut.isResourceExisting(DIR, "YamlTestDataParserTest/noSuchFile"));
+
+        // When
         List<TableData> result = sut.getSetupTableData(DIR, "YamlTestDataParserTest/noSuchFile");
 
         // Then
         assertThat(result.size(), is(0));
+    }
+
+    /**
+     * getSetupTableData: 入れ物ディレクトリごと存在しない場合も空リストを返すこと。
+     *
+     * <p>
+     * Given: 存在しない入れ物名<br>
+     * When:  getSetupTableData を呼ぶ<br>
+     * Then:  例外を送出せず空リストが返ること
+     * </p>
+     */
+    @Test
+    public void getSetupTableDataReturnsEmptyWhenContainerNotExists() {
+        // Given / When
+        List<TableData> result = sut.getSetupTableData(DIR, "NoSuchTestClass/noSuchFile");
+
+        // Then
+        assertThat(result.size(), is(0));
+    }
+
+    /**
+     * getSetupTableData: リソース名に "/" を含まない場合、basePath 直下の YAML を読み込み単位として
+     * 読み込めること（マスタデータ投入ツールの YAML 経路を担保する）。
+     *
+     * <p>
+     * {@code MasterDataSetUpper} は Excel 形式以外のマスタデータファイルを
+     * {@code getSetupTableData(<マスタデータディレクトリ>, <拡張子を除いたファイル名>)} で問い合わせる。
+     * </p>
+     *
+     * <p>
+     * Given: マスタデータディレクトリ直下の master-data.yaml<br>
+     * When:  getSetupTableData(masterDataDir, "master-data") を呼ぶ<br>
+     * Then:  setup_tables のデータが取得できること
+     * </p>
+     */
+    @Test
+    public void getSetupTableDataLoadsMasterDataFileWithoutSlash() {
+        // Given
+        String masterDataDir = DIR + "YamlTestDataParserTest/masterdata";
+
+        // When
+        List<TableData> result = sut.getSetupTableData(masterDataDir, "master-data");
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).getTableName(), is("TEST_TABLE"));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000009001"));
+    }
+
+    /**
+     * getSetupTableData: Excel 形式のマスタデータファイルを YAML 用パーサに問い合わせた場合、
+     * 投入対象が 0 件になり、例外も警告も出ないこと。
+     *
+     * <p>
+     * 解説書 {@code tools/master_data_tool.rst:28}（important）が述べる挙動を担保する。
+     * {@code MasterDataSetUpper} は Excel 形式のマスタデータファイルに対して
+     * {@code <ファイル名>/<シート名>} をリソース名として問い合わせるため、
+     * 同名の YAML が無ければ空リストが返る。
+     * </p>
+     *
+     * <p>
+     * Given: マスタデータディレクトリに master-data-excel.xls 相当の YAML が存在しない<br>
+     * When:  getSetupTableData(masterDataDir, "master-data-excel/Sheet1") を呼ぶ<br>
+     * Then:  空リストが返り、WARN 以上のログが出力されないこと
+     * </p>
+     */
+    @Test
+    public void getSetupTableDataOnExcelMasterDataIsSilentlyEmpty() {
+        // Given
+        String masterDataDir = DIR + "YamlTestDataParserTest/masterdata";
+        OnMemoryLogWriter.clear();
+
+        // When
+        List<TableData> result = sut.getSetupTableData(masterDataDir, "master-data-excel/Sheet1");
+
+        // Then: 投入の対象が 0 件
+        assertThat(result.size(), is(0));
+
+        // Then: 例外も警告も出ない（WARN 以上のログが 1 件も無い）
+        for (String message : OnMemoryLogWriter.getMessages("writer.memlog")) {
+            assertThat(message, not(containsString("-WARN-")));
+            assertThat(message, not(containsString("-ERROR-")));
+            assertThat(message, not(containsString("-FATAL-")));
+        }
     }
 
     // ========================================================================

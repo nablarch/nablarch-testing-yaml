@@ -79,10 +79,40 @@ public final class YamlLoader {
      * @return ファイルパス文字列
      */
     private static String buildFilePath(String basePath, String resourceName) {
+        return join(basePath, resourceName) + YAML_EXTENSION;
+    }
+
+    /**
+     * 入れ物（テストデータをまとめるディレクトリ）のパスを組み立てる。
+     *
+     * <p>
+     * 入れ物名は resourceName の最後の {@code "/"} より前の部分とする。
+     * resourceName に {@code "/"} が含まれない場合は resourceName 全体を入れ物名として扱う。
+     * </p>
+     *
+     * @param basePath     ベースディレクトリパス
+     * @param resourceName リソース名（拡張子なし）
+     * @return 入れ物ディレクトリのパス文字列
+     */
+    private static String buildContainerPath(String basePath, String resourceName) {
+        int index = resourceName.lastIndexOf('/');
+        String containerName = (index < 0) ? resourceName : resourceName.substring(0, index);
+        return join(basePath, containerName);
+    }
+
+    /**
+     * basePath と名前を "/" 1 つで連結する。
+     * basePath が末尾 "/" 付きの場合は余分な "/" を追加しない。
+     *
+     * @param basePath ベースディレクトリパス
+     * @param name     連結する名前
+     * @return 連結したパス文字列
+     */
+    private static String join(String basePath, String name) {
         if (basePath.endsWith("/")) {
-            return basePath + resourceName + YAML_EXTENSION;
+            return basePath + name;
         }
-        return basePath + "/" + resourceName + YAML_EXTENSION;
+        return basePath + "/" + name;
     }
 
     /**
@@ -133,14 +163,42 @@ public final class YamlLoader {
     }
 
     /**
-     * YAML ファイルが存在するかどうかを返す。
+     * テストデータの入れ物が存在するかどうかを返す。
+     *
+     * <p>
+     * YAML 形式の入れ物は {@code <basePath>/<入れ物名>} ディレクトリである
+     * （Excel 形式の {@code <basePath>/<入れ物名>.xls} に相当する）。
+     * 入れ物名は resourceName の最後の {@code "/"} より前の部分とし、
+     * resourceName に {@code "/"} が含まれない場合は resourceName 全体を入れ物名として扱う。
+     * </p>
+     *
+     * <p>
+     * 読み込み単位（{@code <basePath>/<入れ物名>/<読み込み単位名>.yaml}）の存在は見ない。
+     * 読み込み単位の存在を判定する場合は {@link #isDataExisting} を使用する。
+     * </p>
      *
      * @param basePath     ベースディレクトリパス
      * @param resourceName リソース名（拡張子なし）
-     * @return ファイルが存在する場合は {@code true}、存在しない場合は {@code false}
+     * @return 入れ物ディレクトリが存在する場合は {@code true}、存在しない場合は {@code false}
      */
     public static boolean isResourceExisting(String basePath, String resourceName) {
-        return new File(buildFilePath(basePath, resourceName)).exists();
+        return new File(buildContainerPath(basePath, resourceName)).isDirectory();
+    }
+
+    /**
+     * 読み込み単位の YAML ファイルが存在するかどうかを返す。
+     *
+     * <p>
+     * {@code <basePath>/<resourceName>.yaml} が通常ファイルとして存在するかを判定する
+     * （Excel 形式の {@code isDataExisting}（シート単位）に相当する）。
+     * </p>
+     *
+     * @param basePath     ベースディレクトリパス
+     * @param resourceName リソース名（拡張子なし）
+     * @return YAML ファイルが存在する場合は {@code true}、存在しない場合は {@code false}
+     */
+    public static boolean isDataExisting(String basePath, String resourceName) {
+        return new File(buildFilePath(basePath, resourceName)).isFile();
     }
 
     /**

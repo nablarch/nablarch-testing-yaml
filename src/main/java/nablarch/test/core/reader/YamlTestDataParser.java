@@ -97,16 +97,35 @@ public class YamlTestDataParser extends BasicTestDataParser {
         rebuildBuilders();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * 判定単位は入れ物である。YAML 形式の入れ物は {@code <basePath>/<入れ物名>} ディレクトリであり
+     * （Excel 形式の {@code <basePath>/<入れ物名>.xls} に相当する）、
+     * 入れ物内の読み込み単位（{@code <入れ物名>/<読み込み単位名>.yaml}）の有無は見ない。
+     * 入れ物名は resourceName の最後の {@code "/"} より前の部分とし、
+     * resourceName に {@code "/"} が含まれない場合は resourceName 全体を入れ物名として扱う。
+     * </p>
+     */
     @Override
     public boolean isResourceExisting(String basePath, String resourceName) {
         return YamlLoader.isResourceExisting(basePath, resourceName);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * 読み込み単位の YAML ファイル（{@code <path>/<resourceName>.yaml}）が存在しない場合は、
+     * 例外を送出せず空リストを返す（準備データが不要なテストで空ファイルを用意させないため）。
+     * </p>
+     */
     @Override
     public List<TableData> getSetupTableData(String path, String resourceName, String... groupId) {
-        if (!isResourceExisting(path, resourceName)) {
+        if (!YamlLoader.isDataExisting(path, resourceName)) {
+            LOGGER.logDebug("Skipping table data initialization because preparation data is not found. resource=["
+                    + resourceName + "]");
             return Collections.emptyList();
         }
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);

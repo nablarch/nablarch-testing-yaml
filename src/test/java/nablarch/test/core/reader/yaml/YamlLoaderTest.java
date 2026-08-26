@@ -199,37 +199,133 @@ public class YamlLoaderTest {
     }
 
     // ========================================================================
-    // isResourceExisting
+    // isResourceExisting（入れ物単位）／isDataExisting（読み込み単位）
     // ========================================================================
 
     /**
-     * [YamlLoader] isResourceExisting: YAML ファイルが存在する場合は true を返すこと。
+     * [YamlLoader] isResourceExisting: 入れ物ディレクトリが存在する場合は true を返すこと。
      *
      * <p>
-     * Given: 存在する YAML ファイル<br>
-     * When:  isResourceExisting を呼ぶ<br>
+     * Given: 入れ物ディレクトリ YamlLoaderTest と、その配下の simple.yaml<br>
+     * When:  isResourceExisting(dir, "YamlLoaderTest/simple") を呼ぶ<br>
      * Then:  true が返ること
      * </p>
      */
     @Test
-    public void isResourceExisting_trueWhenExists() {
+    public void isResourceExisting_trueWhenContainerDirectoryExists() {
         // When / Then
         assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest/simple"), is(true));
     }
 
     /**
-     * [YamlLoader] isResourceExisting: YAML ファイルが存在しない場合は false を返すこと。
+     * [YamlLoader] isResourceExisting: 判定単位が入れ物であること（読み込み単位の YAML が無くても
+     * 入れ物ディレクトリがあれば true）を担保する。
      *
      * <p>
-     * Given: 存在しないファイルパス<br>
+     * Given: 入れ物ディレクトリ YamlLoaderTest は存在するが noSuchFile.yaml は存在しない<br>
+     * When:  isResourceExisting(dir, "YamlLoaderTest/noSuchFile") を呼ぶ<br>
+     * Then:  true が返ること（読み込み単位の判定である isDataExisting は false）
+     * </p>
+     */
+    @Test
+    public void isResourceExisting_trueWhenReadUnitMissingButContainerExists() {
+        // Given
+        assertThat("読み込み単位は存在しない", YamlLoader.isDataExisting(DIR, "YamlLoaderTest/noSuchFile"), is(false));
+
+        // When / Then
+        assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest/noSuchFile"), is(true));
+    }
+
+    /**
+     * [YamlLoader] isResourceExisting: 入れ物ディレクトリが存在しない場合は false を返すこと。
+     *
+     * <p>
+     * Given: 存在しない入れ物名<br>
      * When:  isResourceExisting を呼ぶ<br>
      * Then:  false が返ること
      * </p>
      */
     @Test
-    public void isResourceExisting_falseWhenNotExists() {
+    public void isResourceExisting_falseWhenContainerDirectoryNotExists() {
         // When / Then
-        assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest/noSuchFile"), is(false));
+        assertThat(YamlLoader.isResourceExisting(DIR, "NoSuchContainer/simple"), is(false));
+    }
+
+    /**
+     * [YamlLoader] isResourceExisting: 入れ物名と同名のものがディレクトリでない場合は false を返すこと。
+     *
+     * <p>
+     * Given: basePath 直下に同名のファイル（YamlLoaderTest.java）が存在する<br>
+     * When:  isResourceExisting(dir, "YamlLoaderTest.java/simple") を呼ぶ<br>
+     * Then:  false が返ること（入れ物はディレクトリでなければならない）
+     * </p>
+     */
+    @Test
+    public void isResourceExisting_falseWhenContainerIsNotDirectory() {
+        // When / Then
+        assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest.java/simple"), is(false));
+    }
+
+    /**
+     * [YamlLoader] isResourceExisting: resourceName に "/" が含まれない場合は resourceName 全体を
+     * 入れ物名として扱うこと。
+     *
+     * <p>
+     * Given: "/" を含まないリソース名<br>
+     * When:  isResourceExisting を呼ぶ<br>
+     * Then:  basePath/resourceName ディレクトリの有無がそのまま返ること
+     * </p>
+     */
+    @Test
+    public void isResourceExisting_wholeNameIsContainerWhenNoSlash() {
+        // When / Then
+        assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest"), is(true));
+        assertThat(YamlLoader.isResourceExisting(DIR, "NoSuchContainer"), is(false));
+    }
+
+    /**
+     * [YamlLoader] isDataExisting: 読み込み単位の YAML ファイルが存在する場合は true を返すこと。
+     *
+     * <p>
+     * Given: YamlLoaderTest/simple.yaml が配置されている<br>
+     * When:  isDataExisting を呼ぶ<br>
+     * Then:  true が返ること
+     * </p>
+     */
+    @Test
+    public void isDataExisting_trueWhenYamlFileExists() {
+        // When / Then
+        assertThat(YamlLoader.isDataExisting(DIR, "YamlLoaderTest/simple"), is(true));
+    }
+
+    /**
+     * [YamlLoader] isDataExisting: 読み込み単位の YAML ファイルが存在しない場合は false を返すこと。
+     *
+     * <p>
+     * Given: 入れ物ディレクトリは存在するが、その配下に noSuchFile.yaml は存在しない<br>
+     * When:  isDataExisting を呼ぶ<br>
+     * Then:  false が返ること
+     * </p>
+     */
+    @Test
+    public void isDataExisting_falseWhenYamlFileNotExists() {
+        // When / Then
+        assertThat(YamlLoader.isDataExisting(DIR, "YamlLoaderTest/noSuchFile"), is(false));
+    }
+
+    /**
+     * [YamlLoader] isDataExisting: "/" を含まないリソース名は basePath 直下の YAML を指すこと。
+     *
+     * <p>
+     * Given: basePath 直下に YamlLoaderTest.yaml は存在しない<br>
+     * When:  isDataExisting(dir, "YamlLoaderTest") を呼ぶ<br>
+     * Then:  false が返ること（同名ディレクトリの存在に引きずられないこと）
+     * </p>
+     */
+    @Test
+    public void isDataExisting_falseWhenOnlySameNamedDirectoryExists() {
+        // When / Then
+        assertThat(YamlLoader.isDataExisting(DIR, "YamlLoaderTest"), is(false));
     }
 
     // ========================================================================
