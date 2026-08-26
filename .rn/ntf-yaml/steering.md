@@ -1000,7 +1000,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #27: 2-2 — `isResourceExisting` の判定単位を Excel と揃える
+### ~~#27: 2-2 — `isResourceExisting` の判定単位を Excel と揃える~~
 
 **Purpose**: `TestDataParser#isResourceExisting` の呼び出し元（`TestSupport#getPathResourceExisting`・`RestTestSupport`）は**入れ物単位**（Excel の `basePath/<クラス名>.xls`）の意味で使っているが、YAML 実装は読み込み単位（シート相当）の存在を答えている。YAML の入れ物は `basePath/<クラス名>` ディレクトリである（`implementation/class_unit_test/component.rst:313`）。入れ物単位に揃える。
 
@@ -1008,15 +1008,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `YamlLoader.java:142`-`:143` / `YamlTestDataParser.java:103` を入れ物単位（`basePath/<クラス名>` ディレクトリの存在）に是正する
-- [ ] B. `YamlTestDataParser.java:109`（`getSetupTableData` の内部ガード）を、Excel が同位置で使う `isDataExisting` 相当（読み込み単位＝ファイルの存在）の判定に置き換える。`BasicTestDataParser.java:52`（`3c4bd2a`）参照
-- [ ] C. `tools/master_data_tool.rst:28` が述べる挙動（Excel 形式のファイルに YAML 用パーサを設定すると投入0件になり、例外も警告も出ない）が壊れていないことをテストで確かめる
-- [ ] D. 入れ物単位／読み込み単位それぞれを押さえるテストを足す（`setUpDb.yaml` を置いていないクラスで入れ物が真になること／存在しない入れ物が偽になること）
-- [ ] E. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
-- [ ] F. `mvn -o clean test` 緑を確認
-- [ ] G. **converter は直さない**。`nablarch-testing-converter@60d9a2d` の `YamlTestCoreAdapterTest.java:365`-`:370`（`isResourceExisting_reflectsFileExistence`）が落ちることを実測し、落ちたテスト名と理由を記録する（本モジュール外のため完了条件の対象外）
-- [ ] H. commit・push
-- [ ] I. self-check (OK/NG per completion criterion, record in checks/task-27.md)
+- [x] A. `YamlLoader.java:142`-`:143` / `YamlTestDataParser.java:103` を入れ物単位（`basePath/<クラス名>` ディレクトリの存在）に是正する
+- [x] B. `YamlTestDataParser.java:109`（`getSetupTableData` の内部ガード）を、Excel が同位置で使う `isDataExisting` 相当（読み込み単位＝ファイルの存在）の判定に置き換える。`BasicTestDataParser.java:52`（`3c4bd2a`）参照
+- [x] C. `tools/master_data_tool.rst:28` が述べる挙動（Excel 形式のファイルに YAML 用パーサを設定すると投入0件になり、例外も警告も出ない）が壊れていないことをテストで確かめる
+- [x] D. 入れ物単位／読み込み単位それぞれを押さえるテストを足す（`setUpDb.yaml` を置いていないクラスで入れ物が真になること／存在しない入れ物が偽になること）
+- [x] E. **変異確認**: 是正前に落ち是正後に通るテストの特定、および追加/変更した各テストの期待値を崩すと落ちることの確認
+- [x] F. `mvn -o clean test` 緑を確認
+- [x] G. **converter は直さない**。`nablarch-testing-converter@60d9a2d` の `YamlTestCoreAdapterTest.java:365`-`:370`（`isResourceExisting_reflectsFileExistence`）が落ちることを実測し、落ちたテスト名と理由を記録する（本モジュール外のため完了条件の対象外）
+- [x] H. commit・push
+- [x] I. self-check (OK/NG per completion criterion, record in checks/task-27.md)
 
 **Completion criteria**:
 
@@ -1175,6 +1175,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - [ ] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で C0/C1 を計測する（`pom.xml` / `argLine` は変更しない）
 - [ ] B. `src/main` の是正でカバレッジが下がった箇所があれば挙げる
+- [ ] B2. converter（`60d9a2d`。**変更しない**）の失敗テストを帰属付きで実測する。Step 4 着手前（`ab0064e`）の本モジュールを `.m2` へ install した状態と、Step 4 完了後の状態とで converter の `mvn -o clean test` を実行し、差分から「Step 4 起因の失敗」を切り分ける。#26（空行判定）起因の失敗が `YamlFormatReaderInvalidInputTest` 2件・`YamlFormatReaderScalarTest` 2件として観測されている（#27 実測。要再確認）ため、2-2 起因の1件と合わせて全件を理由付きで挙げる
 - [ ] C. 報告書を `.rn/ntf-yaml/report-step4.md` に1ファイルでまとめる。順序は指示書 §6 のとおり — ①第2節5件の是正結果（変更ファイルと `file:line`、直す前に落ちたテスト名）②第3節13件の結果（通った／`@Ignore` の内訳。`@Ignore` は理由の文言をそのまま載せる）③期待値をわざと崩す確認の結果（対象テスト名と崩した内容）④既存テストの期待値を変えた箇所の全件（2-1・2-3 それぞれ件数を数えて）⑤カバレッジ C0/C1 の計測結果と converter で落ちたテスト
 - [ ] D. 後始末 — `git status --short` が空。`tmp/` と `javac.*.args` を残さない。一時ファイル・作業用スクリプト・ログを消す
 - [ ] E. commit・push
