@@ -8,6 +8,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 および pom 設定のみを行う。
 移送後、解説書・JSON Schema との食い違いが見つかった箇所は、ユーザー確認を経たタスク（#5〜#13）として是正する。
 
+**Phase 2（2026-08-26〜。#26 以降）**: NTF解説書（`nablarch-document` / `ntf-yaml-support` / `76e6e61`）を
+SSoT（唯一の正）とし、`nablarch-testing-yaml` の実装・テスト・スキーマが解説書と食い違う箇所を全件洗い出して
+モジュール側を解説書に合わせる。**Phase 2 では `src/main` を変更してよい**（本モジュールはタグ0件・未リリースで
+後方互換の対象になる利用者が存在しないため。2026-08-26 実測）。依存先 `nablarch-testing` は変更しない。
+根拠: 作業指示 `nablarch-document` `c6559eb`:`.rn/20260724-ntf-yaml-support/ntf-step4-02-nablarch-testing-yaml.md`
+
 # Acceptance criteria
 
 - `mvn test` 全テスト PASS（yaml リポジトリ単体で緑）
@@ -15,6 +21,24 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - #4 以降の実装差分は、すべて steering の承認済みタスクに帰属し、タスク外の差分が無い（根拠: `git diff --stat 0df7407..HEAD -- src/main` の14ファイルについてファイル→タスク→checks/記録の対応を実測。未採番だった5コミットは `#25` として追番・記録済み（`checks/task-25.md`）。`git diff d8ba387..HEAD` は d8ba387 がこのリポジトリに存在せず取得不能——2026-08-24 `git cat-file -t d8ba387` で `Not a valid object name` を確認、移送元 worktree ブランチが消滅済みのため）
 - 本体（nablarch-testing）に一切書き込みをしていない
 - push 済み
+
+**Phase 2**（本指示書 §7 の完了条件16項目。詳細は各タスクの Completion criteria）:
+
+- §4-1 に赤→緑の記録があり、3ケース（空マッピング／全空文字／全 null）の区別が実測で示されている
+- §4-1 で Excel 形式と YAML 形式の結果一致が実行結果で示されている
+- §4-1 の波及先（`isBlankRow`・`dropBlankRows` の呼び出し元、カラム名の決定）が `src/main` 全走査の全件表になっている
+- §4-2 で落ちたテストが全件表になり、各件が (a) 解説書の仕様を守っていた／(b) 食い違いを固定していた に判定されている
+- §4-2 で `"null"` が文字列のまま残るテストがあり、是正前に落ちることの実行結果がある
+- §4-3 で `:410`・`:108`・`:136` が解説書の文言に合い、`description` **全出現**を母集合とした突合表がある
+- §4-4 の全件表が母集合を先に固定したうえで作られ、0件ファイルの数え直しの実行結果と、対象外の理由1行ずつがある
+- §4-4 の「モジュール是正」に赤→緑の記録があり、「解説書側の誤りの疑い」は実装未変更で報告3点が揃っている
+- §4-5 の対象（今回の変更が持ち込んだ未到達）が全件列挙され、各件にテスト追加または不要根拠がある
+- §5 の2件（`isBlankRow` の直し方、スキーマ `:108` の Boolean 矛盾解消案）を**着手前に報告した**記録がある
+- §6 のレビューが実施され、指摘件数・観点・却下理由が記録され、`must` が残っていない
+- `mvn clean test` が全件 PASS し最終行が記録されている
+- **`nablarch-testing` に差分が無い**
+- コミット**直前**に `git status --porcelain` の全件表があり、予定外のファイルが0件
+- push 済み（1つの修正意図につき1コミット）
 
 # Assumptions
 
@@ -43,6 +67,29 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
   - 基準の当てはめに迷う新タスクが出たときだけユーザーに聞く
 - **スキーマ `description` が対応すべき先は「実装の分岐」ではなく「スキーマ検証を通過しうる入力に対する、外から観測できる挙動」である**（2026-08-24 ユーザー裁定。`description` 全般に適用）。到達不能な内部規則は書かない。実装側の到達不能な防衛分岐（`YamlSection#castMap` の非 Map 分岐など）はそのまま残してよい
 - レビュー用サブエージェントには**個別の一意な作業ディレクトリ**を割り当てる（共有 scratchpad で衝突した実績あり）
+
+**Phase 2（#26 以降）の追加・上書きルール**（出典: 本指示書 §2・§3・§5・§6）:
+
+- **上書き**: 「実装の変更は一切しない」は Phase 1 のルール。**Phase 2 では `src/main` を変更してよい**（タグ0件・未リリースのため）
+- **継続**: `nablarch-testing`（依存先）は変更しない。Excel 側の挙動は読んで確かめるだけ。問題があれば報告して止める
+- **参照点（ピン）はすべて `git show <SHA>:<path>` で読む。作業ツリーの HEAD を読まない**
+  - 解説書（SSoT）: `nablarch-document` / `ntf-yaml-support` / `76e6e61`（`ja/` は `40b9c52` とバイト同一）
+  - 本モジュール: `nablarch-testing-yaml` / `feature/ntf-yaml` / `0db2221`
+  - 依存先: `nablarch-testing` / `convert-testdata-excel-to-text` / `3c4bd2a`
+- **解説書は直さない。** 解説書側が誤っていると判断したら、逐語（`file:line`＋`76e6e61`）・実測結果（`file:line`＋`0db2221`）・なぜ誤りと言えるか の3点を添えて報告し、その項目は止める
+- **事実には `file:line` と参照コミットハッシュを添える。示せないことは書かず「未確認」と書く**
+- **1箇所確認した時点は、まだ根拠ではない。** 具体が依存する処理を末端まで追う。後段で効果が打ち消されていないかを別に確かめる
+- **確かめる手段があるなら、読むだけで済ませない。動かして確かめる**
+- **既存のテストが緑であることを、変更が正しい根拠にしない**
+- **§5 の事前ゲート**: `isBlankRow` の直し方（#26）とスキーマ `:108` の Boolean 矛盾解消案（#29）は、実装に反映する前に案と根拠を報告して検証を受ける。反例が出たら反映せず止まる
+- **レビューは Phase 2 の4観点で回す**（Phase 1 の Craft/QA 基準を置き換え）
+  - A 充足（抜け・漏れ・境界値・異常系）／B 整合（呼び出し元・後方互換・解説書との一致）／C 規約（命名・構造）／D 検証の妥当性（そのテストは通るように書かれただけではないか）
+  - **各観点は別のサブエージェント。**プロンプトに必ず3点を入れる — 実測コマンドで裏付けよ／付属の検証スクリプトを正解として使わず独立に組め／敵対的にレビューせよ
+  - **本指示書自体もレビュー対象に含める**（特に §4-1 の「`TestDataParsingTemplate.isBlankLine` は発火しないと考えられる（未確認）」を疑う）
+  - 回す範囲: §4-1 と §4-3 は4観点／§4-2 と §4-4 の全件表は観点A・D／§4-4 の是正が `src/main` に及ぶ場合は4観点／§4-5 は回さない
+  - **ラウンド2以降は差分限定の2観点**（是正が指示範囲に収まっているか／新しい欠陥を生んでいないか）。是正ラウンドの上限は**3回**。各ラウンドの指摘件数と観点を記録する
+  - **指摘を全部飲まない。** 既決事項（§4-1 の user 判断「Excel に合わせる」、解説書が SSoT、スキーマ `description` が SSoT 範囲）に反する指摘は却下し理由を記録する
+- 見つけた欠陥は範囲外を理由に先送りしない。**本指示の対象外と判定したものは §4-4 の全件表に記録する**
 
 # Tasks
 
@@ -951,6 +998,348 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - `mvn -o clean test` が BUILD SUCCESS の状態で install されている
 - jar のタイムスタンプが更新されている
+
+---
+
+## Phase 2（#26〜）: 解説書 SSoT 準拠
+
+以下は作業指示 `nablarch-document` `c6559eb`:`.rn/20260724-ntf-yaml-support/ntf-step4-02-nablarch-testing-yaml.md`
+（以下「本指示書」）に基づく。§ 番号は本指示書のもの。
+
+### #26: §4-1 `isBlankRow` の直し方の案を報告する（§5 事前ゲート1）
+
+**Purpose**: 本指示書 §5 が「実装に反映する前に案と根拠を出して報告し、検証を受けてから着手する」と定める2件のうち1件目。空マッピング `{}`・全空文字・全 null の3つをどう区別するかの案を、実測の裏付け付きで出す。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] A. 参照点を固定する。解説書 `nablarch-document` `76e6e61`、本モジュール `0db2221`、依存先 `nablarch-testing` `3c4bd2a`。**すべて `git show <SHA>:<path>` で読む。作業ツリーの HEAD を読まない**（本指示書 §2）
+- [ ] B. `YamlSection.java` の `isBlankRow`（`:201`-`:209`）・`objectToString`（`:147`-`:149`）・`toStr`（`:127`-`:129`）・`dropBlankRows`（`:182`-`:190`）・`resolveColumns`（`:227`）を `0db2221` で全量読み、現行の判定経路を実測で確定する
+- [ ] C. **本指示書 §4-1 の未確認記述を動かして確かめる**（本指示書 §6 が名指しで「ここを疑うこと」と指示）。`nablarch-testing` `3c4bd2a` の `TestDataParsingTemplate.isBlankLine`（`:407`-`:409`）が `StringUtil.isNullOrEmpty(Collection)` を呼ぶ経路が、Excel の実入力で発火するか否かを**実行して**確かめる。`PoiXlsReader`（`:140`-`:147`）が返す `List<String>` の要素が空セルで空文字か Java null かを実測する。**シグネチャや Javadoc を根拠にしない**
+- [ ] D. 3ケース（(a) `{}` → 落ちる／(b) 全 `""` → 落ちる／(c) 全 Java null → 残る）を区別する実装案を出す。キーだけ書いて値を省略した行、アンクォートの `null` だけの行の両方が (c) に入ることを含める
+- [ ] E. 案が `resolveColumns`（カラム名決定）へ及ぼす波及の見立てを添える。解説書 `implementation/testdata_notation.rst:818`（後続行がキーの一部を持たない場合そのカラムは `null` 明示と同じ扱い）と矛盾しないか
+- [ ] F. **報告して止まる。** ユーザーの検証を受けるまで `src/main` に手を入れない。反例が出たら反映せず報告して止まる（本指示書 §5）
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-26.md)
+
+**Completion criteria**:
+
+- step C の実測結果（実行コマンドと生の出力）が記録されており、`TestDataParsingTemplate.isBlankLine` 経路の発火有無が「未確認」でなく実測で判定されている
+- 3ケースを区別する案が、判別条件のレベルで書かれている
+- `resolveColumns` への波及の見立てと、解説書 `:818` との整合の見立てがある
+- **`src/main` が変更されていない**（報告のみのタスク）
+
+---
+
+### #27: §4-1 全ての値が Java null の行を残すよう `isBlankRow` を是正する
+
+**Purpose**: 解説書 `implementation/testdata_notation.rst:1500`（`76e6e61`）が定める「YAML で読み飛ばすのは空マッピングと全空文字の2つだけ。null は挙げない」に実装を合わせる。user 判断は「案A ＝ Excel に合わせる」（2026-08-26）。
+
+**Prerequisites**: #26（案の承認）
+
+**Steps**:
+
+- [ ] A. **先に落ちるテストを書く。** 全ての値が Java null の行（アンクォートの `null` だけの行、キーだけ書いて値を省略した行）を含む YAML を用意し、その行が保持されることを検証するテストを書く。**落ちることを確認し、実行コマンドと生の出力を記録する**
+- [ ] B. **波及先を先に特定する。** `isBlankRow`・`dropBlankRows` の呼び出し元を `src/main` **全走査**で挙げ、挙動が変わる箇所を全件表にする。**表を作ってから直す**
+- [ ] C. `isBlankRow` を是正する。3ケース (a) `{}` → 落ちる (b) 全 `""` → 落ちる (c) 全 Java null → **残る** を区別できることを**実測で示す**
+- [ ] D. 通ることを確認し、実行コマンドと生の出力を記録する
+- [ ] E. **Excel と突き合わせる。** 同じ意味のテストデータを Excel 形式でも組み、両形式の結果が一致することを実測で示す。**片方だけ動かして終わらせない**
+- [ ] F. カラム名の決定（`resolveColumns`。`YamlSection.java:227`）が `dropBlankRows` の後で走るため、残る行が増えてカラム名決定行が変わりうる点を実測し、解説書 `implementation/testdata_notation.rst:818` と矛盾しないことを確かめる
+- [ ] G. Javadoc を直す。`dropBlankRows` の `:152`-`:159`、`isBlankRow` の `:192`-`:199`。**`:168`-`:175` の `interpret` との順序の説明**（`NullInterpreter` 前提の例）が是正後に成り立つかを読み直す
+- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-27.md)
+- [ ] I. **4観点レビュー（A 充足 / B 整合 / C 規約 / D 検証の妥当性）。各観点は別サブエージェント。**プロンプトに3点必須（実測コマンドで裏付けよ／付属の検証スクリプトを正解として使わず独立に組め／敵対的にレビューせよ）。**本指示書自体もレビュー対象**に含める
+- [ ] J. 指摘の採否を判定し、却下は理由を記録する。既決事項（user 判断「Excel に合わせる」、解説書が SSoT）に反する指摘は却下
+- [ ] K. commit・push
+
+**Completion criteria**:
+
+- 是正前に落ちるテストを先に書き、落ちること→通ることの実行結果が記録されている（赤→緑）
+- 3ケース（`{}`／全空文字／全 null）の区別が実測で示されている
+- Excel 形式との一致が実行結果で示されている
+- 波及先が `src/main` 全走査の全件表になっており、挙動が変わる箇所に判定が付いている
+- Javadoc 2箇所が是正され、`:168`-`:175` の妥当性が判定されている
+- `mvn clean test` が全件 PASS
+
+---
+
+### #28: §4-2 テスト用 `yamlInterpreters` を解説書に合わせる
+
+**Purpose**: 解説書 `setup/common.rst:56`-`:81`（`76e6e61`）が `yamlInterpreters` は `DateTimeInterpreter` と `CompositeInterpreter` の2つだけと定め、`NullInterpreter` を「指定してはならない」としているのに、`src/test/resources/unit-test.xml:56`-`:76`（`0db2221`）が4件を並べている食い違いを解消する。
+
+**Prerequisites**: #27
+
+**Steps**:
+
+- [ ] A. `unit-test.xml` から `NullInterpreter`（`:58`）と `LineSeparatorInterpreter`（`:65`）を外す
+- [ ] B. **外すと落ちるテストを全件洗い出す。** 実行結果（テスト名の全件）を記録する
+- [ ] C. 落ちたテストそれぞれを **(a) 解説書の仕様を守っていた**／**(b) 解説書と食い違う挙動を固定していた** のどちらかに判定し、全件表にする
+- [ ] D. (a) は外した2つに依存しない形に書き直す。(b) は解説書が定める挙動を検証する形に直す。**落とさない**
+- [ ] E. **`"null"`（クォート付き）が文字列のまま残ることを検証するテストを足す。先に落ちることを確認する**（外す前は Java null になるため落ちるはず）。実行結果を記録する
+- [ ] F. `src/test/resources` 配下を**全走査**し、他に `NullInterpreter`・`LineSeparatorInterpreter` を `yamlInterpreters` に入れている設定ファイルが無いか確かめ、結果を記録する
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-28.md)
+- [ ] H. **観点A・観点D の2観点レビュー**（別サブエージェント・3点必須プロンプト・本指示書もレビュー対象）。押さえるのは「落ちたテストを仕様に合わせたか、通るように書き換えただけか」
+- [ ] I. 指摘の採否判定と却下理由の記録
+- [ ] J. commit・push
+
+**Completion criteria**:
+
+- `NullInterpreter`・`LineSeparatorInterpreter` が `unit-test.xml` から外れている
+- 落ちたテストが全件表になっており、各件が (a)／(b) に判定されている
+- `"null"` が文字列のまま残るテストがあり、**是正前に落ちること**の実行結果が記録されている
+- `src/test/resources` 全走査の結果が記録されている
+- `mvn clean test` が全件 PASS
+
+---
+
+### #29: §4-3 スキーマ `:108` Boolean 型の矛盾の解消案を報告する（§5 事前ゲート2）
+
+**Purpose**: 本指示書 §5 の事前報告2件目。`ntf-testdata-yaml-schema.json:108`（`0db2221`）が「NULL 許容カラムは省略せず `null` を明示すること」と勧める一方、その手前で「Boolean 型カラムは null になると NullPointerException になるため true/false を明示すること（null を明示しても防げない）」と書いており、**NULL 許容の Boolean 型カラムで両者が両立しない**。
+
+**Prerequisites**: #28
+
+**Steps**:
+
+- [ ] A. `:108` の description 全文を `0db2221` から取得し、矛盾する2文を逐語で示す
+- [ ] B. 解説書側の対応記述を `76e6e61` で確認する — `implementation/testdata_notation.rst:666`（FK と省略）、`:719`-`:720`（Boolean 型のデフォルト値は `"false"`）
+- [ ] C. NULL 許容 Boolean カラムで実際に何が起きるかを**動かして確かめる**（既知の O-D1: `:108` FK ブロックの null 明示助言が Boolean 型で NPE。`checks/task-24.md` に実測記録あり。参照点 `0db2221` で再取得する）
+- [ ] D. 解消案と根拠を出す。**解説書は直さない。** 解説書側が誤っていると判断した場合は逐語・実測・理由の3点を添えて報告し止める（本指示書 §3・§4-4 末尾）
+- [ ] E. **報告して止まる。** 検証を受けるまでスキーマに手を入れない
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-29.md)
+
+**Completion criteria**:
+
+- 矛盾する2文が逐語で示されている（`file:line` ＋ SHA）
+- NULL 許容 Boolean カラムの実挙動が実測（実行コマンドと出力）で示されている
+- 解消案と根拠が出ており、報告した記録がある
+- **スキーマファイルが変更されていない**（報告のみのタスク）
+
+---
+
+### #30: §4-3 スキーマ `description` を解説書に合わせる
+
+**Purpose**: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json`（`0db2221` で全434行）の `description` は SSoT の適用範囲（user 確定 2026-08-25）。解説書との不一致を全件是正する。
+
+**Prerequisites**: #27（§4-1 の是正後の挙動を description に書くため）、#29（Boolean 矛盾の解消案の承認）
+
+**Steps**:
+
+- [ ] A. 既知3件を是正する — `:410`（`length`。「改行コードおよび前後空白を除去する」→ 解説書 `implementation/testdata_notation.rst:1059`「値に含まれる改行と、その前後の空白は取り除かれる」。改行を含まない値の前後空白は残る）、`:108`・`:136`（「全ての値が null または空文字の行は取り除かれる」→ §4-1 是正後の挙動＝空マッピングと全空文字だけ）
+- [ ] B. #29 で承認された案で `:108` の Boolean 型の矛盾を解消する
+- [ ] C. **`description` 全件を解説書と突き合わせる。母集合は `description` キーの全出現とし、機械的に列挙してから判定する。`grep` のキーワードで絞らない。** 判定は「解説書に対応する記述があるか」「あるなら一致するか」の2段で行い、全件表にする
+- [ ] D. **スキーマが実際に効いていることを確かめる。** description を直しても検証の挙動は変わらないはずだが、**スキーマファイルを壊していないことを、実際にパースを走らせて確かめる**（解説書 `implementation/testdata_notation.rst:92`「パース時には、このスキーマでの検証が行われる」）
+- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-30.md)
+- [ ] F. **4観点レビュー**（別サブエージェント・3点必須プロンプト・本指示書もレビュー対象）。利用者が読む公開本文が変わるため、解説書との一致（B）と用語（C）が要る
+- [ ] G. 指摘の採否判定と却下理由の記録。**スキーマ `description` が SSoT 範囲であることに反する指摘は却下**
+- [ ] H. commit・push
+
+**Completion criteria**:
+
+- `:410`・`:108`・`:136` が解説書の文言に合っている
+- `description` の**全出現**を母集合とした突合表がある（キーワードで絞っていない）。集計（総数／解説書に対応がある数／一致／不一致）がある
+- Boolean 型の矛盾に解消案と報告の記録がある
+- パースを実行してスキーマが壊れていないことが確認されている
+- `mvn clean test` が全件 PASS
+
+---
+
+### #31: §4-4 母集合を固定する（38ファイル・9,822行の数え直し）
+
+**Purpose**: 全件突合の母集合を、本指示書の数字を信じずに**自分で数え直して**固定する。
+
+**Prerequisites**: #30
+
+**Steps**:
+
+- [ ] A. `nablarch-document` `76e6e61` の `ja/development_tools/testing_framework/` 配下の `.rst` を機械的に列挙し、ファイル数と総行数を実測する（本指示書は38ファイル・9,822行と言うが、**ディレクターの数字を信じない**）
+- [ ] B. `YAML` または `yaml` が1行以上現れるファイルを実測で特定する（本指示書は12ファイル・6,640行）
+- [ ] C. **残りのファイルで `YAML`・`yaml` の出現が0件であることを自分で数え直し、実行コマンドと生の出力を記録する**
+- [ ] D. 0件のファイル群を「対象外」と判定し、**1ファイルにつき理由を1行**書く（黙って飛ばさない）
+- [ ] E. `76e6e61` の `ja/` が `40b9c52` の `ja/` とバイト同一であること（`git diff 40b9c52 76e6e61 -- ja/` が空）を自分で確かめ、記録する
+- [ ] F. 全件表のファイルを `.rn/ntf-yaml/` 配下に作成し、列（ページ／行／記述の要旨／対象・対象外＋理由／実装での成否／根拠（`file:line`＋SHA、動かした場合は手順と出力）／判定（一致・モジュール是正・解説書側の誤りの疑い）／処置）を用意する
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-31.md)
+- [ ] H. commit・push
+
+**Completion criteria**:
+
+- `.rst` のファイル数・総行数が自分の実測で確定している（実行コマンドと出力を記録）
+- `YAML`/`yaml` を含むファイルと0件のファイルが実測で切り分けられている
+- **0件ファイルの数え直しの実行結果**がある
+- 0件ファイルすべてに対象外の理由が1行ずつ書かれている
+- 全件表の器が作られている
+
+---
+
+### #32: §4-4 `setup/request_unit_test/http_messaging.rst`（49行）
+
+**Purpose**: 担当12ページの全件突合。小さいページから型を固める。
+
+**Prerequisites**: #31
+
+**Steps（#32〜#43 共通）**:
+
+- [ ] A. 該当ページを `76e6e61` から**全量読む。`grep` やキーワード走査で済ませない**（解説書側の作業で1回目にキーワード走査が5件取りこぼした実績あり）
+- [ ] B. 段落ごとに問う: 「この記述が成り立つかどうかは、`nablarch-testing-yaml` の実装で決まるか」
+- [ ] C. 対象と判定した記述それぞれについて、実装で成否を確かめる。**確かめる手段があるなら動かす**
+- [ ] D. 対象外と判定した記述にも**理由を1行**書く（Excel 固有・形式非依存など）
+- [ ] E. 「モジュール是正」と判定した項目は、**変更前に失敗するテストを先に書き、落ちることを確認してから直し、通ることを確認する**（赤→緑）
+- [ ] F. 「解説書側の誤りの疑い」と判定した項目は**実装を変更せず**、逐語（`file:line`＋`76e6e61`）／実測結果（`file:line`＋`0db2221`、動かした場合は手順と出力）／なぜ誤りと言えるか の3点を添えて報告し止める
+- [ ] G. 全件表に追記して**このページ分をコミット**する（まとめて作らない）
+
+**Completion criteria（#32〜#43 共通）**:
+
+- ページを全量読んだことが示されている（抽出方式がキーワード依存でない）
+- 対象・対象外が記述単位で判定され、対象外にも理由が1行ずつある
+- 対象と判定した記述に実装での成否と根拠（`file:line`＋SHA）が付いている
+- 「モジュール是正」項目に赤→緑の記録がある
+- 「解説書側の誤りの疑い」項目は実装が変更されておらず報告3点が揃っている
+- このページ分が単独でコミットされている
+
+---
+
+### #33: §4-4 `setup/request_unit_test/mom.rst`（102行）
+
+**Prerequisites**: #32 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #34: §4-4 `about/index.rst`（112行）
+
+**Prerequisites**: #33 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #35: §4-4 `implementation/deal_unit_test/mom.rst`（130行）
+
+**Prerequisites**: #34 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #36: §4-4 `tools/master_data_tool.rst`（163行）
+
+**Prerequisites**: #35 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #37: §4-4 `setup/common.rst`（259行）
+
+**Prerequisites**: #36 ／ Steps・Completion criteria は #32 と共通
+
+**注**: §4-2 で扱った `:56`-`:81` を含むページ。#28 の是正結果と矛盾しないことを確かめる
+
+---
+
+### #38: §4-4 `tools/testdata_converter.rst`（333行）
+
+**Prerequisites**: #37 ／ Steps・Completion criteria は #32 と共通
+
+**注**: converter は別モジュール。**yaml から converter へ手を出さない**（既決事項）。converter 側の記述は対象外と判定し理由を書く
+
+---
+
+### #39: §4-4 `implementation/class_unit_test/component.rst`（366行）
+
+**Prerequisites**: #38 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #40: §4-4 `implementation/deal_unit_test/batch.rst`（491行）
+
+**Prerequisites**: #39 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #41: §4-4 `implementation/class_unit_test/entity.rst`（567行）
+
+**Prerequisites**: #40 ／ Steps・Completion criteria は #32 と共通
+
+---
+
+### #42: §4-4 `implementation/testdata_notation.rst`（1,502行）
+
+**Prerequisites**: #41 ／ Steps・Completion criteria は #32 と共通
+
+**注**: §4-1（`:1500`・`:818`・`:828`-`:833`）・§4-3（`:1059`・`:666`・`:719`-`:720`・`:92`）で参照したページ。既是正分と矛盾しないことを確かめる
+
+---
+
+### #43: §4-4 `implementation/testdata_examples.rst`（2,566行）
+
+**Prerequisites**: #42 ／ Steps・Completion criteria は #32 と共通
+
+**注**: §4-1 で参照した `:862`（アンクォート `null` は Java の null、`"null"` は文字列）を含む
+
+---
+
+### #44: §4-4 全件表のレビュー
+
+**Purpose**: 全件表を求める作業では「表が全件でないこと」より「**同じ表が全件であることを、その抽出方式では証明できないこと**」が本当の欠陥になる（本指示書 §6）。
+
+**Prerequisites**: #43
+
+**Steps**:
+
+- [ ] A. **観点A（抜け・漏れ）と観点D（検証の妥当性）を別担当のサブエージェントで回す。**3点必須プロンプト（実測コマンドで裏付けよ／付属の検証スクリプトを正解として使わず独立に組め／敵対的にレビューせよ）。**本指示書自体もレビュー対象**
+- [ ] B. §4-4 の是正が `src/main` に及んだ場合は、その差分について**4観点**を追加で回す。`src/test` と記録だけの場合は観点A・D で足りる
+- [ ] C. 各ラウンドの**指摘件数と観点**を記録する。是正ラウンドの上限は**3回**。ラウンド2以降は差分限定の2観点（「是正が指示範囲に収まっているか」「是正が新しい欠陥を生んでいないか」）
+- [ ] D. 指摘の採否判定。既決事項に反する指摘は却下し理由を記録する。**`must` を残さない**
+- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-44.md)
+- [ ] F. commit・push
+
+**Completion criteria**:
+
+- 観点A・D が別担当で実施され、指摘件数と観点が記録されている
+- `src/main` 波及がある場合は4観点が回っている
+- 却下した指摘に理由が記録されている
+- `must` が残っていない
+
+---
+
+### #45: §4-5 カバレッジ C0/C1（今回の変更が持ち込んだ未到達のみ）
+
+**Purpose**: 対象は**今回の変更が持ち込んだ未到達の行・分岐に限る。変更前から未達だったものは対象外**（user 指示 2026-08-26）。
+
+**Prerequisites**: #44
+
+**Steps**:
+
+- [ ] A. JaCoCo で**変更前（`0db2221`）と変更後の両方**を計測する
+- [ ] B. 変更後に未到達である行・分岐のうち、**(a) 変更前に存在しなかった行**、または **(b) 変更前は到達していた行**を対象として全件列挙する
+- [ ] C. 各件について、**テストを足す**か**不要とする根拠を書く**かのどちらかにする。数値目標は置かない。**件数だけを書いて中身を書かない形にしない**
+- [ ] D. 計測に使ったコマンドと、計測結果ファイルのハッシュを記録する
+- [ ] E. self-check (OK/NG per completion criterion, record in checks/task-45.md)
+- [ ] F. **レビューは回さない**（本指示書 §6。計測コマンドと全件列挙が機械的に差分を固定するため）。代わりに実行コマンドと生の出力を報告する
+- [ ] G. commit・push
+
+**Completion criteria**:
+
+- 変更前・変更後の両方の計測結果がある
+- 対象（今回の変更が持ち込んだ未到達）が全件列挙され、各件にテスト追加または不要根拠がある
+- 計測コマンドと結果ファイルのハッシュが記録されている
+
+---
+
+### #46: 完了ゲートと §8 報告
+
+**Purpose**: 本指示書 §7 の完了条件13〜16 と §8 の報告を満たす。
+
+**Prerequisites**: #45
+
+**Steps**:
+
+- [ ] A. **コミットの直前に** `git status --porcelain` の**全件**を表にし、このタスクで変更する予定だったファイル以外が0件であることを確認する。`src/` や特定ディレクトリに絞らない。未追跡ファイルを取りこぼさないため `git diff` を母集合にしない。**このゲートをコミットの後ろに置かない**
+- [ ] B. `mvn clean test` を実行し、最終行（`Tests run: … Failures: … Errors: … Skipped: …` と `BUILD SUCCESS`）を記録する
+- [ ] C. **`nablarch-testing` に差分が無いことを確認する**（依存先は変更しない）
+- [ ] D. push（**1つの修正意図につき1コミット**。意図と根拠をコミットメッセージに書く）
+- [ ] E. §8 の報告を作る — §4-1 の是正内容と赤→緑／Excel 突合／波及先件数、§4-2 の落ちたテスト件数と (a)/(b) 内訳、§4-3 の突合表集計と Boolean 解消案、§4-4 の全件表集計と**「解説書側の誤りの疑い」の全件**（user 判断が要る）、§4-5 の対象件数と内訳、§6 の各ラウンドの指摘件数・観点・却下件数、完了条件13・14・16 の実行結果、**指示から外れて行ったことの全件と理由**
+- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-46.md)
+
+**Completion criteria**:
+
+- `git status --porcelain` の全件表がコミット直前に取られている
+- `mvn clean test` の最終行が記録され全件 PASS
+- `nablarch-testing` に差分が無い
+- push 済み
+- §8 の報告項目が全部そろっている
 
 ---
 
