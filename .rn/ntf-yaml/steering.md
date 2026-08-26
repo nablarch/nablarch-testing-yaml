@@ -972,7 +972,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #26: 2-1 — 空行判定が Java null を空扱いしている
+### ~~#26: 2-1 — 空行判定が Java null を空扱いしている~~
 
 **Purpose**: 解説書（`5b5c91e` の `implementation/testdata_notation.rst:1500`）が定めるスキップ条件は「空マッピング `{}`」と「すべての値が空文字」の2つだけである。`YamlSection#isBlankRow` が Java null も空として扱っているため、`COL: null` や `COL:` だけの行が消える。解説書に合わせる。
 
@@ -980,14 +980,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:201`-`:208` の `isBlankRow` を、空文字だけを空と見なし Java null を非空として扱うよう是正する（javadoc も合わせる）
-- [ ] B. 波及: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json:108` と `:136` の `description` から「全ての値が null または」を落とし、解説書 `:1500` の文言に合わせる
-- [ ] C. 既存テストの期待値見直し — `YamlSectionTest#dropBlankRows_*`（5件）・`YamlTableDataBuilderTest#buildTableDataList_blankValueRow*`（5件）・同 `#buildListMapRows_blankValueRow*`（2件）を**全件数え直し**、どれを変えどれを変えなかったかを記録する
-- [ ] D. 是正を押さえるテストを足す（`COL: null` だけの行・`COL:` だけの行が残ること／空マッピング `{}` と全値空文字はスキップされること）
-- [ ] E. **変異確認**: A の是正前は落ち是正後は通るテストを特定し、さらに追加/変更した各テストについて期待値をわざと崩すと落ちることを1度実行して確認し、コマンドと結果を記録する
-- [ ] F. `mvn -o clean test` 緑を確認（`Tests run:` 行を読む）
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-26.md)
+- [x] A. `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:201`-`:208` の `isBlankRow` を、空文字だけを空と見なし Java null を非空として扱うよう是正する（javadoc も合わせる）
+- [x] B. 波及: `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json:108` と `:136` の `description` から「全ての値が null または」を落とし、解説書 `:1500` の文言に合わせる
+- [x] C. 既存テストの期待値見直し — `YamlSectionTest#dropBlankRows_*`（5件）・`YamlTableDataBuilderTest#buildTableDataList_blankValueRow*`（5件）・同 `#buildListMapRows_blankValueRow*`（2件）を**全件数え直し**、どれを変えどれを変えなかったかを記録する
+- [x] D. 是正を押さえるテストを足す（`COL: null` だけの行・`COL:` だけの行が残ること／空マッピング `{}` と全値空文字はスキップされること）
+- [x] E. **変異確認**: A の是正前は落ち是正後は通るテストを特定し、さらに追加/変更した各テストについて期待値をわざと崩すと落ちることを1度実行して確認し、コマンドと結果を記録する
+- [x] F. `mvn -o clean test` 緑を確認（`Tests run:` 行を読む）
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-26.md)
 
 **Completion criteria**:
 
