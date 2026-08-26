@@ -1169,7 +1169,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #33: カバレッジ C0/C1 計測と Step 4 報告書の作成
+### ~~#33: カバレッジ C0/C1 計測と Step 4 報告書の作成~~
 
 **Purpose**: 指示書「4. 完了条件」5 と「6. 報告」を満たす。
 
@@ -1177,13 +1177,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で C0/C1 を計測する（`pom.xml` / `argLine` は変更しない）
-- [ ] B. `src/main` の是正でカバレッジが下がった箇所があれば挙げる
-- [ ] B2. converter（`60d9a2d`。**変更しない**）の失敗テストを帰属付きで実測する。Step 4 着手前（`ab0064e`）の本モジュールを `.m2` へ install した状態と、Step 4 完了後の状態とで converter の `mvn -o clean test` を実行し、差分から「Step 4 起因の失敗」を切り分ける。#26（空行判定）起因の失敗が `YamlFormatReaderInvalidInputTest` 2件・`YamlFormatReaderScalarTest` 2件として観測されている（#27 実測。要再確認）ため、2-2 起因の1件と合わせて全件を理由付きで挙げる
-- [ ] C. 報告書を `.rn/ntf-yaml/report-step4.md` に1ファイルでまとめる。順序は指示書 §6 のとおり — ①第2節5件の是正結果（変更ファイルと `file:line`、直す前に落ちたテスト名）②第3節13件の結果（通った／`@Ignore` の内訳。`@Ignore` は理由の文言をそのまま載せる）③期待値をわざと崩す確認の結果（対象テスト名と崩した内容）④既存テストの期待値を変えた箇所の全件（2-1・2-3 それぞれ件数を数えて）⑤カバレッジ C0/C1 の計測結果と converter で落ちたテスト
-- [ ] D. 後始末 — `git status --short` が空。`tmp/` と `javac.*.args` を残さない。一時ファイル・作業用スクリプト・ログを消す
-- [ ] E. commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-33.md)
+- [x] A. `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で C0/C1 を計測する（`pom.xml` / `argLine` は変更しない）
+- [x] B. `src/main` の是正でカバレッジが下がった箇所があれば挙げる
+- [x] B2. converter（`60d9a2d`。**変更しない**）の失敗テストを帰属付きで実測する。Step 4 着手前（`ab0064e`）の本モジュールを `.m2` へ install した状態と、Step 4 完了後の状態とで converter の `mvn -o clean test` を実行し、差分から「Step 4 起因の失敗」を切り分ける。#26（空行判定）起因の失敗が `YamlFormatReaderInvalidInputTest` 2件・`YamlFormatReaderScalarTest` 2件として観測されている（#27 実測。要再確認）ため、2-2 起因の1件と合わせて全件を理由付きで挙げる
+- [x] C. 報告書を `.rn/ntf-yaml/report-step4.md` に1ファイルでまとめる。順序は指示書 §6 のとおり — ①第2節5件の是正結果（変更ファイルと `file:line`、直す前に落ちたテスト名）②第3節13件の結果（通った／`@Ignore` の内訳。`@Ignore` は理由の文言をそのまま載せる）③期待値をわざと崩す確認の結果（対象テスト名と崩した内容）④既存テストの期待値を変えた箇所の全件（2-1・2-3 それぞれ件数を数えて）⑤カバレッジ C0/C1 の計測結果と converter で落ちたテスト
+- [x] D. 後始末 — `git status --short` が空。`tmp/` と `javac.*.args` を残さない。一時ファイル・作業用スクリプト・ログを消す
+- [x] E. commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-33.md)
 
 **Completion criteria**:
 
