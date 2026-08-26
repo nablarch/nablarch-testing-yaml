@@ -89,20 +89,20 @@ setup_tables:
         PK_COL2: "DD"
         VARCHAR2_COL: "third"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
   # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
   - group_id: blankValueRowLeading
     table: TEST_TABLE
     rows:
       - PK_COL1: ""
-        VARCHAR2_COL: null
+        VARCHAR2_COL: ""
       - PK_COL1: "0000000050"
         PK_COL2: "GG"
         VARCHAR2_COL: "leading"
         NUMBER_COL: "50"
         NUMBER_COL2: "50.0"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
   - group_id: blankValueRowMiddle
     table: TEST_TABLE
     rows:
@@ -112,9 +112,9 @@ setup_tables:
         NUMBER_COL: "51"
         NUMBER_COL2: "51.0"
       - PK_COL1: ""
-        PK_COL2: null
+        PK_COL2: ""
         VARCHAR2_COL: ""
-        NUMBER_COL: null
+        NUMBER_COL: ""
         NUMBER_COL2: ""
       - PK_COL1: "0000000052"
         PK_COL2: "II"
@@ -132,9 +132,9 @@ setup_tables:
         NUMBER_COL: null
         NUMBER_COL2: ""
       - PK_COL1: ""
-        PK_COL2: null
+        PK_COL2: ""
         VARCHAR2_COL: ""
-        NUMBER_COL: null
+        NUMBER_COL: ""
         NUMBER_COL2: ""
 
   # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
@@ -149,6 +149,18 @@ setup_tables:
       - PK_COL1: "null"
         PK_COL2: "null"
         VARCHAR2_COL: "null"
+
+  # 値が全て Java null の行は「全ての値が空文字」ではないため行として保持される。
+  # クォートなしの null と、キーだけ書いて値を省略した COL: の両方をロード時点の Java null として置く。
+  - group_id: nullValueOnlyRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000055"
+        PK_COL2: "QQ"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: null
+        PK_COL2:
+        VARCHAR2_COL: null
 
 
 list_maps:
@@ -210,22 +222,22 @@ list_maps:
         KEY2: "val2"
       - KEY1: "third"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
   # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
   - id: blankValueRowLeadingListMap
     rows:
       - KEY9: ""
-        KEY8: null
+        KEY8: ""
       - KEY1: "second"
         KEY2: "val2"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
   - id: blankValueRowMiddleListMap
     rows:
       - KEY1: "before"
         KEY2: "val1"
       - KEY1: ""
-        KEY2: null
+        KEY2: ""
       - KEY1: "after"
         KEY2: "val2"
 
@@ -236,7 +248,7 @@ list_maps:
         KEY2: ""
         KEY3: null
       - KEY1: ""
-        KEY2: null
+        KEY2: ""
         KEY3: ""
 
   # 空行判定は値加工（interpret）より前に行うため、値加工を通すと全ての値が Java null になる行も
@@ -248,17 +260,26 @@ list_maps:
       - KEY1: "null"
         KEY2: "null"
 
-  # 全行が行として存在しないもの（空マッピング／全ての値が null・空文字）の場合、
+  # 値が全て Java null の行は「全ての値が空文字」ではないため行として保持される（list_maps 経路）。
+  # クォートなしの null と、キーだけ書いて値を省略した KEY2: の両方を置く。
+  - id: nullValueOnlyRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: "val"
+      - KEY1: null
+        KEY2:
+
+  # 全行が行として存在しないもの（空マッピング／全ての値が空文字）の場合、
   # 残る行が 0 件になり列名も決まらない。setup_tables 側の allEmptyRows と同じ趣旨で list_maps 経路を固定する。
   - id: allBlankRowsListMap
     rows:
       - {}
       - KEY1: ""
-        KEY2: null
+        KEY2: ""
       - {}
 
   # マーカーカラム（[NO]）も空行判定の対象に含めるため、マーカーカラムだけが値を持つ行は
-  # 「全ての値が null／空文字」ではなく、行としては残る。ただし DB 操作対象の列が 1 つも無いので
+  # 「全ての値が空文字」ではなく、行としては残る。ただし DB 操作対象の列が 1 つも無いので
   # list_maps の結果は空 Map になる（依存先 nablarch-testing の ListMapParser と同じ挙動）。
   - id: markerOnlyRowListMap
     rows:
@@ -310,20 +331,20 @@ expected_tables:
         NUMBER_COL: "61"
         NUMBER_COL2: "61.0"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（先頭に置いた場合）。
   # 列名解決からも除外されることを固定するため、空行のキー集合を後続行と変えてある。
   - group_id: blankValueRowLeadingExpected
     table: TEST_TABLE
     rows:
       - PK_COL1: ""
-        VARCHAR2_COL: null
+        VARCHAR2_COL: ""
       - PK_COL1: "0000000062"
         PK_COL2: "MM"
         VARCHAR2_COL: "leading"
         NUMBER_COL: "62"
         NUMBER_COL2: "62.0"
 
-  # 全ての値が null または空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
+  # 全ての値が空文字の行は行として存在しないものとして扱われる（中間に置いた場合）。
   - group_id: blankValueRowMiddleExpected
     table: TEST_TABLE
     rows:
@@ -333,9 +354,9 @@ expected_tables:
         NUMBER_COL: "63"
         NUMBER_COL2: "63.0"
       - PK_COL1: ""
-        PK_COL2: null
+        PK_COL2: ""
         VARCHAR2_COL: ""
-        NUMBER_COL: null
+        NUMBER_COL: ""
         NUMBER_COL2: ""
       - PK_COL1: "0000000064"
         PK_COL2: "OO"

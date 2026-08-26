@@ -418,14 +418,14 @@ public class YamlSectionTest {
     }
 
     // ========================================================================
-    // dropBlankRows: 行として存在しないもの（空マッピング・全値が null／空文字）を取り除くこと
+    // dropBlankRows: 行として存在しないもの（空マッピング・全値が空文字）を取り除くこと
     // ========================================================================
 
     /**
-     * [YamlSection] dropBlankRows: 空マッピング行と全ての値が null／空文字の行が取り除かれること。
+     * [YamlSection] dropBlankRows: 空マッピング行と全ての値が空文字の行が取り除かれること。
      *
      * <p>
-     * Given: 空マッピング行・全ての値が空文字の行・全ての値が null の行・値を持つ行 からなる rows<br>
+     * Given: 空マッピング行・全ての値が空文字の行・値を持つ行 からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  値を持つ行 1 件のみが記述順で返ること
      * </p>
@@ -436,7 +436,6 @@ public class YamlSectionTest {
         List<Object> rows = Arrays.<Object>asList(
                 rowOf(),
                 rowOf("COL_A", "", "COL_B", ""),
-                rowOf("COL_A", null, "COL_B", null),
                 rowOf("COL_A", "v", "COL_B", ""));
 
         // When
@@ -539,5 +538,31 @@ public class YamlSectionTest {
         // Then
         assertThat("マッピングでない行が取り除かれること", result.size(), is(1));
         assertThat(result.get(0), is((Object) rowOf("COL_A", "v")));
+    }
+
+    /**
+     * [YamlSection] dropBlankRows: 値が全て Java null の行は残ること。
+     *
+     * <p>
+     * スキップ条件は空マッピング（{@code {}}）と全ての値が空文字の 2 つだけであり、Java null は
+     * 空文字ではないため行として残る。YAML ではクォートなしの {@code null} とキーだけ書いた
+     * {@code COL:} がロード時点で Java null になるため、どちらの書き方の行もここで残る。<br>
+     * Given: 全ての値が Java null の行 1 件からなる rows<br>
+     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
+     * Then:  その行が残ること
+     * </p>
+     */
+    @Test
+    public void dropBlankRows_keepsRowHavingOnlyNullValues() {
+        // Given
+        List<Object> rows = Arrays.<Object>asList(rowOf("COL_A", null, "COL_B", null));
+
+        // When
+        List<Object> result = YamlSection.dropBlankRows(rows);
+
+        // Then
+        assertThat("Java null は空文字ではないため行が残ること", result.size(), is(1));
+        assertThat("残った行が全ての値が null の行であること",
+                result.get(0), is((Object) rowOf("COL_A", null, "COL_B", null)));
     }
 }

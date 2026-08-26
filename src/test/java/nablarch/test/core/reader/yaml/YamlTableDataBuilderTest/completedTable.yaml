@@ -19,7 +19,7 @@ expected_complete_tables:
       - PK_COL1: "0000000097"
         PK_COL2: "XY"
 
-  # 全ての値が null または空文字の行は、fillDefaults=true の経路（expected_complete_tables）でも
+  # 全ての値が空文字の行は、fillDefaults=true の経路（expected_complete_tables）でも
   # 行として存在しないものとして扱われる。1 行目を先頭、3 行目を中間（非空行に挟まれた位置）、
   # 5 行目を末尾に置いてあり、3 位置すべてを 1 グループで担保する。
   # 列名解決からも除外されることを固定するため、空行のキー集合を非空行と変えてある。
@@ -27,15 +27,15 @@ expected_complete_tables:
     table: TEST_TABLE
     rows:
       - PK_COL1: ""
-        VARCHAR2_COL: null
+        VARCHAR2_COL: ""
       - PK_COL1: "0000000096"
         PK_COL2: "WW"
         VARCHAR2_COL: "kept"
-      - PK_COL1: null
+      - PK_COL1: ""
         PK_COL2: ""
         VARCHAR2_COL: ""
       - PK_COL1: "0000000095"
         PK_COL2: "VV"
         VARCHAR2_COL: "kept2"
-      - PK_COL2: null
+      - PK_COL2: ""
         VARCHAR2_COL: ""

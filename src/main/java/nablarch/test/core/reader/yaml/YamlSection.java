@@ -152,8 +152,9 @@ public final class YamlSection {
      * データ行のうち、行として存在しないものを取り除く。
      *
      * <p>
-     * 空マッピング（{@code {}}）の行、および全ての値が {@code null} または空文字の行は、Excel の
-     * 全セル空行と同じく行が無いものとして扱う。マッピングでない行（スカラ等）も構造を持たないため
+     * 空マッピング（{@code {}}）の行、および全ての値が空文字の行は、Excel の全セル空行と同じく
+     * 行が無いものとして扱う。Java null の値は空文字ではないため非空として扱い、{@code COL: null} や
+     * {@code COL:}（値の省略）だけの行は残る。マッピングでない行（スカラ等）も構造を持たないため
      * ここで取り除く（{@link #castMap(Object)} が Map でない値に対して空 Map を返すので、
      * 空マッピングと同じ判定で扱える）。
      * </p>
@@ -190,10 +191,11 @@ public final class YamlSection {
     }
 
     /**
-     * 行として存在しないもの（全ての値が {@code null} または空文字）か判定する。
+     * 行として存在しないもの（全ての値が空文字）か判定する。
      *
      * <p>
-     * 値が 1 つも無い行（空マッピング・マッピングでない行）も該当する。マーカーカラム
+     * 値が 1 つも無い行（空マッピング・マッピングでない行）も該当する。Java null は空文字ではないため
+     * 非空として扱い、{@code COL: null} や {@code COL:}（値の省略）だけの行は残す。マーカーカラム
      * （{@code [COL]}）の値も判定対象に含める（依存先 nablarch-testing の {@code isBlankLine} が
      * 行の全セルを対象とするのに合わせる）。
      * </p>
@@ -201,7 +203,7 @@ public final class YamlSection {
     private static boolean isBlankRow(Object row) {
         for (Object value : castMap(row).values()) {
             String str = objectToString(value);
-            if (str != null && !str.isEmpty()) {
+            if (str == null || !str.isEmpty()) {
                 return false;
             }
         }

@@ -1092,15 +1092,15 @@ public class YamlTableDataBuilderTest {
     }
 
     // ========================================================================
-    // 空マッピング（{}）の行、および全ての値が null または空文字の行が、
+    // 空マッピング（{}）の行、および全ての値が空文字の行が、
     // 行として存在しないものとして扱われること
     // ========================================================================
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: setup_tables の先頭行の値が全て null／空文字の場合、その行が列名解決からもデータ行からも除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables の先頭行の値が全て空文字の場合、その行が列名解決からもデータ行からも除外されること。
      *
      * <p>
-     * 全ての値が null または空文字の行は、Excel の全セル空行と同様に行として存在しないものとして扱う。
+     * 全ての値が空文字の行は、Excel の全セル空行と同様に行として存在しないものとして扱う。
      * 先頭行のキー集合を後続行と変えてあるので、列名がその行から決まっていれば列名リストが食い違って落ちる。<br>
      * Given: setup_tables の blankValueRowLeading グループに 値が全て空の 2 キーの行・5 キーの通常行 の 2 エントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[blankValueRowLeading]", false, path) を呼ぶ<br>
@@ -1126,7 +1126,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: setup_tables の中間行の値が全て null／空文字の場合、その行が除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables の中間行の値が全て空文字の場合、その行が除外されること。
      *
      * <p>
      * Given: setup_tables の blankValueRowMiddle グループに 通常行・値が全て空の行・通常行 の 3 エントリ<br>
@@ -1153,7 +1153,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: 値が 1 つでも非空の行は保持されること。
      *
      * <p>
-     * 除去対象は「全ての値が null または空文字」の行だけであり、1 つでも非空の値を持つ行は
+     * 除去対象は「全ての値が空文字」の行だけであり、1 つでも非空の値を持つ行は
      * 従来どおりデータ行として扱われる。<br>
      * Given: setup_tables の partiallyBlankValueRow グループに 一部のみ値を持つ行・値が全て空の行 の 2 エントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[partiallyBlankValueRow]", false, path) を呼ぶ<br>
@@ -1179,7 +1179,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: expected_tables の先頭行の値が全て null／空文字の場合、その行が列名解決からもデータ行からも除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の先頭行の値が全て空文字の場合、その行が列名解決からもデータ行からも除外されること。
      *
      * <p>
      * Given: expected_tables の blankValueRowLeadingExpected グループに 値が全て空の 2 キーの行・5 キーの通常行 の 2 エントリ<br>
@@ -1206,7 +1206,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: expected_tables の中間行の値が全て null／空文字の場合、その行が除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables の中間行の値が全て空文字の場合、その行が除外されること。
      *
      * <p>
      * Given: expected_tables の blankValueRowMiddleExpected グループに 通常行・値が全て空の行・通常行 の 3 エントリ<br>
@@ -1254,7 +1254,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: expected_complete_tables でも値が全て null／空文字の行が除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: expected_complete_tables でも値が全て空文字の行が除外されること。
      *
      * <p>
      * fillDefaults=true の経路は {@code fillDefaultValues()} が列名を dbInfo の全カラムへ差し替えるため、
@@ -1292,7 +1292,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: list_maps の先頭行の値が全て null／空文字の場合、その行が列名解決からも結果からも除外されること。
+     * [YamlTableDataBuilder] buildListMapRows: list_maps の先頭行の値が全て空文字の場合、その行が列名解決からも結果からも除外されること。
      *
      * <p>
      * 先頭行のキー集合を後続行と変えてあるので、列名がその行から決まっていれば結果のキーが食い違って落ちる。<br>
@@ -1318,7 +1318,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: list_maps の中間行の値が全て null／空文字の場合、その行が除外されること。
+     * [YamlTableDataBuilder] buildListMapRows: list_maps の中間行の値が全て空文字の場合、その行が除外されること。
      *
      * <p>
      * Given: list_maps の blankValueRowMiddleListMap に 通常行・値が全て空の行・通常行 の 3 エントリ<br>
@@ -1401,6 +1401,38 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildTableDataList: 値が全て Java null の行も、行として保持されること。
+     *
+     * <p>
+     * 解説書が定めるスキップ条件は空マッピング（{@code {}}）と全ての値が空文字の 2 つだけであり、
+     * Java null はどちらにも当たらない。クォートなしの {@code null} とキーだけ書いた {@code COL:} は
+     * ロード時点で Java null になるため、これらだけの行が消えないことを固定する。<br>
+     * Given: setup_tables の nullValueOnlyRow グループに 通常行・全ての値が Java null の行 の 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[nullValueOnlyRow]", false, path) を呼ぶ<br>
+     * Then:  2 行とも保持され、2 行目の全カラムが null になること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_nullValueOnlyRowKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[nullValueOnlyRow]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("全ての値が Java null の行も保持され、2 行返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "VARCHAR2_COL").toString(), is("kept"));
+        assertNull("クォートなし null のカラムは null のまま保持されること",
+                result.get(0).getValue(1, "PK_COL1"));
+        assertNull("値を省略した COL: のカラムは null のまま保持されること",
+                result.get(0).getValue(1, "PK_COL2"));
+        assertNull("クォートなし null のカラムは null のまま保持されること",
+                result.get(0).getValue(1, "VARCHAR2_COL"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: 値加工を通すと全ての値が Java null になる行も、行として保持されること。
      *
      * <p>
@@ -1429,12 +1461,39 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: 値が全て Java null の行も、行として保持されること。
+     *
+     * <p>
+     * スキップ条件は空マッピング（{@code {}}）と全ての値が空文字の 2 つだけであることを list_maps 経路で
+     * 固定する（趣旨は {@code buildTableDataList_nullValueOnlyRowKept} と同じ）。<br>
+     * Given: list_maps の nullValueOnlyRowListMap に 通常行・全ての値が Java null の行 の 2 エントリ<br>
+     * When:  buildListMapRows(yaml, "nullValueOnlyRowListMap", path) を呼ぶ<br>
+     * Then:  2 件とも保持され、2 件目の全キーが null になること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_nullValueOnlyRowKept() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "nullValueOnlyRowListMap", DIR);
+
+        // Then
+        assertThat("全ての値が Java null の行も保持され、2 件返ること", result.size(), is(2));
+        assertThat(result.get(0).get("KEY1"), is("kept"));
+        assertTrue("2 件目は KEY1 をキーとして持つこと", result.get(1).containsKey("KEY1"));
+        assertNull("クォートなし null のキーは null のまま保持されること", result.get(1).get("KEY1"));
+        assertNull("値を省略した KEY2: のキーは null のまま保持されること", result.get(1).get("KEY2"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: 全行が行として存在しないものの場合は空リストが返ること。
      *
      * <p>
      * テーブル系の {@code buildTableDataList_allEmptyRowsReturnsTableDataWithNoColumns} と対になる
      * list_maps 経路の固定。残る行が 0 件のとき列名も決まらないため、行 0 件の空リストが返る。<br>
-     * Given: list_maps の allBlankRowsListMap に {} 行・値が全て null／空文字の行・{} 行 の 3 エントリ<br>
+     * Given: list_maps の allBlankRowsListMap に {} 行・値が全て空文字の行・{} 行 の 3 エントリ<br>
      * When:  buildListMapRows(yaml, "allBlankRowsListMap", path) を呼ぶ<br>
      * Then:  空リストが返ること
      * </p>
@@ -1456,7 +1515,7 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * 空行判定はマーカーカラム（{@code [COL]}）の値も対象に含めるため、マーカーカラムだけが値を持つ
-     * 行は「全ての値が null／空文字」ではなく、行としては残る。一方 {@code list_maps} の結果組み立ては
+     * 行は「全ての値が空文字」ではなく、行としては残る。一方 {@code list_maps} の結果組み立ては
      * マーカーカラムを DB 操作対象外として除外するため、有効な列が 1 つも無いこの行は空 Map になる。
      * この「行は残るが中身は空 Map」という組み合わせは、依存先 nablarch-testing の
      * {@code ListMapParser#onReadLine} が {@code HeaderLine#getMapExcludingMarkerColumns} の戻り値を
