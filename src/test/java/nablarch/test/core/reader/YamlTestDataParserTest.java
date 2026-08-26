@@ -1681,6 +1681,38 @@ public class YamlTestDataParserTest {
                 is(instanceOf(nablarch.test.core.util.interpreter.CompositeInterpreter.class)));
     }
 
+    // ========================================================================
+    // #35: fileExtensions（sendSyncTestData を設定しない）
+    // ========================================================================
+
+    /**
+     * [#35] filePathSetting: fileExtensions に sendSyncTestData キーが無いこと。
+     *
+     * <p>
+     * 何を担保するか: YAML 形式では、モックアップクラスが読む同期応答メッセージ送信のテストデータは
+     * リクエスト ID と同じ名前の<b>ディレクトリ</b>配下の {@code message.yaml} が読み込み単位になる。
+     * このため {@code fileExtensions} に {@code sendSyncTestData} の拡張子を設定してはならない。
+     * 設定するとテストデータが見つからず、テストの実行時に例外が発生する。<br>
+     * 根拠: setup/common.rst:264（{@code .. important::} の本文）<br>
+     * Given: unit-test-yaml.xml（経由 unit-test.xml）が定義する filePathSetting<br>
+     * When:  リポジトリから filePathSetting を取得し fileExtensions を見る<br>
+     * Then:  sendSyncTestData キーが存在しないこと
+     * </p>
+     */
+    @Test
+    public void fileExtensionsHasNoSendSyncTestData() {
+        // Given / When
+        nablarch.core.util.FilePathSetting filePathSetting =
+                repositoryResource.getComponent("filePathSetting");
+
+        // Then
+        assertNotNull("filePathSetting コンポーネントが定義されていること", filePathSetting);
+        Map<String, String> fileExtensions = filePathSetting.getFileExtensions();
+        assertNotNull("fileExtensions が取得できること", fileExtensions);
+        assertFalse("fileExtensions に sendSyncTestData キーが無いこと（setup/common.rst:264）",
+                fileExtensions.containsKey("sendSyncTestData"));
+    }
+
     /**
      * [#16] yamlInterpreters: null の記法が YAML のパーサの解釈どおりに扱われること。
      *

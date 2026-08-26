@@ -1,6 +1,6 @@
 # Step 4 報告書
 
-対象: `nablarch-testing-yaml`（ブランチ `feature/ntf-yaml`）。Step 4 着手前 `ab0064e` → 完了時 `8eacaa7`。
+対象: `nablarch-testing-yaml`（ブランチ `feature/ntf-yaml`）。Step 4 着手前 `ab0064e` → 指示書18件の完了時 `8eacaa7`。§6 の2件は、その後 2026-08-27 のユーザー指示（`/rn:gm` 差し戻し）で `#35` として是正した。
 
 ## 結論
 
@@ -10,7 +10,7 @@
 
 下流 `nablarch-testing-converter`（`60d9a2d`、未変更）で **Step 4 起因の失敗は1件**（`YamlTestCoreAdapterTest#isResourceExisting_reflectsFileExistence`、2-2 起因）。逆に Step 4 で**5件が解消した**。指示書が「2-1 起因の疑い」とした4件は `ab0064e` の時点で既に落ちており、Step 4 起因ではない（実測）。
 
-未是正の食い違いが2件ある（スキーマの `sendSyncTestData` 形式の `id` 記述、`unit-test.xml` の `fileExtensions`）。いずれもユーザー判断待ちで、指示書の18件には含まれない。
+指示書の18件の外で見つかった食い違い2件（スキーマの `sendSyncTestData` 形式の `id` 記述、`unit-test.xml` の `fileExtensions`）は、**`#35` で是正済み**（§6）。是正後の `mvn -o clean test` は `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（門番テスト1件を追加）。
 
 出典の書き方: 本モジュールは `<パス>:<行>`（断りが無ければ HEAD `8eacaa7`）。解説書は `nablarch-document` のピン `5b5c91e` の `<パス>:<行>`（パスは `ja/development_tools/testing_framework/` からの相対）。依存先はピン（`nablarch-testing` `3c4bd2a`／`nablarch-testing-converter` `60d9a2d`）。
 
@@ -366,30 +366,38 @@ converter は**一切変更していない**（実行前後とも `git status --
 
 ---
 
-## 6. 未是正の食い違い（指示書の18件に含まれないもの）
+## 6. 指示書18件の外にあった食い違いの是正（2件・是正済み）
 
-いずれもユーザー判断待ちで、本 Step では変更していない。
+2026-08-27 のユーザー指示（`/rn:gm` 差し戻し）で `#35` として是正した。**この節に限り、本モジュールの行番号は是正後の状態を指す**（他の節は HEAD `8eacaa7`）。
 
-### 6-1. スキーマの `id` 記述が解説書と食い違う
+### 6-1. スキーマの `id` 記述が解説書と食い違っていた（是正済み）
 
-`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の2箇所:
+**是正前**（`8eacaa7`）— `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の2箇所:
 
 - `:53`（`properties.messages` の `description`）— 「…id は `sendSyncTestData/{requestId}/message` 形式で指定する」
 - `:200`（`$defs.message_data.properties.id` の `description`）— 「メッセージID。`sendSyncTestData/{requestId}/message` 形式で指定する（末尾の `message` は固定のパスセグメント）」
 
-解説書 `implementation/testdata_notation.rst:1151`（ピン `5b5c91e`）は次のように定める。
+**合わせる先** — 解説書 `implementation/testdata_notation.rst:1151`（ピン `5b5c91e`）:
 
-> データタイプ `MESSAGE` の識別子として `setUpMessages`（要求電文）・`expectedMessages`（応答電文）を指定し、テストの入力データ・期待値となる電文を記述する。**これらの識別子は固定である。**（中略）読み込み単位の名前はリクエスト ID ごとに決まっており、Excel 形式ではリクエスト ID と同じ名前のファイルの `message` シート、YAML 形式ではリクエスト ID と同じ名前のディレクトリ配下の `message.yaml` である（`message` は固定の名前）。（中略）**`sendSyncTestData` はデータブロックの識別子ではない。**
+> データタイプ `MESSAGE` の識別子として `setUpMessages`（要求電文）・`expectedMessages`（応答電文）を指定し、テストの入力データ・期待値となる電文を記述する。**これらの識別子は固定である。**（中略）取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータは、コンポーネント設定ファイルで `sendSyncTestData` というキーに設定したベースディレクトリの配下に置く。読み込み単位の名前はリクエスト ID ごとに決まっており、Excel 形式ではリクエスト ID と同じ名前のファイルの `message` シート、YAML 形式ではリクエスト ID と同じ名前のディレクトリ配下の `message.yaml` である（`message` は固定の名前）。（中略）**`sendSyncTestData` はデータブロックの識別子ではない。**
 
-つまり `sendSyncTestData/{requestId}/message` は**読み込み単位のパス**であって、`messages` の `id` に書く値ではない。`#32` の 3-10（`YamlTestDataParserTest#getMessage_reservedIdsSetUpMessagesAndExpectedMessages`、`src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java:1782`）が、`messages` の `id` に `setUpMessages` / `expectedMessages` を書いて取得できることを実測で通しており、スキーマの記述と正面から食い違う。
+**是正後** — 両方の `description` を次の2点に書き換えた（行番号は `:53`・`:200` のまま）:
 
-Step 4 着手前から存在する食い違いで、Step 4 の是正が生んだものではない。指示書 2-5 の名指し（`:410`・`:108`・`:136`）にも、2-3 の波及先として追加した `:365` にも該当しない。
+1. id はデータタイプ `MESSAGE` の識別子であり、`setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する
+2. `sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーであり、`sendSyncTestData/{requestId}/message` は**読み込み単位を指すパス**であって、この `id` に書く値ではない（`:200` では「データブロックの識別子ではない」と明記）
 
-（`.rn/ntf-yaml/checks/task-32.md` は解説書の該当行を `:1149` としているが、ピン `5b5c91e` の現物では **`:1151`** である。本書は現物の行番号を採る。）
+`messages` セクションがデータタイプ `MESSAGE` に対応することは実装で確認できる（`src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:314` の `case MESSAGE: return KEY_MESSAGES;`、`src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:176` が `getMessage` から `KEY_MESSAGES` を渡す）。
 
-### 6-2. `unit-test.xml` の `fileExtensions` が解説書の禁止に反する
+**挙動テスト** — 指示どおり新規テストは足していない。根拠テストは既存の `YamlTestDataParserTest#getMessage_reservedIdsSetUpMessagesAndExpectedMessages`（`src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java:1814`）。`description` の是正なので、**変更の前後で結果が変わらない**ことを実測した（いずれも `mvn -o clean test -Dtest='YamlTestDataParserTest#getMessage_reservedIdsSetUpMessagesAndExpectedMessages'`）。
 
-`src/test/resources/unit-test.xml:170`-`:174`:
+| 順 | 状態 | 結果 |
+|---|---|---|
+| 1 | `description` 変更**前**（6-2 の是正のみ適用済み） | BUILD SUCCESS — `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` |
+| 2 | `description` 変更**後** | BUILD SUCCESS — `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` |
+
+### 6-2. `unit-test.xml` の `fileExtensions` が解説書の禁止に反していた（是正済み）
+
+**是正前**（`8eacaa7` の `src/test/resources/unit-test.xml:170`-`:174`）:
 
 ```xml
 <property name="fileExtensions">
@@ -399,17 +407,28 @@ Step 4 着手前から存在する食い違いで、Step 4 の是正が生んだ
 </property>
 ```
 
-解説書 `setup/common.rst:264`（`.. important::` の本文、ピン `5b5c91e`）:
+**根拠** — 解説書 `setup/common.rst:264`（`.. important::` の本文、ピン `5b5c91e`）:
 
 > `fileExtensions` には `sendSyncTestData` を設定しない。YAML 形式ではリクエストIDと同じ名前のディレクトリを参照するため、拡張子を設定するとテストデータが見つからず、テストの実行時に例外が発生する。
 
-さらに同ファイルの `basePathSettings`（`:166`-`:168`）には `move` しか無く、`sendSyncTestData` が無い。このため `SendSyncSupport`（`nablarch-testing` `3c4bd2a` の `SendSyncSupport.java:346`・`:348`）が呼ぶ `FilePathSetting#getBaseDirectory("sendSyncTestData")` は `IllegalArgumentException: Unknown basePathName: sendSyncTestData` になる。
+**是正後** — `filePathSetting` から `fileExtensions` プロパティを削除した（`src/test/resources/unit-test.xml:163`-`:170`）。残るエントリが `sendSyncTestData` の1件だけで、空の `<map/>` を残す意味が無いため、プロパティごと落としている。`FilePathSetting` の `fileExtensions` フィールドは初期値が空の `CaseInsensitiveMap` で、プロパティ未指定でも `getFileExtensions()` は `null` を返さない（`nablarch-core` `6-NEXT-SNAPSHOT` の `FilePathSetting.java:27`）。`basePathSettings`（`move` = `file:tmp`）には手を入れていない（解説書が要求していないため範囲外）。
 
-この2つの結果、3-11（同期応答メッセージ送信のテストデータ配置）を `SendSyncSupport` 経由で押さえることができず、`#32` は `SendSyncSupport.java:347` が組み立てるのと同じ引数（`resourceName = <リクエストID>/message`）で `YamlTestDataParser#getMessageWithoutCache` を直接呼ぶ形で押さえた（`YamlTestDataParserTest.java:1829`）。囮ファイル `sendSyncTestData/RM21AA0101.yaml` を併置し、`<リクエストID>.yaml` が読まれないことも表明している。
+**門番テスト**（1件追加） — `YamlTestDataParserTest#fileExtensionsHasNoSendSyncTestData`（`src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java:1703`）。2-4 の `yamlInterpretersAreOnlyDocumentedTwo` と同じ形で、リポジトリから `filePathSetting` を取得し `getFileExtensions()` に `sendSyncTestData` キーが無いことを表明する。
 
-指示書 2-4 の「やること」は `yamlInterpreters` に限られており、この項目は18件のいずれにも該当しないため未是正。
+**削除前 → 削除後の順序と結果**（いずれも `mvn -o clean test -Dtest='YamlTestDataParserTest#fileExtensionsHasNoSendSyncTestData'`）:
+
+| 順 | 状態 | 結果 |
+|---|---|---|
+| 1 | 門番テストを足しただけ（`fileExtensions` は**残したまま**） | **BUILD FAILURE** — `java.lang.AssertionError: fileExtensions に sendSyncTestData キーが無いこと（setup/common.rst:264）` at `YamlTestDataParserTest.java:1712`。`Tests run: 1, Failures: 1, Errors: 0, Skipped: 0` |
+| 2 | `fileExtensions` を**削除した後** | **BUILD SUCCESS** — `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` |
+
+3-11（同期応答メッセージ送信のテストデータ配置）を `SendSyncSupport` 経由で押さえられない事情は、この是正では変わらない。`basePathSettings` に `sendSyncTestData` が無いため、`SendSyncSupport#createTestDataInfo`（`nablarch-testing` `3c4bd2a` の `SendSyncSupport.java:346`）が呼ぶ `FilePathSetting#getBaseDirectory("sendSyncTestData")` は、`getBasePathUrl` の中で `IllegalArgumentException: Unknown basePathName: sendSyncTestData` になる（`nablarch-core` `6-NEXT-SNAPSHOT` の `FilePathSetting.java` の `getBasePathUrl`）。`#32` が採った、`SendSyncSupport.java:347` と同じ引数（`resourceName = <リクエストID> + "/" + "message"`）で `YamlTestDataParser#getMessageWithoutCache` を直接呼ぶ形はそのまま維持している。
 
 （指示書はこの important を `setup/common.rst:263` としているが、ピン `5b5c91e` の現物では `.. important::` が `:262`、本文が **`:264`** である。本書は現物の行番号を採る。）
+
+### 6-3. 是正後の全体テスト
+
+`mvn -o clean test`: **`Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`**（`8eacaa7` の 267 件 + 門番テスト1件）。`Skipped 1` は 3-2 の `@Ignore` 1件のままで、実装は直していない。`git status --short` は空。
 
 ---
 

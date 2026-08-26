@@ -50,7 +50,7 @@
     },
     "messages": {
       "type": "array",
-      "description": "MockMessaging 経路の要求/応答電文データ。id で完全一致検索され先着1件のみ有効（2件目以降は無視）。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールドを定義する。id は `sendSyncTestData/{requestId}/message` 形式で指定する",
+      "description": "MockMessaging 経路の要求/応答電文データ。id で完全一致検索され先着1件のみ有効（2件目以降は無視）。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールドを定義する。id はデータタイプ MESSAGE の識別子であり、`setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する。`sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーであり、`sendSyncTestData/{requestId}/message` は読み込み単位を指すパスであって、この id に書く値ではない",
       "items": {
         "$ref": "#/$defs/message_data"
       }
@@ -197,7 +197,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "メッセージID。`sendSyncTestData/{requestId}/message` 形式で指定する（末尾の `message` は固定のパスセグメント）。ファイル内で重複した場合は先着1件のみ有効"
+          "description": "メッセージID。データタイプ MESSAGE の識別子であり、`setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する。`sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーであり、`sendSyncTestData/{requestId}/message` は読み込み単位（リクエストID と同じ名前のディレクトリ配下の `message.yaml`）を指すパスであって、データブロックの識別子ではない。ファイル内で重複した場合は先着1件のみ有効"
         },
         "directives": {
           "$ref": "#/$defs/directives"

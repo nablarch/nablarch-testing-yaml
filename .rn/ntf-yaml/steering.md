@@ -1194,16 +1194,46 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #34: Evaluation sign-off（Step 4）
+### ~~#35: 報告書 §6 の未是正2件を是正する~~
 
-**Purpose**: 指示書「4. 完了条件」8項目を実測で通し、ユーザーの評価ゲートを取る。
+**Purpose**: 2026-08-27 のユーザー指示（`/rn:gm` 差し戻し）。#34 の判定を仰いだ結果、報告書 §6 に挙げた「指示書18件の外の食い違い」2件を直してから #34 を再提示することになった。
 
 **Prerequisites**: #33
 
 **Steps**:
 
+- [x] A. 6-2 の門番テスト `YamlTestDataParserTest#fileExtensionsHasNoSendSyncTestData` を先に足し、**削除前に落ちること**を実測する
+- [x] B. `src/test/resources/unit-test.xml` の `filePathSetting` から `fileExtensions`（`sendSyncTestData` = `xls`）を削除する。根拠は `setup/common.rst:264`（ピン `5b5c91e`）。`basePathSettings` には手を入れない
+- [x] C. 門番テストが**削除後に通ること**を実測する
+- [x] D. 6-1 — `ntf-testdata-yaml-schema.json:53`・`:200` の `description` を `implementation/testdata_notation.rst:1151`（ピン `5b5c91e`）に合わせる。id は `setUpMessages`・`expectedMessages` の固定値であること、`sendSyncTestData/{requestId}/message` は読み込み単位のパスでデータブロックの識別子ではないことを書く。新しい挙動テストは足さない（根拠テストは既存の `getMessage_reservedIdsSetUpMessagesAndExpectedMessages`）
+- [x] E. D の**前後で挙動テストの結果が変わらない**ことを実測する
+- [x] F. `mvn -o clean test` が緑（`Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`。`Skipped 1` は 3-2 の `@Ignore` のまま）
+- [x] G. 報告書 `.rn/ntf-yaml/report-step4.md` の §6 を「是正済み」に書き換える
+- [x] H. `git status --short` が空。commit・push
+- [x] I. self-check (OK/NG per completion criterion, record in checks/task-35.md)
+
+**Completion criteria**:
+
+- 門番テストが削除前は落ち、削除後は通る（順序が報告に書かれている）
+- `mvn -o clean test` が緑。`Skipped 1` は `@Ignore` 1件のまま
+- 6-1 の前後で挙動テストの結果が変わらないことが示されている
+- 報告書 §6 が「是正済み」になっている
+- `git status --short` が空、push 済み
+
+---
+
+### #34: Evaluation sign-off（Step 4）
+
+**Purpose**: 指示書「4. 完了条件」8項目を実測で通し、ユーザーの評価ゲートを取る。
+
+**Prerequisites**: #33、#35
+
+**Steps**:
+
 - [x] A. 指示書 §4 の完了条件8項目を1つずつ実測し、結果をユーザーに提示する（2026-08-26 提示済み。8項目すべて OK）
-- [ ] B. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+- [x] B. 1回目の判定は `/rn:gm`（差し戻し）。報告書 §6 の未是正2件の是正を指示された → `#35` で対応
+- [x] C. `#35` の完了条件を実測し、#34 を再提示する（2026-08-27）
+- [ ] D. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
 
 **Completion criteria**:
 

@@ -167,11 +167,6 @@
         <entry key="move" value="file:tmp"/>
       </map>
     </property>
-    <property name="fileExtensions">
-      <map>
-        <entry key="sendSyncTestData" value="xls"/>
-      </map>
-    </property>
   </component>
 
 </component-configuration>
