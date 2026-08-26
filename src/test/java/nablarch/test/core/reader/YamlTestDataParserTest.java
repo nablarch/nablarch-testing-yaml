@@ -269,6 +269,109 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
+    // YAML 1.2 Core Schema: yes / no / on / off は文字列
+    // ${attach:ファイルパス}
+    // ========================================================================
+
+    /**
+     * getListMap: クォートなしの {@code yes}/{@code no}/{@code on}/{@code off} が、キーでも値でも文字列のままになること。
+     *
+     * <p>
+     * 何を担保するか: YAML ファイルが YAML 1.2 に準拠し、YAML 1.1 のように
+     * {@code yes}/{@code no}/{@code on}/{@code off} を真偽値へ型変換しないこと。<br>
+     * 根拠: implementation/testdata_notation.rst:92<br>
+     * Given: list_maps の 1 行に、キーも値もクォートなしの no / yes / on / off を書いた YAML<br>
+     * When:  getListMap を呼ぶ<br>
+     * Then:  キーが no / yes / on / off の 4 つのまま取得でき、値もそれぞれ同じ文字列になること
+     *        （YAML 1.1 ならキーが true / false の 2 つに縮退し、値も "true" / "false" になる）
+     * </p>
+     */
+    @Test
+    public void yaml12BooleanWordsAreStringsAsKeysAndValues() {
+        // Given / When
+        List<Map<String, String>> result = sut.getListMap(
+                DIR, "YamlTestDataParserTest/nativeTypes", "yaml12BooleanWordTest");
+
+        // Then
+        assertThat(result.size(), is(1));
+        Map<String, String> row = result.get(0);
+        assertThat("キーが真偽値へ型変換されず 4 つのまま残ること: " + row.keySet(), row.size(), is(4));
+        assertThat("キー no が文字列のまま残ること: " + row.keySet(), row.containsKey("no"), is(true));
+        assertThat("キー yes が文字列のまま残ること: " + row.keySet(), row.containsKey("yes"), is(true));
+        assertThat("キー on が文字列のまま残ること: " + row.keySet(), row.containsKey("on"), is(true));
+        assertThat("キー off が文字列のまま残ること: " + row.keySet(), row.containsKey("off"), is(true));
+        assertThat("値 no が文字列 \"no\" になること", row.get("no"), is("no"));
+        assertThat("値 yes が文字列 \"yes\" になること", row.get("yes"), is("yes"));
+        assertThat("値 on が文字列 \"on\" になること", row.get("on"), is("on"));
+        assertThat("値 off が文字列 \"off\" になること", row.get("off"), is("off"));
+    }
+
+    /**
+     * getListMap: 解説書の実例どおり、testShots のカラム {@code no} をクォートなしのキーで書いても文字列キーになること。
+     *
+     * <p>
+     * 何を担保するか: 解説書のバッチテスト例がクォートなしの {@code - no: "1"} を使っており、
+     * YAML 1.1 ならキーが真偽値 false になってしまうところ、YAML 1.2 では文字列キー {@code no} のまま
+     * 読めること。<br>
+     * 根拠: implementation/deal_unit_test/batch.rst:352（実例）、implementation/testdata_notation.rst:92<br>
+     * Given: list_maps の 1 行に、クォートなしのキー no と値 "1" を書いた YAML<br>
+     * When:  getListMap を呼ぶ<br>
+     * Then:  キー "no" で値 "1" が取得でき、キー "false" にはならないこと
+     * </p>
+     */
+    @Test
+    public void unquotedNoKeyStaysStringKey() {
+        // Given / When
+        List<Map<String, String>> result = sut.getListMap(
+                DIR, "YamlTestDataParserTest/nativeTypes", "unquotedNoKeyTest");
+
+        // Then
+        assertThat(result.size(), is(1));
+        Map<String, String> row = result.get(0);
+        assertThat("クォートなしのキー no が文字列キーのまま残ること: " + row.keySet(),
+                row.containsKey("no"), is(true));
+        assertThat("YAML 1.1 のようにキーが false へ型変換されないこと: " + row.keySet(),
+                row.containsKey("false"), is(false));
+        assertThat(row.get("no"), is("1"));
+        assertThat(row.get("description"), is("ファイル入力"));
+        assertThat(row.get("expectedStatusCode"), is("0"));
+    }
+
+    /**
+     * getListMap: {@code "${attach:ファイルパス}"} がアップロードファイルの指定として読めること。
+     *
+     * <p>
+     * 何を担保するか: HTTP リクエストパラメータの値に書いた {@code ${attach:ファイルパス}} が、
+     * YAML の読み込み経路でそのままの表記として取り出せること。アップロードファイルの指定は
+     * {@code HttpRequestTestSupport}（nablarch-testing）が値の表記 {@code ${attach:...}} を見て
+     * 判定するため、YAML 経路が表記を保ったまま渡すことがその前提になる。<br>
+     * 根拠: implementation/testdata_notation.rst:1337<br>
+     * Given: list_maps の 1 行に uploadFile: "${attach:&lt;プロジェクトルートからの相対パス&gt;}" を書いた YAML<br>
+     * When:  getListMap を呼ぶ<br>
+     * Then:  値が {@code ${attach:...}} の表記のまま取得でき、示すファイルが
+     *        テスト実行時のカレントディレクトリ（プロジェクトルート）から見て存在すること
+     * </p>
+     */
+    @Test
+    public void attachNotationIsReadableAsUploadFileSpecification() {
+        // Given
+        String path = "src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest/test.bin";
+
+        // When
+        List<Map<String, String>> result = sut.getListMap(
+                DIR, "YamlTestDataParserTest/nativeTypes", "attachNotationTest");
+
+        // Then
+        assertThat(result.size(), is(1));
+        String value = result.get(0).get("uploadFile");
+        assertThat("${attach:ファイルパス} の表記のまま取得できること", value, is("${attach:" + path + "}"));
+        assertTrue("表記が ${attach: で始まること", value.startsWith("${attach:"));
+        assertTrue("表記が } で終わること", value.endsWith("}"));
+        assertTrue("示すファイルがカレントディレクトリからの相対パスで存在すること: " + path,
+                new java.io.File(path).exists());
+    }
+
+    // ========================================================================
     // YAML ネイティブ null は Java null（末尾キー省略含む）
     // ========================================================================
 

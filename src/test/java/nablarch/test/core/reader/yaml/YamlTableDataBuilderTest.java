@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -49,6 +50,17 @@ public class YamlTableDataBuilderTest {
 
     private static final String RESOURCE_ROOT = "src/test/java/";
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
+
+    /**
+     * {@code ${文字種,文字数}} で使用できる14文字種。
+     *
+     * <p>出典: implementation/testdata_notation.rst:1313-:1320</p>
+     */
+    private static final String[] CHARACTER_TYPES = {
+            "半角英字", "半角数字", "半角記号", "半角カナ",
+            "全角英字", "全角数字", "全角ひらがな", "全角カタカナ", "全角漢字", "全角記号その他",
+            "中国語", "サロゲートペア", "改行", "外字"
+    };
 
     private DbInfo dbInfo;
     private YamlTableDataBuilder builder;
@@ -669,6 +681,146 @@ public class YamlTableDataBuilderTest {
         String numVal = result.get(0).get("NUM_COL");
         assertThat("${半角数字,5} は 5 文字になること", numVal.length(), is(5));
         assertTrue("${半角数字,5} は半角数字のみであること", numVal.matches("[0-9]{5}"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 14文字種それぞれで ${文字種,3} が該当文字種3文字になること。
+     *
+     * <p>
+     * 何を担保するか: {@code ${文字種,文字数}} で使用できる文字種が解説書の列挙する14種類すべてで
+     * 変換され、指定した文字数（サロゲートペアは3コードポイント）になること。<br>
+     * 根拠: implementation/testdata_notation.rst:1313-:1320<br>
+     * Given: list_maps の charTypeTest_&lt;文字種&gt; に GEN_COL: "${&lt;文字種&gt;,3}" を書いた YAML（文字種ごとに別エントリ）<br>
+     * When:  文字種ごとに buildListMapRows(yaml, "charTypeTest_&lt;文字種&gt;", path) を呼ぶ<br>
+     * Then:  いずれの文字種でも記法が変換され、3 コードポイントの文字列になること
+     * </p>
+     *
+     * <p>
+     * 1 つの文字種で落ちても残りが検証されるよう、文字種ごとの結果を集めてから一度に判定する。
+     * 各文字種がどの文字集合から生成されるかは解説書に列挙が無いため、ここでは変換されることと
+     * コードポイント数だけを固定する（半角英字・半角数字の文字集合は
+     * {@link #buildListMapRows_charTypeGeneratorProducesSpecifiedLength} で固定している）。
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_allFourteenCharacterTypesAreGenerated() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When / Then
+        List<String> failures = new ArrayList<String>();
+        for (String type : CHARACTER_TYPES) {
+            String notation = "${" + type + ",3}";
+            try {
+                List<Map<String, String>> result = buildListMapRows(yaml, "charTypeTest_" + type, DIR);
+                if (result.size() != 1) {
+                    failures.add(type + ": 行が1件でない (" + result.size() + "件)");
+                    continue;
+                }
+                String value = result.get(0).get("GEN_COL");
+                if (value == null) {
+                    failures.add(type + ": 値が null");
+                } else if (value.equals(notation)) {
+                    failures.add(type + ": 変換されず " + notation + " のまま");
+                } else {
+                    int codePoints = value.codePointCount(0, value.length());
+                    if (codePoints != 3) {
+                        failures.add(type + ": 3コードポイントでない (" + codePoints + "コードポイント)");
+                    }
+                }
+            } catch (RuntimeException e) {
+                failures.add(type + ": " + e.getClass().getName() + ": " + e.getMessage());
+            }
+        }
+        assertTrue("14文字種すべてが該当文字種3文字（サロゲートペアは3コードポイント）になること。落ちた文字種: "
+                + failures, failures.isEmpty());
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 列挙外の文字種名は変換されないこと（負のテスト）。
+     *
+     * <p>
+     * 何を担保するか: {@code ${文字種,文字数}} で使用できる文字種が解説書の列挙する14種類に限定されており、
+     * 列挙外の文字種名を書いても記法として変換されないこと。<br>
+     * 根拠: implementation/testdata_notation.rst:1313<br>
+     * Given: list_maps の charTypeUnknownTest に GEN_COL: "${存在しない文字種,3}"<br>
+     * When:  buildListMapRows(yaml, "charTypeUnknownTest", path) を呼ぶ<br>
+     * Then:  値が "${存在しない文字種,3}" のまま残ること
+     * </p>
+     */
+    @Ignore("NTF-DOC: implementation/testdata_notation.rst:1313 — 期待 列挙外の文字種名は変換されず ${存在しない文字種,3} のまま / 実際 InterpretationFailedException（原因 IllegalArgumentException: unknown charsetName. charsetName=[存在しない文字種]）")
+    @Test
+    public void buildListMapRows_unknownCharacterTypeIsNotConverted() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "charTypeUnknownTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("列挙外の文字種名は変換されずそのまま残ること",
+                result.get(0).get("GEN_COL"), is("${存在しない文字種,3}"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 組み合わせ記法で ${...} 以外の部分が残ること。
+     *
+     * <p>
+     * 何を担保するか: {@code ${文字種,文字数}} を組み合わせて使った場合、記法の部分だけが変換され、
+     * それ以外の文字はそのまま残ること。<br>
+     * 根拠: implementation/testdata_notation.rst:1322<br>
+     * Given: list_maps の charTypeCombinedTest に COMBINED_COL: "${半角数字,2}-${半角数字,4}"<br>
+     * When:  buildListMapRows(yaml, "charTypeCombinedTest", path) を呼ぶ<br>
+     * Then:  値が 7 文字になり、3 文字目が "-" のまま残ること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_combinedCharTypeNotationKeepsSeparator() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "charTypeCombinedTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        String value = result.get(0).get("COMBINED_COL");
+        assertThat("半角数字2文字 + \"-\" + 半角数字4文字で 7 文字になること: [" + value + "]",
+                value.length(), is(7));
+        assertThat("3 文字目の \"-\" は変換されず残ること: [" + value + "]",
+                value.charAt(2), is('-'));
+        assertTrue("\"-\" 以外の部分が半角数字に変換されること: [" + value + "]",
+                value.matches("[0-9]{2}-[0-9]{4}"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: "\n" は LF 1 文字になること。
+     *
+     * <p>
+     * 何を担保するか: YAML 形式では改行文字を {@code "\r"}（CR）・{@code "\n"}（LF）と書き、
+     * YAML のパーサが制御文字へ変換すること。CR 側は
+     * {@link #buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser} で固定しており、
+     * ここでは LF 側を固定する。<br>
+     * 根拠: implementation/testdata_notation.rst:1441-:1443<br>
+     * Given: list_maps の lineFeedTest に YAML_LF_COL: "\n"<br>
+     * When:  buildListMapRows(yaml, "lineFeedTest", path) を呼ぶ<br>
+     * Then:  値が LF（U+000A）1 文字になること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_escapedLfIsLineFeed() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "lineFeedTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        String value = result.get(0).get("YAML_LF_COL");
+        assertThat("\"\\n\" は 1 文字になること", value.length(), is(1));
+        assertThat("\"\\n\" は LF（U+000A）になること", value, is("\n"));
     }
 
     /**

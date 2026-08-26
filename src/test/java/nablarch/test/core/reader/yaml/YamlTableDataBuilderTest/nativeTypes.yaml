@@ -39,3 +39,63 @@ list_maps:
   - id: singleQuoteNotationTest
     rows:
       - DQ_COL: '"'
+
+  # 3-4: 改行文字 "\n"（LF）（implementation/testdata_notation.rst:1441-:1443）
+  - id: lineFeedTest
+    rows:
+      - YAML_LF_COL: "\n"
+
+  # 3-2: ${文字種,文字数} で使用できる14文字種（implementation/testdata_notation.rst:1313-:1320）。
+  #      どの文字種で落ちたかが分かるよう、文字種ごとに別エントリにしてある。
+  - id: charTypeTest_半角英字
+    rows:
+      - GEN_COL: "${半角英字,3}"
+  - id: charTypeTest_半角数字
+    rows:
+      - GEN_COL: "${半角数字,3}"
+  - id: charTypeTest_半角記号
+    rows:
+      - GEN_COL: "${半角記号,3}"
+  - id: charTypeTest_半角カナ
+    rows:
+      - GEN_COL: "${半角カナ,3}"
+  - id: charTypeTest_全角英字
+    rows:
+      - GEN_COL: "${全角英字,3}"
+  - id: charTypeTest_全角数字
+    rows:
+      - GEN_COL: "${全角数字,3}"
+  - id: charTypeTest_全角ひらがな
+    rows:
+      - GEN_COL: "${全角ひらがな,3}"
+  - id: charTypeTest_全角カタカナ
+    rows:
+      - GEN_COL: "${全角カタカナ,3}"
+  - id: charTypeTest_全角漢字
+    rows:
+      - GEN_COL: "${全角漢字,3}"
+  - id: charTypeTest_全角記号その他
+    rows:
+      - GEN_COL: "${全角記号その他,3}"
+  - id: charTypeTest_中国語
+    rows:
+      - GEN_COL: "${中国語,3}"
+  - id: charTypeTest_サロゲートペア
+    rows:
+      - GEN_COL: "${サロゲートペア,3}"
+  - id: charTypeTest_改行
+    rows:
+      - GEN_COL: "${改行,3}"
+  - id: charTypeTest_外字
+    rows:
+      - GEN_COL: "${外字,3}"
+
+  # 3-2（負のテスト）: 列挙外の文字種名（implementation/testdata_notation.rst:1313）
+  - id: charTypeUnknownTest
+    rows:
+      - GEN_COL: "${存在しない文字種,3}"
+
+  # 3-3: 組み合わせ記法（implementation/testdata_notation.rst:1322）
+  - id: charTypeCombinedTest
+    rows:
+      - COMBINED_COL: "${半角数字,2}-${半角数字,4}"

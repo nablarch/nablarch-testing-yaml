@@ -12,3 +12,26 @@ list_maps:
         INT_COL: "42"
         FLOAT_COL: "3.14"
         FLOAT_SCIENTIFIC: "1.0E10"
+
+  # 3-1: YAML 1.2 Core Schema では yes / no / on / off は真偽値ではなく文字列として扱われる
+  #      （implementation/testdata_notation.rst:92）。キー・値のいずれもクォートなしで書く。
+  - id: yaml12BooleanWordTest
+    rows:
+      - no: no
+        yes: yes
+        on: on
+        off: off
+
+  # 3-1: 解説書の実例（implementation/deal_unit_test/batch.rst:352）と同じく、
+  #      testShots のカラム no をクォートなしのキーで書いた形。YAML 1.1 ならキーが真偽値 false になる。
+  - id: unquotedNoKeyTest
+    rows:
+      - no: "1"
+        description: "ファイル入力"
+        expectedStatusCode: "0"
+
+  # 3-6: ${attach:ファイルパス}（implementation/testdata_notation.rst:1337）。
+  #      パスはテスト実行時のカレントディレクトリ（プロジェクトルート）からの相対パス。
+  - id: attachNotationTest
+    rows:
+      - uploadFile: "${attach:src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest/test.bin}"
