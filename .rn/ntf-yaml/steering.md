@@ -1017,13 +1017,17 @@ SSoT（唯一の正）とし、`nablarch-testing-yaml` の実装・テスト・�
 
 **Steps**:
 
-- [ ] A. 参照点を固定する。解説書 `nablarch-document` `76e6e61`、本モジュール `0db2221`、依存先 `nablarch-testing` `3c4bd2a`。**すべて `git show <SHA>:<path>` で読む。作業ツリーの HEAD を読まない**（本指示書 §2）
-- [ ] B. `YamlSection.java` の `isBlankRow`（`:201`-`:209`）・`objectToString`（`:147`-`:149`）・`toStr`（`:127`-`:129`）・`dropBlankRows`（`:182`-`:190`）・`resolveColumns`（`:227`）を `0db2221` で全量読み、現行の判定経路を実測で確定する
-- [ ] C. **本指示書 §4-1 の未確認記述を動かして確かめる**（本指示書 §6 が名指しで「ここを疑うこと」と指示）。`nablarch-testing` `3c4bd2a` の `TestDataParsingTemplate.isBlankLine`（`:407`-`:409`）が `StringUtil.isNullOrEmpty(Collection)` を呼ぶ経路が、Excel の実入力で発火するか否かを**実行して**確かめる。`PoiXlsReader`（`:140`-`:147`）が返す `List<String>` の要素が空セルで空文字か Java null かを実測する。**シグネチャや Javadoc を根拠にしない**
-- [ ] D. 3ケース（(a) `{}` → 落ちる／(b) 全 `""` → 落ちる／(c) 全 Java null → 残る）を区別する実装案を出す。キーだけ書いて値を省略した行、アンクォートの `null` だけの行の両方が (c) に入ることを含める
-- [ ] E. 案が `resolveColumns`（カラム名決定）へ及ぼす波及の見立てを添える。解説書 `implementation/testdata_notation.rst:818`（後続行がキーの一部を持たない場合そのカラムは `null` 明示と同じ扱い）と矛盾しないか
-- [ ] F. **報告して止まる。** ユーザーの検証を受けるまで `src/main` に手を入れない。反例が出たら反映せず報告して止まる（本指示書 §5）
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-26.md)
+- [x] A. 参照点を固定する。解説書 `nablarch-document` `76e6e61`、本モジュール `0db2221`、依存先 `nablarch-testing` `3c4bd2a`。**すべて `git show <SHA>:<path>` で読む。作業ツリーの HEAD を読まない**（本指示書 §2）
+- [x] B. `YamlSection.java` の `isBlankRow`（`:201`-`:209`）・`objectToString`（`:147`-`:149`）・`toStr`（`:127`-`:129`）・`dropBlankRows`（`:182`-`:190`）・`resolveColumns`（`:227`）を `0db2221` で全量読み、現行の判定経路を実測で確定する
+- [x] C. **本指示書 §4-1 の未確認記述を動かして確かめる**（本指示書 §6 が名指しで「ここを疑うこと」と指示）。`nablarch-testing` `3c4bd2a` の `TestDataParsingTemplate.isBlankLine`（`:407`-`:409`）が `StringUtil.isNullOrEmpty(Collection)` を呼ぶ経路が、Excel の実入力で発火するか否かを**実行して**確かめる。`PoiXlsReader`（`:140`-`:147`）が返す `List<String>` の要素が空セルで空文字か Java null かを実測する。**シグネチャや Javadoc を根拠にしない**
+- [x] D. 3ケース（(a) `{}` → 落ちる／(b) 全 `""` → 落ちる／(c) 全 Java null → 残る）を区別する実装案を出す。キーだけ書いて値を省略した行、アンクォートの `null` だけの行の両方が (c) に入ることを含める
+- [x] E. 案が `resolveColumns`（カラム名決定）へ及ぼす波及の見立てを添える。解説書 `implementation/testdata_notation.rst:818`（後続行がキーの一部を持たない場合そのカラムは `null` 明示と同じ扱い）と矛盾しないか
+- [x] F. **報告して止まる。** ユーザーの検証を受けるまで `src/main` に手を入れない。反例が出たら反映せず報告して止まる（本指示書 §5）
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-26.md)
+- [x] H. **本指示書 §6 の4観点レビュー**（A 充足 / B 整合 / C 規約 / D 検証の妥当性。各観点は別サブエージェント・3点必須プロンプト・本指示書自体もレビュー対象）— ラウンド1 完了。**観点D が fail**（must 2 / should 3）。A・B・C は pass。全指摘と却下理由は `checks/task-26.md`
+- [ ] I. **ユーザー判断待ちの4件**（2026-08-26 報告済み）— ①混在行が先頭に来たときのカラム消失を仕様の帰結として受け入れるか（must M2）②非 String キーの `ClassCastException`（should S4）③`PoiXlsReader` が Java null を返しうる既存欠陥の扱い（should S3）④Excel 突合を実 `.xls` でやり直す位置（should S6）
+- [ ] J. 修正ラウンド1 — ユーザー判断を織り込んで報告書を是正する。判断不要で確定している是正: 落ちるテスト11件・fixture 出典（M1）／Javadoc 是正9箇所とスキーマ `:108`/`:136` の #30 依存（S1）／`resolveColumns` の外部呼び出し元 converter `:498`（S2）／§3.2 の判定を母集合の観測に弱める（S3 の記述面）／指示書の `:828`-`:833` 誤要約を反例に追加（S7）／javadoc 是正後の文案を載せる（S8）
+- [ ] K. 修正ラウンド2（差分限定の2観点: 是正が指示範囲に収まっているか／新しい欠陥を生んでいないか）
 
 **Completion criteria**:
 
@@ -1352,8 +1356,16 @@ SSoT（唯一の正）とし、`nablarch-testing-yaml` の実装・テスト・�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-26
+- **Last completed**: #26 step H（§6 の4観点レビュー ラウンド1）。観点D が fail、A・B・C は pass
+- **Next**: #26 step I — ユーザー判断4件の回答を受けてから step J（修正ラウンド1）へ。**判断が案の中身を変えうるため、回答前に報告書を是正しない**
+- **Notes**:
+  - ブランチ `feature/ntf-yaml`、push 済み。**PR #1 は DRAFT のまま維持**（マージ禁止・ユーザー指示）
+  - Phase 2 の作業指示は `nablarch-document` `c6559eb`:`.rn/20260724-ntf-yaml-support/ntf-step4-02-nablarch-testing-yaml.md`。**このファイルだけで完結する**（ユーザー明示）
+  - 参照点のピン: 解説書 `76e6e61` / 本モジュール `0db2221` / 依存先 `nablarch-testing` `3c4bd2a`。**すべて `git show <SHA>:<path>` で読む**
+  - **ユーザー判断待ちの4件**は `checks/task-26.md` の must/should 表（M2・S4・S3・S6）に全文。報告済みで回答待ち
+  - #26 の成果物: 報告書 `report-task-26-isblankrow.md`（`d3d1eb8`）、実測プローブ `probes/task-26/`（観点C の指摘で保全）
+  - **§6 の4観点は rn 既定レビューの代わりではない**（2026-08-26 ユーザー明示。Rules に記録）。#27 以降の実装タスクは §6 の4観点に加えて既定の Design と Verification を回す
+  - 本体 `../nablarch-testing` は参照のみで書き込みなし。`nablarch-document` も参照のみ
+  - user-deferred paths: なし

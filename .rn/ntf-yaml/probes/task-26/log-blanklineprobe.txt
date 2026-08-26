@@ -1,0 +1,16 @@
+=== (1) isBlankLine の単体挙動（人工入力） ===
+isBlankLine([])            = true
+isBlankLine(["",""])       = true
+isBlankLine([null,null])   = true
+isBlankLine([null,"a"])    = false
+StringUtil.isNullOrEmpty([null,null]) = true
+
+=== (2) readTestData 相当のパイプラインを実 Excel 全件で流す ===
+readLine 通過行数                       = 5852
+うちコメント行(isCommentRow=true)       = 1210
+readLine 通過セル数                     = 81873
+うち Java null のセル数                 = 0
+isBlankLine が true を返した回数         = 1
+うち Java null を含んでいた回数          = 0
+isBlankLine=true サンプル(最大10件):
+  RequestTestingSendSyncBatchTest.xls#testPaddingRemoved raw=[, , // 半角スペース20個, , ] cut=[, ]
