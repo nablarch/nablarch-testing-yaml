@@ -1,4 +1,0 @@
-入力行数 = 4 -> readTestData 出力行数 = 3
-  ["USER_ID", "USER_NAME"]
-  [<Java null>, <Java null>]
-  ["1", "a"]

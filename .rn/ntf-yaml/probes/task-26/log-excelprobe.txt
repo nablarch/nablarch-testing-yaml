@@ -1,9 +1,0 @@
-book count = 61
-=== PoiXlsReader#readOneLine 全走査結果 ===
-sheets            = 246
-raw lines         = 11871
-cells             = 147632
-Java null cells   = 0
-empty("") cells   = 131515
-all-empty rawlines= 6019  (readLine がスキップする行)
-null samples      = []
