@@ -171,8 +171,7 @@ public final class YamlSection {
      * 空行（{@code isBlankLine}）をそのまま読み飛ばす。値加工（{@code interpret}）を持つのは
      * {@code TestDataParsingTemplate#readTestData} の方で、こちらも {@code isBlankLine} による
      * 読み飛ばしを {@code interpret} より前に行う。本メソッドはこの順序に揃える。この順序により、
-     * 値加工を通すと空になる値（例えば {@code NullInterpreter} が Java null へ変換する
-     * {@code "null"}）だけを持つ行も、行としては保持される。
+     * 値加工を通すと空になる値だけを持つ行も、行としては保持される。
      * </p>
      *
      * @param rows データ行のリスト（null 不可）。呼び出し側は {@link #getList(Map, String)} の戻り値を

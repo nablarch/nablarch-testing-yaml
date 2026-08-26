@@ -131,6 +131,63 @@ setup_files:
         rows:
           - ["BODYKEY001"]
 
+
+  # length: "-"（オンデマンド計算）— 全レコードの最大バイト長へ自動拡張されること
+  - group_id: ondemandLength
+    path: dummy/ondemand_length.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+            length: "-"
+          - name: FIELD2
+            type: 全角
+            length: "-"
+          - name: FIELD3
+            type: 半角
+            length: 2
+        rows:
+          - ["A", "あ", "ZZ"]
+          - ["ABCDE", "あいう", "YY"]
+          - ["ABC", "あい", "XX"]
+
+  # length: "-"（オンデマンド計算）— 値に含まれる改行とその前後の空白が取り除かれること
+  - group_id: ondemandLineSeparator
+    path: dummy/ondemand_ls.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+            length: "-"
+        rows:
+          - ["AB \r\n CD"]
+
+  # length: "-"（オンデマンド計算）— 改行を含まない値の前後の空白は残ること
+  - group_id: ondemandKeepSpaces
+    path: dummy/ondemand_keep_spaces.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+            length: "-"
+          - name: FIELD2
+            type: 半角
+            length: 1
+        rows:
+          - ["  AB  ", "Z"]
+
 expected_files:
   - path: dummy/expected_fixed.dat
     type: fixed

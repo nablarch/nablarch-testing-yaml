@@ -287,6 +287,121 @@ public class YamlFileBuilderTest {
     }
 
     // ========================================================================
+    // length: "-"（オンデマンド計算）の挙動
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: {@code length: "-"} のフィールド長が、追加した全レコード値の
+     * 最大バイト長へ自動拡張されること。
+     *
+     * <p>
+     * Given: setup_files の ondemandLength グループに、{@code length: "-"} の FIELD1（半角。値は
+     *        "A"／"ABCDE"／"ABC" の 1／5／3 バイト）と FIELD2（全角。値は "あ"／"あいう"／"あい" の
+     *        2／6／4 バイト）、および {@code length: 2} の FIELD3 を持つ 3 行のレコード<br>
+     * When:  buildFileList(yaml, "setup_files", "[ondemandLength]", DIR) を呼ぶ<br>
+     * Then:  FIELD1 が 5 バイト、FIELD2 が 6 バイトへ拡張され（最大値であって最終行の値の長さではない）、
+     *        record-length が 5 + 6 + 2 = 13 になること
+     * </p>
+     */
+    @Test
+    public void buildFileList_ondemandLengthExpandsToMaxByteLength() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[ondemandLength]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        List<FieldDefinition> fields = layout.getRecords().get(0).getFields();
+        assertThat("FIELD1 は先頭バイトから始まること", fields.get(0).getPosition(), is(1));
+        assertThat("FIELD1 が全レコードの最大バイト長（\"ABCDE\" の 5 バイト）へ拡張されること",
+                fields.get(1).getPosition(), is(6));
+        assertThat("FIELD2 が全レコードの最大バイト長（\"あいう\" の 6 バイト。文字数ではない）へ拡張されること",
+                fields.get(2).getPosition(), is(12));
+        assertThat("record-length が拡張後のフィールド長の合計（5 + 6 + 2）になること",
+                layout.getDirective().get("record-length"), is(13));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: {@code length: "-"} のフィールドの値から、改行とその前後の空白が
+     * 取り除かれること。
+     *
+     * <p>
+     * 除去は依存先 nablarch-testing の {@code DataFileFragment#addValue} が
+     * {@code removeLineSeparatorWithTrim}（パターン {@code \s*[\r\n]\s*} を空文字へ置換）で行う。
+     * 本モジュールは {@code "-"} をそのまま {@code setLengths} へ渡すだけである<br>
+     * Given: setup_files の ondemandLineSeparator グループに、{@code length: "-"} の FIELD1 と
+     *        値 {@code "AB \r\n CD"}（改行の前後に半角空白）を持つ 1 行のレコード<br>
+     * When:  buildFileList(yaml, "setup_files", "[ondemandLineSeparator]", DIR) を呼ぶ<br>
+     * Then:  値が "ABCD" になり（改行と、その前後の空白がいずれも除去される）、
+     *        フィールド長が除去後の 4 バイトになること
+     * </p>
+     */
+    @Test
+    public void buildFileList_ondemandLengthRemovesLineSeparatorWithSurroundingSpaces() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[ondemandLineSeparator]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("改行と、その前後の空白を除去した \"ABCD\" の 4 バイトになること",
+                layout.getDirective().get("record-length"), is(4));
+
+        List<DataRecord> dataRecords = result.get(0).toDataRecords();
+        assertThat(dataRecords.size(), is(1));
+        assertThat("値から改行と、その前後の空白が取り除かれること",
+                dataRecords.get(0).getString("FIELD1"), is("ABCD"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: {@code length: "-"} のフィールドでも、改行を含まない値の
+     * 前後の空白は取り除かれないこと。
+     *
+     * <p>
+     * 除去パターン（{@code \s*[\r\n]\s*}）は改行を含む箇所しか一致しないため、改行のない値は
+     * 前後の空白ごとそのまま保持される<br>
+     * Given: setup_files の ondemandKeepSpaces グループに、{@code length: "-"} の FIELD1（値
+     *        {@code "  AB  "}。前後に半角空白 2 文字ずつ）と {@code length: 1} の FIELD2（値 "Z"）を
+     *        持つ 1 行のレコード<br>
+     * When:  buildFileList(yaml, "setup_files", "[ondemandKeepSpaces]", DIR) を呼ぶ<br>
+     * Then:  FIELD1 が前後の空白を含む 6 バイトのままとなり（除去されていれば 2 バイトになる）、
+     *        FIELD2 が 7 バイト目から始まること
+     * </p>
+     */
+    @Test
+    public void buildFileList_ondemandLengthKeepsSpacesWhenValueHasNoLineSeparator() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[ondemandKeepSpaces]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        List<FieldDefinition> fields = layout.getRecords().get(0).getFields();
+        assertThat("FIELD1 は先頭バイトから始まること", fields.get(0).getPosition(), is(1));
+        assertThat("改行を含まない値の前後の空白は除去されず、FIELD1 が 6 バイトのままになること",
+                fields.get(1).getPosition(), is(7));
+        assertThat("record-length が 6 + 1 = 7 になること",
+                layout.getDirective().get("record-length"), is(7));
+
+        List<DataRecord> dataRecords = result.get(0).toDataRecords();
+        assertThat(dataRecords.size(), is(1));
+        // 半角（X）データタイプは読み出し時に末尾のパディング（半角空白）を落とすため、
+        // 末尾側の空白が残っていることは上のバイト長（6 バイト）で担保する。
+        assertThat("先頭の空白が除去されずに残ること",
+                dataRecords.get(0).getString("FIELD1"), is("  AB"));
+        assertThat(dataRecords.get(0).getString("FIELD2"), is("Z"));
+    }
+
+    // ========================================================================
     // path キーが存在しないエントリで IllegalStateException がスローされること（E-2）
     // ========================================================================
 
