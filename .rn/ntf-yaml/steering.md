@@ -1246,14 +1246,15 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - **Status**: paused
 - **Date**: 2026-08-27
-- **Last completed**: #33 カバレッジ C0/C1 計測と Step 4 報告書の作成（`ecdfbb3`）
-- **Next**: #34 Evaluation sign-off — 完了条件8項目の実測結果は提示済み（すべて OK）。**ユーザーの判定（`/rn:ty` 承認 / `/rn:gm` 差し戻し）待ち**
+- **Last completed**: #35 報告書 §6 の未是正2件の是正（`a008066`）
+- **Next**: #34 Evaluation sign-off — 完了条件8項目（2026-08-26 提示・すべて OK）に加え、#35 の是正結果を 2026-08-27 に再提示済み。**ユーザーの判定（`/rn:ty` 承認 / `/rn:gm` 差し戻し）待ち**
 - **Notes**:
-  - ブランチ `feature/ntf-yaml`（`ecdfbb3`）。`origin/feature/ntf-yaml` と一致。作業ツリーは clean
-  - 報告書は `.rn/ntf-yaml/report-step4.md`。指示書 §6 の5項目＋未是正の食い違い（§6）＋指示書との差分（§7）
-  - **ユーザー判断待ち2件**（どちらも指示書18件の外。直すなら #34 の前にタスクを足す）:
-    1. スキーマ `ntf-testdata-yaml-schema.json:53`（`properties.messages`）・`:200`（`$defs.message_data.id`）の `description` が「id は `sendSyncTestData/{requestId}/message` 形式」と述べ、解説書 `5b5c91e` の `implementation/testdata_notation.rst:1151`（識別子は `setUpMessages`・`expectedMessages` の固定値。`sendSyncTestData` はデータブロックの識別子ではない）と食い違う。#32 の 3-10 が実測で反証済み。**Step 4 の是正が誤りにしたものではなく、着手前から存在する食い違い**
-    2. `src/test/resources/unit-test.xml:170`-`:174` の `filePathSetting` が `fileExtensions` に `sendSyncTestData` = `xls` を設定しており、解説書 `setup/common.rst:264`（important）の「設定しない」に反する。`basePathSettings` には `sendSyncTestData` が無い
+  - ブランチ `feature/ntf-yaml`。`origin/feature/ntf-yaml` と一致。作業ツリーは clean
+  - 報告書は `.rn/ntf-yaml/report-step4.md`。指示書 §6 の5項目＋18件の外の食い違いの是正（§6・**是正済み**）＋指示書との差分（§7）
+  - 是正済み（`#35`・2026-08-27 のユーザー指示）: ①スキーマ `ntf-testdata-yaml-schema.json:53`・`:200` の `description` を `implementation/testdata_notation.rst:1151`（`5b5c91e`）に合わせた ②`unit-test.xml` の `filePathSetting` から `fileExtensions`（`sendSyncTestData` = `xls`）を削除し、門番テスト `YamlTestDataParserTest#fileExtensionsHasNoSendSyncTestData` を追加（削除前 FAILURE・削除後 SUCCESS を実測）。`basePathSettings` は変更していない
+  - `mvn -o clean test` は `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（267 + 門番テスト1件）
+  - 既決（2026-08-27 ユーザー判断）: 指示書 完了条件7の「`tmp/` を残さない」は条件の書き方の誤り。`unit-test.xml:167` の `basePathSettings` が `move` = `file:tmp` のため、テストスイート自身が毎回 `tmp/` を作る。空ディレクトリで `git status` には出ないので**対応不要**
+  - 既決（2026-08-27 ユーザー確認）: 報告書 §7 の訂正3件（`FW_HEADER` 17件／`testdata_notation.rst:1151`／converter 4件の帰属）はユーザーが独立に実測して確認済み。**指示書側の誤り**で確定
   - 既決（2026-08-26 ユーザー判断）: 指示書 2-5 の名指し3件の外だったスキーマ `$defs.record_fragment.record_type` は、2-3 の波及先として #30 で是正済み。判断理由は「自分の是正が事実に反することにした記述を残さない」
   - `@Ignore` は1件のみ（`YamlTableDataBuilderTest.java:751`。3-2 の負のテスト）。**実装は直していない。範囲の判断はディレクターが全モジュール分を集めてから行う**
   - converter（`60d9a2d`・未変更）で Step 4 起因の失敗は `YamlTestCoreAdapterTest#isResourceExisting_reflectsFileExistence` の1件のみ（2-2 起因）。逆に5件が解消。**指示書と #27 check が「2-1 起因」とした4件は `ab0064e` の時点で既に落ちており誤り**（#33 で帰属実測して反証済み）

@@ -12,7 +12,7 @@
 | `mvn -o clean test` が緑。`Skipped 1` は `@Ignore` 1件のまま | OK | `mvn -o clean test` → `BUILD SUCCESS` / `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`。267（`8eacaa7`）+ 門番テスト1件。`Skipped 1` は `YamlTableDataBuilderTest`（`Tests run: 60, ..., Skipped: 1`）＝ 3-2 の `@Ignore`。実装は直していない | | |
 | 6-1 の前後で挙動テストの結果が変わらないことが示されている | OK | `mvn -o clean test -Dtest='YamlTestDataParserTest#getMessage_reservedIdsSetUpMessagesAndExpectedMessages'` を `description` 変更の前後で実行。前: `BUILD SUCCESS` / `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`。後: 同じく `BUILD SUCCESS` / `Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`。報告書 §6-1 の表に記載 | | |
 | 報告書 §6 が「是正済み」になっている | OK | `## 6. 指示書18件の外にあった食い違いの是正（2件・是正済み）` / `### 6-1. …（是正済み）` / `### 6-2. …（是正済み）` / `### 6-3. 是正後の全体テスト`。§結論の該当段落も「`#35` で是正済み」に書き換え | | |
-| `git status --short` が空、push 済み | OK（push は本 check を含むコミットの直後に実施） | 是正後の `git status --short` は変更3ファイルのみ（`ntf-testdata-yaml-schema.json` / `YamlTestDataParserTest.java` / `unit-test.xml`）。`tmp/` は空ディレクトリで git status に出ない（`unit-test.xml:167` の `basePathSettings` が `move` = `file:tmp` のため、テストスイート自身が毎回作る。2026-08-27 ユーザー確認で対応不要と決定）。`find . -name "javac.*.args"` は0件 | | |
+| `git status --short` が空、push 済み | OK | 是正後の `git status --short` は変更3ファイルのみ（`ntf-testdata-yaml-schema.json` / `YamlTestDataParserTest.java` / `unit-test.xml`）。`tmp/` は空ディレクトリで git status に出ない（`unit-test.xml:167` の `basePathSettings` が `move` = `file:tmp` のため、テストスイート自身が毎回作る。2026-08-27 ユーザー確認で対応不要と決定）。`find . -name "javac.*.args"` は0件。commit `a008066`（`fix: 報告書 §6 の未是正2件を是正する（#35）`）→ `git push origin feature/ntf-yaml` → `6bdd9e8..a008066  feature/ntf-yaml -> feature/ntf-yaml`。force push はしていない。本 State 更新コミットも同様に push する | | |
 
 ## Overall Verdict
 
