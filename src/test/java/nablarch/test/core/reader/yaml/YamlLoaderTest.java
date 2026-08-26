@@ -558,4 +558,39 @@ public class YamlLoaderTest {
     public void load_schemaViolation_expectedRequestEmptyGroupId() {
         YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_expectedRequest_emptyGroupId");
     }
+
+    /**
+     * [YamlLoader] load: setup_tables に前方一致するトップレベルキーはスキーマ違反になること。
+     *
+     * <p>
+     * 何を担保するか: YAML 形式のトップレベルキーはデータタイプごとの専用キーであり完全一致で
+     * 解決されること（前方一致は発生しない）。{@code setup_tables_extra} のように
+     * {@code setup_tables} に前方一致するキーは {@code setup_tables} として読まれず、
+     * スキーマ（{@code additionalProperties: false}）違反になる。<br>
+     * 根拠: implementation/testdata_notation.rst:205<br>
+     * Given: トップレベルキーが setup_tables_extra だけの YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、違反の種別が additionalProperties で、
+     *        メッセージに違反したキー名とファイルパスが含まれること
+     * </p>
+     */
+    @Test
+    public void load_prefixMatchedTopLevelKeyIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_prefixMatchedTopLevelKey");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/schemaViolation_prefixMatchedTopLevelKey"));
+            assertThat("前方一致するキーは setup_tables として読まれず、違反したキー名が報告されること",
+                    e.getMessage(), containsString("setup_tables_extra"));
+            List<ValidationMessage> errors = e.getErrors();
+            assertThat("違反が 1 件報告されること", errors.size(), is(1));
+            assertThat("スキーマに定義されていないトップレベルキーとして弾かれること"
+                            + "（additionalProperties 違反）: " + errors.get(0),
+                    errors.get(0).getType(), is("additionalProperties"));
+        }
+    }
 }

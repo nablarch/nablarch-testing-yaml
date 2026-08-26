@@ -1723,4 +1723,105 @@ public class YamlTableDataBuilderTest {
         assertTrue("マーカーカラムは除外されるため、結果の要素は空 Map になること", result.get(0).isEmpty());
     }
 
+    // ========================================================================
+    // グループ ID の突合（完全一致）・収集の打ち切りが無いこと
+    // ========================================================================
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: グループ ID は完全一致で突合されること。
+     *
+     * <p>
+     * 何を担保するか: YAML 形式のグループ ID はグループ ID の完全一致で判定され、前方一致は発生しないこと。
+     * {@code case01} を指定したとき、前方一致する {@code case010} を持つエントリは収集されない。<br>
+     * 根拠: implementation/testdata_notation.rst:255-:269<br>
+     * Given: setup_tables に group_id が {@code case01} のエントリと {@code case010} のエントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[case01]", false, path) を呼ぶ<br>
+     * Then:  {@code case01} のエントリ 1 件だけが返り、{@code case010} のエントリは含まれないこと
+     *        （{@code [case010]} を指定した場合も同様に 1 件だけ返ること）
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_groupIdIsMatchedExactly() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> exact = buildTableDataList(yaml, "setup_tables", "[case01]", false, DIR);
+
+        // Then
+        assertThat("case01 に前方一致する case010 は収集されず 1 件だけ返ること", exact.size(), is(1));
+        assertThat("収集されたのは group_id: case01 のエントリであること",
+                exact.get(0).getValue(0, "PK_COL1").toString(), is("0000000070"));
+
+        // When: 前方一致される側（case010）を指定した場合
+        List<TableData> longer = buildTableDataList(yaml, "setup_tables", "[case010]", false, DIR);
+
+        // Then
+        assertThat("case010 を指定した場合も完全一致の 1 件だけ返ること", longer.size(), is(1));
+        assertThat("収集されたのは group_id: case010 のエントリであること",
+                longer.get(0).getValue(0, "PK_COL1").toString(), is("0000000071"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: 異なるグループ ID を挟んでも収集が打ち切られないこと。
+     *
+     * <p>
+     * 何を担保するか: トップレベルのキーごとに独立して読み込むため、記述順序や異なるデータブロックの
+     * 交互記述を気にする必要がないこと。group_id が {@code a}・{@code b}・{@code a} の順に並んでいても、
+     * {@code a} の収集結果は 2 件になる（Excel 形式のように 1 件で打ち切られない）。<br>
+     * 根拠: implementation/testdata_notation.rst:339<br>
+     * Given: expected_tables に group_id が interleavedA・interleavedB・interleavedA の順で並ぶ 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[interleavedA]", false, path) を呼ぶ<br>
+     * Then:  interleavedA のエントリが 2 件とも収集され、記述順に並ぶこと
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_collectionIsNotTruncatedByInterleavedGroupId() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[interleavedA]", false, DIR);
+
+        // Then
+        assertThat("別の group_id を挟んでも打ち切られず 2 件とも収集されること", result.size(), is(2));
+        assertThat("1 件目は記述順で先に現れたエントリであること",
+                result.get(0).getValue(0, "PK_COL1").toString(), is("0000000080"));
+        assertThat("2 件目は interleavedB を挟んだ後ろのエントリであること",
+                result.get(1).getValue(0, "PK_COL1").toString(), is("0000000082"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: {@code args[n]} 形式のキーはマーカーカラムとして除外されないこと。
+     *
+     * <p>
+     * 何を担保するか: バッチ起動時のコマンドライン引数を表す {@code args[n]} 形式のカラムが、
+     * {@code [} {@code ]} を含んでいてもマーカーカラム（{@code [COL]} 形式）とはみなされず、
+     * 返る Map のキーが文字列 {@code "args[0]"} のまま残ること。<br>
+     * 根拠: implementation/testdata_notation.rst:503-:507<br>
+     * Given: list_maps の argsColumnTest に args[0]・args[1] のキーを持つ行<br>
+     * When:  buildListMapRows(yaml, "argsColumnTest", path) を呼ぶ<br>
+     * Then:  キー "args[0]"・"args[1]" が結果 Map にそのまま含まれ、値が取得できること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_argsIndexKeyIsNotExcludedAsMarker() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "argsColumnTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        Map<String, String> row = result.get(0);
+        assertTrue("キーが文字列 \"args[0]\" のまま結果 Map に含まれること: " + row.keySet(),
+                row.containsKey("args[0]"));
+        assertThat("args[0] の値が取得できること", row.get("args[0]"), is("arg0Value"));
+        assertTrue("キーが文字列 \"args[1]\" のまま結果 Map に含まれること: " + row.keySet(),
+                row.containsKey("args[1]"));
+        assertThat("args[1] の値が取得できること", row.get("args[1]"), is("arg1Value"));
+        assertThat("マーカーカラムでない通常カラムも取得できること", row.get("no"), is("1"));
+    }
+
 }

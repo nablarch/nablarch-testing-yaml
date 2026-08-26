@@ -1,0 +1,9 @@
+# setup_tables に前方一致するトップレベルキー。
+# YAML 形式のトップレベルキーは完全一致で解決されるため、このキーは setup_tables として
+# 読まれず、スキーマ（additionalProperties: false）違反になる。
+# 出典: implementation/testdata_notation.rst:205
+setup_tables_extra:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000001"
+        PK_COL2: "AB"

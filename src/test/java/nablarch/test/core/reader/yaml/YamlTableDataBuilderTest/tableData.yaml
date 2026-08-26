@@ -163,6 +163,28 @@ setup_tables:
         VARCHAR2_COL: null
 
 
+  # グループIDは完全一致で突合される（前方一致は発生しない）。
+  # case01 を指定したとき、前方一致する case010 のエントリは収集されない。
+  # 出典: implementation/testdata_notation.rst:255-:269
+  - group_id: case01
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000070"
+        PK_COL2: "RA"
+        VARCHAR2_COL: "exactMatch"
+        NUMBER_COL: "70"
+        NUMBER_COL2: "70.0"
+
+  - group_id: case010
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000071"
+        PK_COL2: "RB"
+        VARCHAR2_COL: "prefixMatch"
+        NUMBER_COL: "71"
+        NUMBER_COL2: "71.0"
+
+
 list_maps:
   - id: testListMap
     rows:
@@ -286,6 +308,16 @@ list_maps:
       - "[NO]": "1"
 
 
+  # args[n] 形式のカラム（バッチ起動時のコマンドライン引数）は、"[" で始まらないため
+  # マーカーカラム（[COL]）ではなく、キーが文字列 "args[0]" のまま Map に残る。
+  # 出典: implementation/testdata_notation.rst:503-:507
+  - id: argsColumnTest
+    rows:
+      - no: "1"
+        args[0]: "arg0Value"
+        args[1]: "arg1Value"
+
+
 expected_tables:
   - group_id: markerColInTable
     table: TEST_TABLE
@@ -363,3 +395,33 @@ expected_tables:
         VARCHAR2_COL: "third"
         NUMBER_COL: "64"
         NUMBER_COL2: "64.0"
+
+  # トップレベルのキーごとに独立して読み込むため、同じ group_id のエントリが別の group_id を
+  # 挟んで並んでいても、途中で収集が打ち切られることはない（Excel 形式のような1件打ち切りが無い）。
+  # 出典: implementation/testdata_notation.rst:339
+  - group_id: interleavedA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000080"
+        PK_COL2: "SA"
+        VARCHAR2_COL: "firstA"
+        NUMBER_COL: "80"
+        NUMBER_COL2: "80.0"
+
+  - group_id: interleavedB
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000081"
+        PK_COL2: "SB"
+        VARCHAR2_COL: "middleB"
+        NUMBER_COL: "81"
+        NUMBER_COL2: "81.0"
+
+  - group_id: interleavedA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000082"
+        PK_COL2: "SC"
+        VARCHAR2_COL: "secondA"
+        NUMBER_COL: "82"
+        NUMBER_COL2: "82.0"

@@ -74,6 +74,39 @@ messages:
         rows:
           - ["SEARCHKEY1"]
 
+  # データタイプ MESSAGE の識別子 setUpMessages（要求電文）・expectedMessages（応答電文）は
+  # テスティングフレームワークの予約語であり固定である。
+  # 出典: implementation/testdata_notation.rst:1149
+  - id: setUpMessages
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "RM11AC0101"
+      userId: "setUpUser0"
+    records:
+      - record_type: BODY
+        fields:
+          - name: REQUEST_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SETUPKEY01"]
+
+  - id: expectedMessages
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "RM11AC0101"
+      userId: "expectUser"
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESPONSE_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["EXPECTKEY1"]
+
 expected_request_header_messages:
   - id: req001
     records:

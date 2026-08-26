@@ -24,6 +24,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
@@ -49,6 +50,12 @@ public class YamlTestDataParserTest {
     private static final String RESOURCE_ROOT = "src/test/java/";
 
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/";
+
+    /** モックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリ。 */
+    private static final String SEND_SYNC_DIR = DIR + "YamlTestDataParserTest/sendSyncTestData";
+
+    /** TestDataParser を直接使って読む、テストコードと別のディレクトリ。 */
+    private static final String OTHER_DIR = DIR + "YamlTestDataParserTest/otherDir";
 
     private YamlTestDataParser sut;
 
@@ -1752,5 +1759,143 @@ public class YamlTestDataParserTest {
         assertThat("COL1 が with space であること", result.get(1).get("COL1"), is("with space"));
         assertThat("COL2 が 123 であること", result.get(1).get("COL2"), is("123"));
         assertThat("COL3 が true であること", result.get(1).get("COL3"), is("true"));
+    }
+
+    // ========================================================================
+    // 読み込み単位の解決（予約 ID・モックアップクラスの電文配置・TestDataParser の直接使用）
+    // ========================================================================
+
+    /**
+     * getMessage: MESSAGE の予約 ID setUpMessages・expectedMessages で電文を取得できること。
+     *
+     * <p>
+     * 何を担保するか: データタイプ MESSAGE の識別子として予約値 {@code setUpMessages}（要求電文）・
+     * {@code expectedMessages}（応答電文）を書いて、テストの入力データ・期待値となる電文を
+     * 取得できること。これらの識別子は固定である。<br>
+     * 根拠: implementation/testdata_notation.rst:1149<br>
+     * Given: messages に id=setUpMessages と id=expectedMessages のエントリ<br>
+     * When:  getMessage(dir, resource, "setUpMessages")／getMessage(dir, resource, "expectedMessages") を呼ぶ<br>
+     * Then:  それぞれの電文本文と FW 制御ヘッダが取得できること
+     * </p>
+     */
+    @Test
+    public void getMessage_reservedIdsSetUpMessagesAndExpectedMessages() throws Exception {
+        // Given / When
+        MessagePool setUp = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "setUpMessages");
+
+        // Then
+        assertNotNull("予約 ID setUpMessages の電文が取得できること", setUp);
+        List<DataRecord> setUpMessages = ((RequestTestingMessagePool) setUp).getExpectedMessageList();
+        assertThat("setUpMessages の電文本文が 1 件取得できること", setUpMessages.size(), is(1));
+        assertThat("setUpMessages の電文本文が記述どおりであること",
+                setUpMessages.get(0).getString("REQUEST_KEY"), is("SETUPKEY01"));
+        assertThat("setUpMessages の FW 制御ヘッダが取得できること",
+                fwHeaderOf(setUp).get("userId"), is("setUpUser0"));
+
+        // Given / When
+        MessagePool expected = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "expectedMessages");
+
+        // Then
+        assertNotNull("予約 ID expectedMessages の電文が取得できること", expected);
+        List<DataRecord> expectedMessages = ((RequestTestingMessagePool) expected).getExpectedMessageList();
+        assertThat("expectedMessages の電文本文が 1 件取得できること", expectedMessages.size(), is(1));
+        assertThat("expectedMessages の電文本文が記述どおりであること",
+                expectedMessages.get(0).getString("RESPONSE_KEY"), is("EXPECTKEY1"));
+        assertThat("expectedMessages の FW 制御ヘッダが取得できること",
+                fwHeaderOf(expected).get("userId"), is("expectUser"));
+    }
+
+    /**
+     * getMessageWithoutCache: モックアップクラスの電文は リクエストID と同じ名前のディレクトリ配下の
+     * message.yaml が読み込み単位になること。
+     *
+     * <p>
+     * 何を担保するか: 取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータが、
+     * リクエスト ID と同じ名前のディレクトリ配下の固定名 {@code message.yaml} から読まれること。
+     * {@code <リクエストID>.yaml}（Excel 形式の {@code <リクエストID>.xlsx} に相当する置き方）は
+     * 読み込み単位にならない。<br>
+     * 根拠: implementation/deal_unit_test/mom.rst:72、implementation/testdata_notation.rst:1149<br>
+     * 呼び出し方は、モックアップクラス経路の入口である nablarch-testing の
+     * {@code SendSyncSupport#createTestDataInfo}（{@code SendSyncSupport.java:347} が
+     * リソース名を {@code リクエストID + "/" + "message"} として組み立て、
+     * {@code :393} が {@code getMessageWithoutCache} を呼ぶ）に合わせている。<br>
+     * Given: {@code <base>/RM21AA0101/message.yaml}（RESULT_KEY="FROM_DIR01"）と、
+     *        囮の {@code <base>/RM21AA0101.yaml}（RESULT_KEY="FROM_FILE1"）の 2 ファイル<br>
+     * When:  getMessageWithoutCache(base, "RM21AA0101/message", RESPONSE_BODY_MESSAGES, "RM21AA0101") を呼ぶ<br>
+     * Then:  ディレクトリ配下の message.yaml が読まれ、RESULT_KEY が "FROM_DIR01" になること
+     * </p>
+     */
+    @Test
+    public void getMessageWithoutCache_readsMessageYamlUnderRequestIdDirectory() {
+        // Given: 囮の <リクエストID>.yaml が存在すること（この前提が崩れると本テストは空振りになる）
+        assertTrue("囮ファイル <リクエストID>.yaml が存在すること",
+                new File(SEND_SYNC_DIR + "/RM21AA0101.yaml").isFile());
+        assertTrue("読み込み単位 <リクエストID>/message.yaml が存在すること",
+                new File(SEND_SYNC_DIR + "/RM21AA0101/message.yaml").isFile());
+
+        // When
+        MessagePool result = sut.getMessageWithoutCache(
+                SEND_SYNC_DIR, "RM21AA0101/message",
+                DataType.RESPONSE_BODY_MESSAGES, "RM21AA0101");
+
+        // Then
+        assertNotNull("リクエストID と同じ名前のディレクトリ配下の message.yaml が読めること", result);
+        List<DataRecord> messages = ((RequestTestingMessagePool) result).getExpectedMessageList();
+        assertThat("電文が 1 件取得できること", messages.size(), is(1));
+        assertThat("<リクエストID>/message.yaml が読み込み単位になること"
+                        + "（囮の <リクエストID>.yaml が読まれると FROM_FILE1 になる）",
+                messages.get(0).getString("RESULT_KEY"), is("FROM_DIR01"));
+    }
+
+    /**
+     * getListMap: 第2引数 &lt;ファイル名&gt;/&lt;読み込み単位の名前&gt; が
+     * &lt;ディレクトリ&gt;/&lt;ファイル名&gt;/&lt;読み込み単位の名前&gt;.yaml に解決されること。
+     *
+     * <p>
+     * 何を担保するか: テストコードと別のディレクトリにあるテストデータを読む目的で
+     * {@code TestDataParser} を直接使うとき、第1引数のディレクトリ・第2引数の
+     * {@code <ファイル名>/<読み込み単位の名前>} が {@code <ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml}
+     * に解決されること。{@code <ディレクトリ>/<ファイル名>.yaml} は読まれない。<br>
+     * 根拠: implementation/class_unit_test/component.rst:313<br>
+     * Given: {@code <dir>/CommonTestData/employees.yaml}（list_maps の id=params）と、
+     *        囮の {@code <dir>/CommonTestData.yaml}（同じ id=params で別の値）<br>
+     * When:  getListMap(dir, "CommonTestData/employees", "params") を呼ぶ<br>
+     * Then:  {@code <dir>/CommonTestData/employees.yaml} の内容が返ること
+     * </p>
+     */
+    @Test
+    public void getListMap_resolvesFileNameAndUnitNameToNestedYaml() {
+        // Given: 囮の <ディレクトリ>/<ファイル名>.yaml が存在すること（この前提が崩れると本テストは空振りになる）
+        assertTrue("囮ファイル <ディレクトリ>/<ファイル名>.yaml が存在すること",
+                new File(OTHER_DIR + "/CommonTestData.yaml").isFile());
+        assertTrue("読み込み単位 <ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml が存在すること",
+                new File(OTHER_DIR + "/CommonTestData/employees.yaml").isFile());
+
+        // When
+        List<Map<String, String>> result = sut.getListMap(OTHER_DIR, "CommonTestData/employees", "params");
+
+        // Then
+        assertThat("<ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml が読まれること"
+                        + "（囮の <ディレクトリ>/<ファイル名>.yaml が読まれると 1 件になる）",
+                result.size(), is(2));
+        assertThat(result.get(0).get("EMP_ID"), is("00001"));
+        assertThat(result.get(0).get("EMP_NAME"), is("山田太郎"));
+        assertThat(result.get(1).get("EMP_ID"), is("00002"));
+        assertThat(result.get(1).get("EMP_NAME"), is("鈴木花子"));
+    }
+
+    /**
+     * {@link MessagePool} の FW 制御ヘッダを取得する。
+     *
+     * <p>
+     * {@code MessagePool#getFwHeader} はパッケージプライベートのため、リフレクションで
+     * {@code fwHeader} フィールドを直接取得する（既存テストと同じ手法）。
+     * </p>
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> fwHeaderOf(MessagePool pool) throws Exception {
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        return (Map<String, String>) fwHeaderField.get(pool);
     }
 }
