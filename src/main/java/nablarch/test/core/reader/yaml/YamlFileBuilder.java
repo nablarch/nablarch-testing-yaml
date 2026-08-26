@@ -118,34 +118,38 @@ public final class YamlFileBuilder {
      */
     static void buildFragmentsForFile(DataFile file, List<Object> records,
                                       List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, false, false, interps);
+        buildFragmentsInternal(file, records, false, true, false, interps);
     }
 
     /**
      * 受信メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
      *
-     * <p>{@code record_type} は記述された値によらず {@code "default"} に固定し、
-     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。
+     * <p>長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。
      * {@code record_type} に特別な予約値はなく、{@code records} の全レコードがフラグメントになる。
-     * FW 制御ヘッダの扱いは呼び出し元のセクションによって異なり、{@code messages} では
+     * {@code record_type} の扱いは呼び出し元のセクションによって異なるため {@code keepRecordType} で指定する
+     * （{@code messages} は {@code false}、同期応答メッセージ送信の 4 セクションは {@code true}）。
+     * FW 制御ヘッダの扱いも呼び出し元のセクションによって異なり、{@code messages} では
      * {@code fw_header:} マップから取得し、{@code expected_request_header_messages} 等では
      * {@code fw_header:} を使わずヘッダ項目も {@code records} の {@code fields}／{@code rows} に記述する。
      * いずれの場合も本メソッドは {@code records} を一様に扱う。</p>
      *
-     * @param file    ファイル
-     * @param records 生のレコードレイアウト Map 群（YAML 順）
-     * @param interps 使用するインタープリタリスト
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     *                       （{@code false} の場合は記載値によらず {@code "default"}）
+     * @param interps        使用するインタープリタリスト
      */
-    static void buildFragmentsForMessage(DataFile file, List<Object> records,
+    static void buildFragmentsForMessage(DataFile file, List<Object> records, boolean keepRecordType,
                                          List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, true, false, interps);
+        buildFragmentsInternal(file, records, true, keepRecordType, false, interps);
     }
 
     /**
      * 送信同期メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
      *
-     * <p>{@code record_type} は記述された値によらず {@code "default"} に固定し、
-     * 長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
+     * <p>長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
+     * {@code record_type} の扱いは呼び出し元のセクションによって異なるため {@code keepRecordType} で指定する
+     * （同期応答メッセージ送信の 4 セクションは {@code true}）。
      * 各値行に連番（1 始まりの行インデックス）を {@link DataFileFragment#FIRST_FIELD_NO} として付与する。
      * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
      * 値から切り離して {@code FIRST_FIELD_NO} に隔離して保持する。YAML には No 列が存在しないため、
@@ -155,38 +159,43 @@ public final class YamlFileBuilder {
      * {@code remove()} し、期待電文と実電文はリストの位置（インデックス）で対応付ける。
      * 取り出した連番は失敗時メッセージ（{@code test no=[...]}）にのみ使われる。</p>
      *
-     * @param file    ファイル
-     * @param records 生のレコードレイアウト Map 群（YAML 順）
-     * @param interps 使用するインタープリタリスト
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     *                       （{@code false} の場合は記載値によらず {@code "default"}）
+     * @param interps        使用するインタープリタリスト
      */
-    static void buildFragmentsForSendSync(DataFile file, List<Object> records,
+    static void buildFragmentsForSendSync(DataFile file, List<Object> records, boolean keepRecordType,
                                           List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, true, true, interps);
+        buildFragmentsInternal(file, records, true, keepRecordType, true, interps);
     }
 
     /**
      * レコード群から {@link DataFileFragment} を組み立てる共通実装。
      *
-     * @param file      ファイル
-     * @param records   生のレコードレイアウト Map 群（YAML 順）
-     * @param messaging true の場合メッセージ系経路として、record_type を {@code "default"} に固定し、
-     *                  長さ未指定フィールドを {@code "-"}（動的計算）として扱う
-     * @param withId    true の場合、各値行に連番（1 始まりの行インデックス）を
-     *                  {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
-     *                  {@code withId=true} は {@code messaging=true} のときのみ有効。
-     * @param interps   使用するインタープリタリスト
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param messaging      true の場合メッセージ系経路として、長さ未指定フィールドを
+     *                       {@code "-"}（動的計算）として扱う
+     * @param keepRecordType true の場合 {@code record_type} の記載値をレコード種別として保持する
+     *                       （未指定の場合のみ {@code "default"}）。false の場合は記載値によらず
+     *                       {@code "default"} になる（{@code messages} 経路）。
+     * @param withId         true の場合、各値行に連番（1 始まりの行インデックス）を
+     *                       {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
+     *                       {@code withId=true} は {@code messaging=true} のときのみ有効。
+     * @param interps        使用するインタープリタリスト
      */
     private static void buildFragmentsInternal(DataFile file, List<Object> records,
-                                               boolean messaging, boolean withId,
+                                               boolean messaging, boolean keepRecordType, boolean withId,
                                                List<TestDataInterpreter> interps) {
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
             String recordType = toStr(record.get(FIELD_RECORD_TYPE));
 
             DataFileFragment fragment = file.getNewFragment();
-            fragment.setRecordType(messaging
-                    ? DEFAULT_RECORD_TYPE
-                    : (recordType != null ? recordType : DEFAULT_RECORD_TYPE));
+            fragment.setRecordType(keepRecordType && recordType != null
+                    ? recordType
+                    : DEFAULT_RECORD_TYPE);
 
             List<Object> fields = getList(record, FIELD_FIELDS);
             List<String> names = new ArrayList<String>(fields.size());

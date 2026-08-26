@@ -685,11 +685,14 @@ public class YamlTestDataParserTest {
      * <p>
      * {@code record_type} に特別な予約値はなく、値が "FW_HEADER" のレコードも読み飛ばされない。
      * このセクションは {@code fw_header:} を使わず、ヘッダ項目も {@code records} の fields/rows に記述するため、
-     * 読み飛ばされると期待電文が 0 件の空メッセージになってしまう<br>
+     * 読み飛ばされると期待電文が 0 件の空メッセージになってしまう。
+     * また同期応答メッセージ送信の 4 データタイプでは記載した値がそのままレコード種別になるため、
+     * "FW_HEADER" は単に "FW_HEADER" というレコード種別になる<br>
      * Given: expected_request_header_messages の id=req001 に record_type: FW_HEADER のレコードがあり、
      *        requestId/userId/resendFlag/resultCode の値行が 1 行記述されている<br>
      * When:  getMessageWithoutCache(dir, resource, EXPECTED_REQUEST_HEADER_MESSAGES, "req001") を呼ぶ<br>
-     * Then:  RequestTestingMessagePool が返り、期待電文 1 件の各フィールドに記述どおりの値が入っていること
+     * Then:  RequestTestingMessagePool が返り、期待電文 1 件のレコード種別が "FW_HEADER"、
+     *        各フィールドに記述どおりの値が入っていること
      * </p>
      */
     @Test
@@ -707,7 +710,8 @@ public class YamlTestDataParserTest {
         List<DataRecord> messages = ((RequestTestingMessagePool) result).getExpectedMessageList();
         assertThat("FW_HEADER レコードも読み飛ばされず期待電文が 1 件取得できること", messages.size(), is(1));
         DataRecord message = messages.get(0);
-        assertThat(message.getRecordType(), is("default"));
+        assertThat("送信同期4データタイプでは record_type の記載値がそのままレコード種別になること",
+                message.getRecordType(), is("FW_HEADER"));
         assertThat(message.getString("requestId"), is("0000000001"));
         assertThat(message.getString("userId"), is("testUser01"));
         assertThat(message.getString("resendFlag"), is("0"));
@@ -810,11 +814,13 @@ public class YamlTestDataParserTest {
      * フラグメントになり、FW 制御ヘッダは fw_header: マップから別途取得されること。
      *
      * <p>
-     * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する<br>
+     * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する。
+     * {@code messages}（MESSAGE）では記載した値は使われず、デフォルトのレコード種別（"default"）になる
+     * （記載値がそのままレコード種別になるのは同期応答メッセージ送信の 4 データタイプのみ）<br>
      * Given: messages の id=fwHeaderRecordType001 が fw_header: マップ（requestId/userId）と
      *        record_type が "FW_HEADER"・"BODY" の 2 レコード（各 10 バイト）を持つ<br>
      * When:  getMessage(dir, resource, "fwHeaderRecordType001") を呼ぶ<br>
-     * Then:  2 レコードとも電文本文になり（record_type は "default" に固定）、
+     * Then:  2 レコードとも電文本文になり（record_type は "default" になる）、
      *        fw_header: の値は本文に混ざらず FW 制御ヘッダとして取得できること
      * </p>
      */
@@ -827,8 +833,10 @@ public class YamlTestDataParserTest {
         assertNotNull(result);
         List<DataRecord> messages = ((RequestTestingMessagePool) result).getExpectedMessageList();
         assertThat("FW_HEADER レコードも読み飛ばされず 2 件の電文本文になること", messages.size(), is(2));
-        assertThat("メッセージ系はレコード種別が \"default\" に固定されること",
+        assertThat("messages では記載値が使われず \"default\" になること",
                 messages.get(0).getRecordType(), is("default"));
+        assertThat("messages では記載値が使われず \"default\" になること",
+                messages.get(1).getRecordType(), is("default"));
         assertThat(messages.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
         assertThat(messages.get(1).getString("SEARCH_KEY"), is("SEARCHKEY1"));
 
@@ -855,10 +863,12 @@ public class YamlTestDataParserTest {
      * フラグメントになり、値行に連番が付与されること。
      *
      * <p>
+     * "FW_HEADER" は予約値ではないため、送信同期経路では単に "FW_HEADER" というレコード種別になる<br>
      * Given: response_body_messages の group_id=fwHeaderSync に record_type が "FW_HEADER"（値行1行）と
      *        "BODY"（値行2行）の 2 レコード（各 10 バイト）がある<br>
      * When:  getSendSyncMessage(dir, resource, "[fwHeaderSync]", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
-     * Then:  FW_HEADER レコードの値行を含む 3 件が電文本文になり、
+     * Then:  FW_HEADER レコードの値行を含む 3 件が電文本文になり、記載どおりのレコード種別
+     *        （"FW_HEADER"／"BODY"）が保持され、
      *        連番（FIRST_FIELD_NO）がフラグメントごとに 1 始まりで付与されていること
      * </p>
      */
@@ -878,6 +888,14 @@ public class YamlTestDataParserTest {
         assertThat(messages.get(1).getString("BODY_KEY"), is("BODYKEY001"));
         assertThat(messages.get(2).getString("BODY_KEY"), is("BODYKEY002"));
 
+        // Then: "FW_HEADER" は予約値ではなく、記載どおりのレコード種別になること
+        assertThat("record_type: FW_HEADER が単に \"FW_HEADER\" というレコード種別になること",
+                messages.get(0).getRecordType(), is("FW_HEADER"));
+        assertThat("record_type: BODY が記載どおりのレコード種別になること",
+                messages.get(1).getRecordType(), is("BODY"));
+        assertThat("record_type: BODY が記載どおりのレコード種別になること",
+                messages.get(2).getRecordType(), is("BODY"));
+
         // Then: 連番はフラグメント単位で 1 始まり（現行挙動）
         assertThat("FW_HEADER レコードの値行にも連番が付与されること",
                 messages.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
@@ -885,6 +903,81 @@ public class YamlTestDataParserTest {
                 messages.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
         assertThat("BODY レコードの 2 行目の連番が \"2\" にインクリメントされること",
                 messages.get(2).getString(DataFileFragment.FIRST_FIELD_NO), is("2"));
+    }
+
+    /**
+     * getMessageWithoutCache: 同期応答メッセージ送信の 4 データタイプでは
+     * {@code record_type} の記載値がそのままレコード種別になること。
+     *
+     * <p>
+     * 電文のレコード種別の扱いはデータタイプによって異なる。{@code EXPECTED_REQUEST_HEADER_MESSAGES}／
+     * {@code EXPECTED_REQUEST_BODY_MESSAGES}／{@code RESPONSE_HEADER_MESSAGES}／
+     * {@code RESPONSE_BODY_MESSAGES} の 4 データタイプでは記載した値がそのままレコード種別になる。
+     * "FW_HEADER" も予約値ではないため、単に "FW_HEADER" というレコード種別になる<br>
+     * Given: messageData.yaml の送信同期 4 セクションに record_type がそれぞれ
+     *        "FW_HEADER"／"BODY"／"HEADER"／"BODY" のエントリがある<br>
+     * When:  各データタイプで getMessageWithoutCache を呼ぶ<br>
+     * Then:  取得した電文のレコード種別が記載値と一致すること
+     * </p>
+     */
+    @Test
+    public void getMessageWithoutCache_recordTypeIsKeptForSendSyncDataTypes() {
+        // Given
+        final String resource = "YamlTestDataParserTest/messageData";
+
+        // When / Then
+        assertThat("expected_request_header_messages: 記載値 \"FW_HEADER\" が保持されること",
+                firstRecordTypeOf(sut.getMessageWithoutCache(
+                        DIR, resource, DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "req001")),
+                is("FW_HEADER"));
+        assertThat("expected_request_body_messages: 記載値 \"BODY\" が保持されること",
+                firstRecordTypeOf(sut.getMessageWithoutCache(
+                        DIR, resource, DataType.EXPECTED_REQUEST_BODY_MESSAGES, "req001")),
+                is("BODY"));
+        assertThat("response_header_messages: 記載値 \"HEADER\" が保持されること",
+                firstRecordTypeOf(sut.getMessageWithoutCache(
+                        DIR, resource, DataType.RESPONSE_HEADER_MESSAGES, "resp001")),
+                is("HEADER"));
+        assertThat("response_body_messages: 記載値 \"BODY\" が保持されること",
+                firstRecordTypeOf(sut.getMessageWithoutCache(
+                        DIR, resource, DataType.RESPONSE_BODY_MESSAGES, "resp001")),
+                is("BODY"));
+    }
+
+    /**
+     * getMessageWithoutCache: {@code MESSAGE}（{@code messages}）では
+     * {@code record_type} の記載値が使われず "default" になること。
+     *
+     * <p>
+     * 送信同期 4 データタイプとの対比を固定する。{@code messages} は記載値によらず
+     * デフォルトのレコード種別（"default"）になる<br>
+     * Given: messages の id=req001 に record_type: BODY のレコードがある<br>
+     * When:  getMessageWithoutCache(dir, resource, MESSAGE, "req001") を呼ぶ<br>
+     * Then:  レコード種別が記載値 "BODY" ではなく "default" になること
+     * </p>
+     */
+    @Test
+    public void getMessageWithoutCache_recordTypeIsDefaultForMessages() {
+        // Given / When
+        MessagePool result = sut.getMessageWithoutCache(
+                DIR, "YamlTestDataParserTest/messageData", DataType.MESSAGE, "req001");
+
+        // Then
+        assertThat("messages では記載値 \"BODY\" が使われず \"default\" になること",
+                firstRecordTypeOf(result), is("default"));
+    }
+
+    /**
+     * メッセージプールの先頭電文のレコード種別を取り出す。
+     *
+     * @param pool メッセージプール
+     * @return 先頭電文のレコード種別
+     */
+    private static String firstRecordTypeOf(MessagePool pool) {
+        assertNotNull(pool);
+        List<DataRecord> messages = ((RequestTestingMessagePool) pool).getExpectedMessageList();
+        assertThat("電文が 1 件以上取得できること", messages.isEmpty(), is(false));
+        return messages.get(0).getRecordType();
     }
 
     /**

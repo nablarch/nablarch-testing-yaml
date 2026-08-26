@@ -84,7 +84,7 @@ public final class YamlSection {
     /** messages エントリ直下の FW 制御ヘッダマップキー */
     public static final String FIELD_FW_HEADER = "fw_header";
 
-    /** レコードタイプ名。record_type が未指定の場合のフォールバック、およびメッセージ系で固定値として使用する。 */
+    /** レコードタイプ名。record_type が未指定の場合のフォールバック、および {@code messages} で記載値の代わりに使用する。 */
     public static final String DEFAULT_RECORD_TYPE = "default";
 
     // ========================================================================
@@ -282,6 +282,29 @@ public final class YamlSection {
     public static boolean groupMatches(String rawGroupId, String requestedFormatted) {
         String formatted = rawGroupId != null ? "[" + rawGroupId + "]" : "";
         return formatted.equals(requestedFormatted);
+    }
+
+    /**
+     * 指定されたセクションキーが同期応答メッセージ送信で使う 4 セクション
+     * （{@code expected_request_header_messages}／{@code expected_request_body_messages}／
+     * {@code response_header_messages}／{@code response_body_messages}）のいずれかかを判定する。
+     *
+     * <p>
+     * 電文のレコード種別の扱いはセクションによって異なる。この 4 セクションでは
+     * {@code record_type} に記載した値がそのままレコード種別になる（{@code "FW_HEADER"} のような
+     * 予約値はなく、記載どおりのレコード種別として扱われる）。
+     * 一方 {@code messages} では記載した値は使われず、デフォルトのレコード種別
+     * （{@link #DEFAULT_RECORD_TYPE}）になる。
+     * </p>
+     *
+     * @param sectionKey セクションキー
+     * @return 同期応答メッセージ送信の 4 セクションのいずれかの場合 {@code true}
+     */
+    public static boolean isSendSyncMessageSectionKey(String sectionKey) {
+        return KEY_EXPECTED_REQUEST_HEADER_MESSAGES.equals(sectionKey)
+                || KEY_EXPECTED_REQUEST_BODY_MESSAGES.equals(sectionKey)
+                || KEY_RESPONSE_HEADER_MESSAGES.equals(sectionKey)
+                || KEY_RESPONSE_BODY_MESSAGES.equals(sectionKey);
     }
 
     /**

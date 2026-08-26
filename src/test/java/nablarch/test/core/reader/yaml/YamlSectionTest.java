@@ -86,6 +86,45 @@ public class YamlSectionTest {
     }
 
     // ========================================================================
+    // isSendSyncMessageSectionKey: 送信同期4セクションだけが true になること
+    // ========================================================================
+
+    /**
+     * [YamlSection] isSendSyncMessageSectionKey: 同期応答メッセージ送信で使う 4 セクションのみ
+     * {@code true} が返ること。
+     *
+     * <p>
+     * この 4 セクションでは {@code record_type} の記載値がそのままレコード種別になり、
+     * {@code messages} では記載値が使われず "default" になる。その振り分けの判定を固定する<br>
+     * Given: 送信同期 4 セクションのキー・{@code messages}・ファイル系セクションキー・null<br>
+     * When:  YamlSection.isSendSyncMessageSectionKey を呼ぶ<br>
+     * Then:  送信同期 4 セクションのみ true、それ以外は false が返ること
+     * </p>
+     */
+    @Test
+    public void isSendSyncMessageSectionKey_onlySendSyncFourSectionsAreTrue() {
+        // When / Then: 送信同期4セクション
+        assertThat("expected_request_header_messages は送信同期セクションであること",
+                YamlSection.isSendSyncMessageSectionKey("expected_request_header_messages"), is(true));
+        assertThat("expected_request_body_messages は送信同期セクションであること",
+                YamlSection.isSendSyncMessageSectionKey("expected_request_body_messages"), is(true));
+        assertThat("response_header_messages は送信同期セクションであること",
+                YamlSection.isSendSyncMessageSectionKey("response_header_messages"), is(true));
+        assertThat("response_body_messages は送信同期セクションであること",
+                YamlSection.isSendSyncMessageSectionKey("response_body_messages"), is(true));
+
+        // When / Then: それ以外
+        assertThat("messages は送信同期セクションではないこと",
+                YamlSection.isSendSyncMessageSectionKey("messages"), is(false));
+        assertThat("setup_files は送信同期セクションではないこと",
+                YamlSection.isSendSyncMessageSectionKey("setup_files"), is(false));
+        assertThat("expected_files は送信同期セクションではないこと",
+                YamlSection.isSendSyncMessageSectionKey("expected_files"), is(false));
+        assertThat("null は送信同期セクションではないこと",
+                YamlSection.isSendSyncMessageSectionKey(null), is(false));
+    }
+
+    // ========================================================================
     // toStr: 非 null 値の toString が返ること
     // ========================================================================
 

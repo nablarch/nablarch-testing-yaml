@@ -404,16 +404,17 @@ public class YamlMessageBuilderTest {
 
     /**
      * [YamlMessageBuilder] buildMessagePool: record_type の値が "FW_HEADER" のレコードも読み飛ばされず、
-     * レコード種別 "default" のフラグメントとして電文本文になること。
+     * レコード種別 "FW_HEADER" のフラグメントとして電文本文になること。
      *
      * <p>
-     * {@code record_type} に特別な予約値はなく、値は常に "default" に置き換えられる。
-     * {@code expected_request_header_messages} は {@code fw_header:} を使わずヘッダ項目も
+     * {@code record_type} に特別な予約値はない。{@code expected_request_header_messages} は
+     * 同期応答メッセージ送信の 4 セクションの1つであり、記載した値がそのままレコード種別になる。
+     * またこのセクションは {@code fw_header:} を使わずヘッダ項目も
      * {@code records} の fields/rows に記述するため、読み飛ばすと電文本文が 0 件になってしまう<br>
      * Given: expected_request_header_messages の id=req001 に record_type: FW_HEADER のレコードが
      *        requestId 等 4 フィールド・値行 1 行で定義されている<br>
      * When:  buildMessagePool を呼ぶ<br>
-     * Then:  FixedLengthFile に 1 フラグメント（レコード種別 "default"）が構築され、
+     * Then:  FixedLengthFile に 1 フラグメント（レコード種別 "FW_HEADER"）が構築され、
      *        値行が記述どおりの電文本文としてレンダリングされること
      * </p>
      */
@@ -431,13 +432,71 @@ public class YamlMessageBuilderTest {
         assertNotNull(file);
         LayoutDefinition layout = file.createLayout();
         assertThat("record_type: FW_HEADER のレコードもフラグメントになること", layout.getRecords().size(), is(1));
-        assertThat("レコードタイプが 'default' に固定されること", layout.getRecords().get(0).getTypeName(), is("default"));
+        assertThat("送信同期4セクションでは record_type の記載値がそのままレコード種別になること",
+                layout.getRecords().get(0).getTypeName(), is("FW_HEADER"));
 
         // Then: 値行が電文本文としてレンダリングされること
         List<DataRecord> messages = ((RequestTestingMessagePool) pool).getExpectedMessageList();
         assertThat("期待電文が 1 件取得できること", messages.size(), is(1));
         assertThat(messages.get(0).getString("requestId"), is("0000000001"));
         assertThat(messages.get(0).getString("userId"), is("testUser01"));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code messages} では record_type の記載値が使われず
+     * "default" になること。
+     *
+     * <p>
+     * 送信同期 4 セクションとの対比を固定する。セクションキーが {@code messages} の場合は
+     * 記載値によらずデフォルトのレコード種別（"default"）になる<br>
+     * Given: messages の id=req001 に record_type: BODY のレコードがある<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  レコード種別が記載値 "BODY" ではなく "default" になること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_recordTypeIsDefaultForMessages() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool pool = buildMessagePool(yaml, "messages", "req001", DIR);
+        assertNotNull(pool);
+
+        // Then
+        LayoutDefinition layout = sourceOf(pool).createLayout();
+        assertThat("messages では記載値 \"BODY\" が使われず \"default\" になること",
+                layout.getRecords().get(0).getTypeName(), is("default"));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: 送信同期経路では record_type の記載値が
+     * そのままレコード種別になること。
+     *
+     * <p>
+     * {@code response_body_messages} は同期応答メッセージ送信の 4 セクションの1つであり、
+     * 記載した値がそのままレコード種別になる<br>
+     * Given: response_body_messages の group_id=grp1 に record_type: BODY のレコードがある<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "[grp1]", path) を呼ぶ<br>
+     * Then:  電文のレコード種別が記載値 "BODY" になること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncMessageList_recordTypeIsKeptAsIs() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
+                yaml, "response_body_messages", "[grp1]", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat(result.size(), is(1));
+        List<DataRecord> messages = result.get(0).getExpectedMessageList();
+        assertThat("電文が 1 件取得できること", messages.size(), is(1));
+        assertThat("送信同期4セクションでは record_type の記載値がそのままレコード種別になること",
+                messages.get(0).getRecordType(), is("BODY"));
     }
 
     // ========================================================================

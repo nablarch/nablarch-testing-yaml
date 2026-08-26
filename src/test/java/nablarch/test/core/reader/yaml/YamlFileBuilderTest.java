@@ -43,7 +43,7 @@ import static org.junit.Assert.fail;
  * あわせて、メッセージ系のレコードレイアウト組み立てメソッド
  * （{@link YamlFileBuilder#buildFragmentsForMessage}／{@link YamlFileBuilder#buildFragmentsForSendSync}）
  * も本クラスで検証する。これらは package-private であり、同一パッケージに属する本クラスからのみ
- * 直接呼び出せる。ここでは分岐単位の挙動（{@code record_type} の固定・長さ未指定フィールドの動的計算・
+ * 直接呼び出せる。ここでは分岐単位の挙動（{@code record_type} の保持／"default" 化・長さ未指定フィールドの動的計算・
  * 値行への連番付与）を細かく固定する。利用者が実際に通る公開 API 経路
  * （{@code YamlTestDataParser#getMessage} 等）での担保は {@code YamlTestDataParserTest} が、
  * {@link YamlMessageBuilder} 経由の結合検証は {@code YamlMessageBuilderTest} が担う。
@@ -718,10 +718,11 @@ public class YamlFileBuilderTest {
      *
      * <p>
      * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する。
-     * よって "FW_HEADER" という値も他の値と同じく装飾的な名前として扱われる<br>
+     * よって "FW_HEADER" という値も他の値と同じく扱われ、読み飛ばされない。
+     * {@code keepRecordType=false}（{@code messages} 経路）では記載値は使われず "default" になる<br>
      * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
-     * When:  buildFragmentsForMessage を呼ぶ<br>
-     * Then:  2 フラグメントが構築され、いずれも record_type が "default" に固定され、
+     * When:  buildFragmentsForMessage を keepRecordType=false で呼ぶ<br>
+     * Then:  2 フラグメントが構築され、いずれも record_type が "default" になり、
      *        両レコードとも電文本文としてレンダリングされること
      * </p>
      */
@@ -735,13 +736,17 @@ public class YamlFileBuilderTest {
         file.setDirective("text-encoding", "MS932");
 
         // When
-        YamlFileBuilder.buildFragmentsForMessage(file, records, Collections.<TestDataInterpreter>emptyList());
+        // keepRecordType=false: messages（MESSAGE）経路は記載値を使わず "default" になる
+        YamlFileBuilder.buildFragmentsForMessage(file, records, false,
+                Collections.<TestDataInterpreter>emptyList());
 
         // Then: レコード定義はフラグメント 1 件につき 1 件生成される
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
         assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", layoutRecords.size(), is(2));
-        assertThat("1つ目のレコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
-        assertThat("2つ目のレコード種別が 'default' に固定されること", layoutRecords.get(1).getTypeName(), is("default"));
+        assertThat("messages では記載値が使われず 'default' になること",
+                layoutRecords.get(0).getTypeName(), is("default"));
+        assertThat("messages では記載値が使われず 'default' になること",
+                layoutRecords.get(1).getTypeName(), is("default"));
 
         // Then: 値行が電文本文としてレンダリングされること
         List<DataRecord> dataRecords = file.toDataRecords();
@@ -777,13 +782,14 @@ public class YamlFileBuilderTest {
         file.setDirective("text-encoding", "MS932");
 
         // When
-        YamlFileBuilder.buildFragmentsForMessage(file, Arrays.<Object>asList(record),
+        YamlFileBuilder.buildFragmentsForMessage(file, Arrays.<Object>asList(record), false,
                 Collections.<TestDataInterpreter>emptyList());
 
         // Then
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
         assertThat("length 未指定の FW_HEADER レコードも 1 フラグメント構築されること", layoutRecords.size(), is(1));
-        assertThat("レコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
+        assertThat("messages では記載値が使われず 'default' になること",
+                layoutRecords.get(0).getTypeName(), is("default"));
 
         List<FieldDefinition> fields = layoutRecords.get(0).getFields();
         assertThat("1つ目のフィールドは先頭バイトから始まること", fields.get(0).getPosition(), is(1));
@@ -798,12 +804,16 @@ public class YamlFileBuilderTest {
 
     /**
      * [YamlFileBuilder] buildFragmentsForSendSync: record_type の値が "FW_HEADER" のレコードも
-     * 読み飛ばされずフラグメントとして構築され、値行に連番が付与されること。
+     * 読み飛ばされず、記載どおりのレコード種別 "FW_HEADER" のフラグメントとして構築され、
+     * 値行に連番が付与されること。
      *
      * <p>
+     * "FW_HEADER" は予約値ではない。{@code keepRecordType=true}（同期応答メッセージ送信の 4 セクション）では
+     * 記載した値がそのままレコード種別になるため、単に "FW_HEADER" というレコード種別になる<br>
      * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
-     * When:  buildFragmentsForSendSync を呼ぶ<br>
-     * Then:  2 フラグメントが構築され、FW_HEADER レコードの値行にも連番（FIRST_FIELD_NO="1"）が付与されること
+     * When:  buildFragmentsForSendSync を keepRecordType=true で呼ぶ<br>
+     * Then:  2 フラグメントが構築され、レコード種別が記載どおり "FW_HEADER"／"BODY" になり、
+     *        FW_HEADER レコードの値行にも連番（FIRST_FIELD_NO="1"）が付与されること
      * </p>
      */
     @Test
@@ -816,13 +826,17 @@ public class YamlFileBuilderTest {
         file.setDirective("text-encoding", "MS932");
 
         // When
-        YamlFileBuilder.buildFragmentsForSendSync(file, records, Collections.<TestDataInterpreter>emptyList());
+        // keepRecordType=true: 送信同期4セクションは record_type の記載値がそのままレコード種別になる
+        YamlFileBuilder.buildFragmentsForSendSync(file, records, true,
+                Collections.<TestDataInterpreter>emptyList());
 
         // Then
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
         assertThat("FW_HEADER レコードも読み飛ばされず 2 フラグメント構築されること", layoutRecords.size(), is(2));
-        assertThat("1つ目のレコード種別が 'default' に固定されること", layoutRecords.get(0).getTypeName(), is("default"));
-        assertThat("2つ目のレコード種別が 'default' に固定されること", layoutRecords.get(1).getTypeName(), is("default"));
+        assertThat("1つ目のレコード種別が記載どおり 'FW_HEADER' になること",
+                layoutRecords.get(0).getTypeName(), is("FW_HEADER"));
+        assertThat("2つ目のレコード種別が記載どおり 'BODY' になること",
+                layoutRecords.get(1).getTypeName(), is("BODY"));
 
         List<DataRecord> dataRecords = file.toDataRecords();
         assertThat("FW_HEADER レコードの値行も電文本文になること", dataRecords.size(), is(2));
@@ -832,6 +846,41 @@ public class YamlFileBuilderTest {
                 dataRecords.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
         assertThat("BODY レコードの値行にも連番（レコード内 1 始まり）が付与されること",
                 dataRecords.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFragmentsForSendSync: {@code keepRecordType=false} の場合は
+     * record_type の記載値が使われず "default" になること。
+     *
+     * <p>
+     * 送信同期の組み立て経路であっても、セクションキーが {@code messages} の場合
+     * （{@code getSendSyncMessage} を DataType.MESSAGE で呼ぶ経路）は記載値を使わない。
+     * レコード種別の扱いが引数で切り替わることを固定する<br>
+     * Given: records に record_type が "FW_HEADER" と "BODY" の 2 レコード<br>
+     * When:  buildFragmentsForSendSync を keepRecordType=false で呼ぶ<br>
+     * Then:  いずれのレコード種別も "default" になること
+     * </p>
+     */
+    @Test
+    public void buildFragmentsForSendSync_recordTypeIsDefaultWhenNotKept() {
+        // Given
+        List<Object> records = Arrays.<Object>asList(
+                messageRecord("FW_HEADER", "requestId", 10, "0000000001"),
+                messageRecord("BODY", "SEARCH_KEY", 10, "SEARCHKEY1"));
+        MockMessages file = new MockMessages("dummy/sendSync.dat");
+        file.setDirective("text-encoding", "MS932");
+
+        // When
+        YamlFileBuilder.buildFragmentsForSendSync(file, records, false,
+                Collections.<TestDataInterpreter>emptyList());
+
+        // Then
+        List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
+        assertThat("2 フラグメント構築されること", layoutRecords.size(), is(2));
+        assertThat("keepRecordType=false では記載値が使われず 'default' になること",
+                layoutRecords.get(0).getTypeName(), is("default"));
+        assertThat("keepRecordType=false では記載値が使われず 'default' になること",
+                layoutRecords.get(1).getTypeName(), is("default"));
     }
 
     /**
@@ -855,7 +904,9 @@ public class YamlFileBuilderTest {
         file.setDirective("text-encoding", "MS932");
 
         // When
-        YamlFileBuilder.buildFragmentsForSendSync(file, records, Collections.<TestDataInterpreter>emptyList());
+        // keepRecordType=true: 送信同期4セクションは record_type の記載値がそのままレコード種別になる
+        YamlFileBuilder.buildFragmentsForSendSync(file, records, true,
+                Collections.<TestDataInterpreter>emptyList());
 
         // Then
         List<DataRecord> dataRecords = file.toDataRecords();
@@ -882,10 +933,10 @@ public class YamlFileBuilderTest {
      * そのままレコード種別名として採用されること。
      *
      * <p>
-     * メッセージ系（{@code buildFragmentsForMessage}／{@code buildFragmentsForSendSync}）は
-     * record_type を常に "default" に固定するが、通常ファイル経路（{@code setup_files}／
-     * {@code expected_files}）は記述された値をそのまま使う。"FW_HEADER" もこの経路では
-     * 予約値ではなく普通の文字列として扱われる、という非対称を固定する<br>
+     * {@code messages} 経路（{@code keepRecordType=false}）は record_type の記載値を使わず
+     * "default" にするが、通常ファイル経路（{@code setup_files}／{@code expected_files}）は
+     * 記述された値をそのまま使う。"FW_HEADER" もこの経路では予約値ではなく普通の文字列として
+     * 扱われる、という非対称を固定する<br>
      * Given: setup_files の fwHeaderRecordTypeInFile グループに record_type が "FW_HEADER" と
      *        "DATA" の 2 レコード（レコード長はいずれも 10 バイト）<br>
      * When:  buildFileList(yaml, "setup_files", "[fwHeaderRecordTypeInFile]", path) を呼ぶ<br>

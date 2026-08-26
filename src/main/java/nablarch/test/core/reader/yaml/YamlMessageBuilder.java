@@ -86,7 +86,8 @@ public final class YamlMessageBuilder {
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
-                FixedLengthFile file = buildMessageBodyFile(new FixedLengthFile(id), map, interps);
+                FixedLengthFile file = buildMessageBodyFile(
+                        new FixedLengthFile(id), map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps);
                 Map<String, String> fwHeader = useFwHeader
                         ? convertFwHeader(map.get(FIELD_FW_HEADER), id)
                         : Collections.<String, String>emptyMap();
@@ -115,7 +116,8 @@ public final class YamlMessageBuilder {
                 continue;
             }
             String id = toStr(map.get(FIELD_ID));
-            MockMessages file = buildSendSyncFile(id, map, interps);
+            MockMessages file = buildSendSyncFile(
+                    id, map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps);
             RequestTestingMessagePool pool =
                     new RequestTestingMessagePool(file, Collections.<String, String>emptyMap());
             if (id != null) {
@@ -153,7 +155,8 @@ public final class YamlMessageBuilder {
             Map<String, Object> map = castMap(entry);
             String rawGroupId = toStr(map.get(FIELD_GROUP_ID));
             if (rawGroupId != null && rawGroupId.equals(groupId)) {
-                result.add(buildSendSyncFile(toStr(map.get(FIELD_ID)), map, interps));
+                result.add(buildSendSyncFile(toStr(map.get(FIELD_ID)), map,
+                        YamlSection.isSendSyncMessageSectionKey(sectionKey), interps));
             }
         }
         return result;
@@ -162,33 +165,36 @@ public final class YamlMessageBuilder {
     /**
      * SendSync 用の本文（{@link MockMessages}）を 1 エントリ分組み立てる。
      *
-     * @param id      エントリの id（{@code null} 可。{@code null} の場合 path は空文字）
-     * @param map     エントリ Map
-     * @param interps 使用するインタープリタリスト
+     * @param id             エントリの id（{@code null} 可。{@code null} の場合 path は空文字）
+     * @param map            エントリ Map
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     * @param interps        使用するインタープリタリスト
      * @return 本文の器
      */
-    private static MockMessages buildSendSyncFile(String id, Map<String, Object> map,
+    private static MockMessages buildSendSyncFile(String id, Map<String, Object> map, boolean keepRecordType,
                                                   List<TestDataInterpreter> interps) {
         MockMessages file = new MockMessages(id != null ? id : "");
         // 送信同期メッセージは本体パーサが値行先頭の No 列を FIRST_FIELD_NO に隔離するため、
         // YAML 経路でも同じ形の器になるよう withId=true で連番を補う
         // （連番は照合には使われず、失敗時メッセージの test no=[...] にのみ使われる）。
-        return buildSendSyncBodyFile(file, map, interps);
+        return buildSendSyncBodyFile(file, map, keepRecordType, interps);
     }
 
     /**
      * 受信メッセージ用の本文ファイルにディレクティブとレコードレイアウト（{@code records} 全件）を組み立てて返す。
      *
-     * @param file    本文ファイル（{@link FixedLengthFile}）
-     * @param map     エントリ Map
-     * @param interps 使用するインタープリタリスト
-     * @param <T>     本文ファイルの具体型
+     * @param file           本文ファイル（{@link FixedLengthFile}）
+     * @param map            エントリ Map
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     * @param interps        使用するインタープリタリスト
+     * @param <T>            本文ファイルの具体型
      * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
      */
     private static <T extends FixedLengthFile> T buildMessageBodyFile(T file, Map<String, Object> map,
+                                                                       boolean keepRecordType,
                                                                        List<TestDataInterpreter> interps) {
         YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
-        YamlFileBuilder.buildFragmentsForMessage(file, getList(map, FIELD_RECORDS), interps);
+        YamlFileBuilder.buildFragmentsForMessage(file, getList(map, FIELD_RECORDS), keepRecordType, interps);
         return file;
     }
 
@@ -197,16 +203,18 @@ public final class YamlMessageBuilder {
      *
      * <p>値行に連番（FIRST_FIELD_NO）を付与する。</p>
      *
-     * @param file    本文ファイル（{@link MockMessages}）
-     * @param map     エントリ Map
-     * @param interps 使用するインタープリタリスト
-     * @param <T>     本文ファイルの具体型
+     * @param file           本文ファイル（{@link MockMessages}）
+     * @param map            エントリ Map
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     * @param interps        使用するインタープリタリスト
+     * @param <T>            本文ファイルの具体型
      * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
      */
     private static <T extends FixedLengthFile> T buildSendSyncBodyFile(T file, Map<String, Object> map,
+                                                                        boolean keepRecordType,
                                                                         List<TestDataInterpreter> interps) {
         YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
-        YamlFileBuilder.buildFragmentsForSendSync(file, getList(map, FIELD_RECORDS), interps);
+        YamlFileBuilder.buildFragmentsForSendSync(file, getList(map, FIELD_RECORDS), keepRecordType, interps);
         return file;
     }
 
