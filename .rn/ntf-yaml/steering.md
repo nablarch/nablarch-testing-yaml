@@ -1370,7 +1370,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #40: 2-5 — 2文字の `\` ＋ `r` を含む値が読める
+### ~~#40: 2-5 — 2文字の `\` ＋ `r` を含む値が読める~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:1445`（ピン `afa4f9e`。`04b9405` で改訂済み）は、バックスラッシュと `r` の2文字（`"\\r"`）を含む値は書けず YAML 形式ではエラーになると定める。Excel では `LineSeparatorInterpreter.java:31`・`:34` がこの2文字を必ず CR に変換するため、この2文字を含む値は NTF の仕様上存在しない。`setup/common.rst:77` は YAML 形式に `LineSeparatorInterpreter` を指定しないと定めるため「CR として解釈する」は採れない。
 
@@ -1378,13 +1378,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 検査を `YamlSection` の1箇所に置き、`interpret`（`:248`-`:257`）と `YamlMessageBuilder.convertFwHeader`（`:244` の `objectToString`）の両方から通す。値（データ行・ディレクティブ・制御ヘッダ）に2文字の `\` ＋ `r` が含まれていればエラーにする。例外には値と、分かる範囲で出所（セクション・`id`／`path`）を含める
-- [ ] B. テストを足す — 2文字の `\` ＋ `r` がデータ行・ディレクティブ・制御ヘッダのそれぞれでエラーになること、`"\\n"`（2文字のまま残る）と実際の CR（`"\r"`）は通ること。例外の型と、メッセージに出所が入ることを assert する
-- [ ] C. 既存フィクスチャ・テストの是正 — 着手前調査で該当は**フィクスチャ1件・テスト1件**（`YamlTableDataBuilderTest/nativeTypes.yaml:16` の `LITERAL_CR_COL: "\\r"` と、それを期待値に書く `buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser`（`YamlTableDataBuilderTest.java:591`。`:603` で `is("\\r")` を assert））。解説書に合わせて「エラーになること」へ直す
-- [ ] D. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
-- [ ] E. `mvn -o clean test` 緑を確認
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-40.md)
+- [x] A. 検査を `YamlSection` の1箇所に置き、`interpret`（`:266`）と `YamlMessageBuilder.convertFwHeader`（`:290` のキー・`:296` の値の `objectToString`）の両方から通す。値（データ行・ディレクティブ・制御ヘッダ）に2文字の `\` ＋ `r` が含まれていればエラーにする。例外には値と、分かる範囲で出所（セクション・`id`／`path`）を含める
+- [x] B. テストを足す — 2文字の `\` ＋ `r` がデータ行・ディレクティブ・制御ヘッダのそれぞれでエラーになること、`"\\n"`（2文字のまま残る）と実際の CR（`"\r"`）は通ること。例外の型と、メッセージに出所が入ることを assert する
+- [x] C. 既存フィクスチャ・テストの是正 — 着手前調査で該当は**フィクスチャ1件・テスト1件**（`YamlTableDataBuilderTest/nativeTypes.yaml:16` の `LITERAL_CR_COL: "\\r"` と、それを期待値に書く `buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser`（`YamlTableDataBuilderTest.java:597`。`:609` で `is("\\r")` を assert））。解説書に合わせて「エラーになること」へ直す
+- [x] D. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
+- [x] E. `mvn -o clean test` 緑を確認
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-40.md)
 
 **Completion criteria**:
 
