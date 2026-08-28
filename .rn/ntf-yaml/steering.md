@@ -1497,7 +1497,7 @@ session is suspended — the signal /rn:up and /rn:dn search for — and resets 
 so only a genuinely suspended session reads `paused`.)
 
 - **Status**: not suspended
-- **Date**: 2026-08-28
-- **Last completed**: #37 2-2 — 電文の `records` に `maxItems: 1` を課す（`389fe6d`）
-- **Next**: #38 2-3 — `fw_header:` のキーを `reader.fwHeaderfields` の名前に限る
-- **Notes**: ブランチ `feature/ntf-yaml`（`3ee39c9`）。Step 4 第2回の指示書（`nablarch-document@origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`）に基づき #36〜#44 を追加。着手前の実測ベースラインは `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test`）
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
