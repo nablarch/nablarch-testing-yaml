@@ -143,7 +143,7 @@ public class YamlBlankEntryOracleTest {
      * 本体に読ませる {@code .xlsx} を組み立てて書き出す。
      *
      * <p>
-     * シート名はケース名（T1〜T4・L1〜L4）と一致させ、{@code blankEntry.yaml} の
+     * シート名はケース名（T1〜T5・L1〜L5）と一致させ、{@code blankEntry.yaml} の
      * グループ ID／ID と 1 対 1 に対応させる。
      * </p>
      *
@@ -406,9 +406,14 @@ public class YamlBlankEntryOracleTest {
      * 省略したキーの値だけが本体（{@code ""}）と YAML（Java {@code null}）で食い違うこと（L5）。
      *
      * <p>
-     * 趣旨・根拠は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と同じ。
-     * スキーマ {@code $defs.list_map_data.properties.rows.description} は
-     * カラム省略の扱いを {@code $defs.table_data.properties.rows.description} と共通の規則として参照する。<br>
+     * 趣旨は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と同じ。
+     * ただしスキーマ {@code $defs.list_map_data.properties.rows.description} には
+     * カラム（キー）省略の扱いを述べた記述が無い。省略したキーが Java {@code null} になるのは
+     * 実装上の共通化による。{@code list_maps} 経路もテーブル系と同じ
+     * {@code YamlTableDataBuilder#extractRows} を通り、そこで {@code rowMap.get(col)} が
+     * 省略したキーに対して {@code null} を返すため、{@code $defs.table_data.properties.rows.description}
+     * の (2)（カラム名決定行にはあるが個々の行で省略したカラムは値が null の状態で保持される）が
+     * そのまま当てはまる。<br>
      * Given: マーカーカラム {@code [NO]} を持つキー名の行と、通常行 1 件・{@code [NO]} だけを
      *        キーに持つ行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getListMap} で読む<br>

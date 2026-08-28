@@ -1345,7 +1345,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: 値が 1 つでも非空の行は保持されること。
+     * [YamlTableDataBuilder] buildTableDataList: 空文字・null を値に持つ行がいずれも保持されること。
      *
      * <p>
      * 除去対象は値を 1 つも持たない行だけであり、空文字・null を値に持つ行はいずれも
@@ -1547,9 +1547,11 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 値が 1 つでも非空の行は保持されること。
+     * [YamlTableDataBuilder] buildListMapRows: 空文字・null を値に持つ行がいずれも保持されること。
      *
      * <p>
+     * 除去対象は値を 1 つも持たない行だけであり、空文字・null を値に持つ行はいずれも
+     * データ行として扱われる。<br>
      * Given: list_maps の partiallyBlankValueRowListMap に 一部のみ値を持つ行・値が全て空の行 の 2 エントリ<br>
      * When:  buildListMapRows(yaml, "partiallyBlankValueRowListMap", path) を呼ぶ<br>
      * Then:  2 件とも返り、1 件目の空文字キーは空文字・null キーは null で保持されること

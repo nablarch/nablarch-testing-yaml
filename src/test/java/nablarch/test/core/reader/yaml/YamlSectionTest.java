@@ -496,27 +496,6 @@ public class YamlSectionTest {
     }
 
     /**
-     * [YamlSection] dropBlankRows: 値が 1 つでも非空なら行が残ること（null と空文字が混在していても同じ）。
-     *
-     * <p>
-     * Given: null・空文字・非空文字 が混在する行 1 件からなる rows<br>
-     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
-     * Then:  その行が残ること
-     * </p>
-     */
-    @Test
-    public void dropBlankRows_keepsRowHavingAnyNonBlankValue() {
-        // Given
-        List<Object> rows = Arrays.<Object>asList(rowOf("COL_A", null, "COL_B", "", "COL_C", "v"));
-
-        // When
-        List<Object> result = YamlSection.dropBlankRows(rows);
-
-        // Then
-        assertThat("値が 1 つでも非空なら残ること", result.size(), is(1));
-    }
-
-    /**
      * [YamlSection] dropBlankRows: マーカーカラムだけが値を持つ行も残ること。
      *
      * <p>
@@ -583,7 +562,7 @@ public class YamlSectionTest {
         List<Object> result = YamlSection.dropBlankRows(rows);
 
         // Then
-        assertThat("Java null は空文字ではないため行が残ること", result.size(), is(1));
+        assertThat("値が全て Java null でもキーを持つ行であるため残ること", result.size(), is(1));
         assertThat("残った行が全ての値が null の行であること",
                 result.get(0), is((Object) rowOf("COL_A", null, "COL_B", null)));
     }

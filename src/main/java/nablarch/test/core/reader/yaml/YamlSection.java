@@ -28,9 +28,12 @@ import java.util.Map;
  *   <li>どのカラム名を DB 操作対象外のマーカーカラムとみなすか — {@link #isMarker(String)}</li>
  * </ul>
  * <p>
- * 前の 2 つは組で、{@code dropBlankRows} を先に適用する（順序の根拠は
- * {@link #dropBlankRows(List)} の javadoc に記す）。{@code isMarker} は列名が決まった後に適用する。
- * ファイルデータ（{@link YamlFileBuilder}）はいずれの規則も使わない。
+ * {@code dropBlankRows} は値加工（{@link #interpret(String, List)}）より前に適用する。
+ * {@code resolveColumns} との前後は、どちらも同じ判定で行を読み飛ばすため結果を変えない
+ * （いずれも根拠は {@link #dropBlankRows(List)} の javadoc に記す）。
+ * {@code isMarker} は列名が決まった後に適用する。
+ * {@code record_fragment} の行を組み立てる {@link YamlFileBuilder}（ファイル系・電文系の両方が使う）は
+ * いずれの規則も使わない。
  * </p>
  *
  * @author kiyotis
@@ -171,11 +174,11 @@ public final class YamlSection {
      *
      * <p>
      * テーブル系セクション（{@code setup_tables}／{@code expected_tables}／
-     * {@code expected_complete_tables}）と {@code list_maps} の行に適用する。ファイルデータ
-     * （{@code record_fragment}）の {@code rows} には適用しない。ファイルデータの行はカラム名を
-     * キーに持つマッピングではなく値だけを並べた配列（{@link java.util.List}）であり
-     * （{@link YamlFileBuilder#buildDataFileList} は各行を {@code List} としてのみ扱い、
-     * {@code List} でない行は読み飛ばす）、
+     * {@code expected_complete_tables}）と {@code list_maps} の行に適用する。{@code record_fragment} の
+     * {@code rows}（ファイル系セクションと電文系セクションのレコードレイアウトが持つ行）には適用しない。
+     * その行はカラム名をキーに持つマッピングではなく値だけを並べた配列（{@link List}）であり
+     * （{@link YamlFileBuilder} の {@code buildFragmentsInternal} が各行を {@code List} としてのみ扱い、
+     * {@code List} でない行は読み飛ばす。ファイル系・電文系のどの入口もこのメソッドを通る）、
      * {@link #castMap(Object)} が Map でない値に対して空 Map を返すため、本メソッドを通すと
      * 値の有無にかかわらず全ての行が取り除かれてしまう。
      * </p>
