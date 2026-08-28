@@ -152,11 +152,21 @@ public final class YamlSection {
      * データ行のうち、行として存在しないものを取り除く。
      *
      * <p>
-     * 空マッピング（{@code {}}）の行、および全ての値が空文字の行は、Excel の全セル空行と同じく
-     * 行が無いものとして扱う。Java null の値は空文字ではないため非空として扱い、{@code COL: null} や
-     * {@code COL:}（値の省略）だけの行は残る。マッピングでない行（スカラ等）も構造を持たないため
-     * ここで取り除く（{@link #castMap(Object)} が Map でない値に対して空 Map を返すので、
-     * 空マッピングと同じ判定で扱える）。
+     * 値を 1 つも持たない行（空マッピング {@code {}}）だけを、Excel の全セル空行と同じく
+     * 行が無いものとして扱う。空文字 {@code ""} も Java null も値であり、どちらも非空として扱うため、
+     * 全ての値が {@code ""} の行や {@code COL: null}・{@code COL:}（値の省略）だけの行は残る。
+     * マッピングでない行（スカラ等）は構造を持たないためここで取り除く
+     * （{@link #castMap(Object)} が Map でない値に対して空 Map を返すので、空マッピングと同じ判定で
+     * 扱える）。
+     * </p>
+     *
+     * <p>
+     * 出典は解説書（{@code nablarch-document} リポジトリの
+     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
+     * 「コメント・マーカーカラム・空エントリを扱う」節である。行番号は改版で腐るため引用文で示す。
+     * 「記法として空のエントリは読み飛ばされる。Excel 形式では行の全セルが空セルの場合、YAML 形式では
+     * {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。{@code ""} と書いた空文字は値であり、
+     * すべての値が {@code ""} のエントリは読み飛ばされず、全カラムが空文字のエントリとして読み込まれる。」
      * </p>
      *
      * <p>
@@ -167,11 +177,11 @@ public final class YamlSection {
      *
      * <p>
      * 列名解決（{@link #resolveColumns(List)}）と値加工（{@link #interpret(String, List)}）より前に
-     * 適用すること。依存先 nablarch-testing では、{@code PoiXlsReader#readLine} が読み込み段階で
-     * 空行（{@code isBlankLine}）をそのまま読み飛ばす。値加工（{@code interpret}）を持つのは
+     * 適用すること。列名は残った先頭行のキーで決まる（{@link #resolveColumns(List)}）ため、
+     * この順序が列名の決定を左右する。依存先 nablarch-testing では、{@code PoiXlsReader#readLine} が
+     * 読み込み段階で空行（{@code isBlankLine}）をそのまま読み飛ばす。値加工（{@code interpret}）を持つのは
      * {@code TestDataParsingTemplate#readTestData} の方で、こちらも {@code isBlankLine} による
-     * 読み飛ばしを {@code interpret} より前に行う。本メソッドはこの順序に揃える。この順序により、
-     * 値加工を通すと空になる値だけを持つ行も、行としては保持される。
+     * 読み飛ばしを {@code interpret} より前に行う。本メソッドはこの順序に揃える。
      * </p>
      *
      * @param rows データ行のリスト（null 不可）。呼び出し側は {@link #getList(Map, String)} の戻り値を
@@ -190,23 +200,19 @@ public final class YamlSection {
     }
 
     /**
-     * 行として存在しないもの（全ての値が空文字）か判定する。
+     * 行として存在しないもの（値を 1 つも持たない行）か判定する。
      *
      * <p>
-     * 値が 1 つも無い行（空マッピング・マッピングでない行）も該当する。Java null は空文字ではないため
-     * 非空として扱い、{@code COL: null} や {@code COL:}（値の省略）だけの行は残す。マーカーカラム
-     * （{@code [COL]}）の値も判定対象に含める（依存先 nablarch-testing の {@code isBlankLine} が
-     * 行の全セルを対象とするのに合わせる）。
+     * 該当するのは空マッピング（{@code {}}）と、マッピングでない行（スカラ等。
+     * {@link #castMap(Object)} が空 Map を返すため空マッピングと同じ判定になる）だけである。
+     * 空文字 {@code ""} も Java null も値であり、どちらも非空として扱うため、全ての値が {@code ""} の行、
+     * {@code COL: null} や {@code COL:}（値の省略）だけの行、マーカーカラム（{@code [COL]}）だけに
+     * 値がある行は、いずれも残す。マーカーカラムを除外するのは列名が決まった後
+     * （{@link #isMarker(String)} の適用時）であり、本判定はそれより前に行われる。
      * </p>
      */
     private static boolean isBlankRow(Object row) {
-        for (Object value : castMap(row).values()) {
-            String str = objectToString(value);
-            if (str == null || !str.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
+        return castMap(row).isEmpty();
     }
 
     /**

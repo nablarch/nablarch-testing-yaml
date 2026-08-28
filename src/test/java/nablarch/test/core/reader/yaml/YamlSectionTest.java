@@ -457,20 +457,24 @@ public class YamlSectionTest {
     }
 
     // ========================================================================
-    // dropBlankRows: 行として存在しないもの（空マッピング・全値が空文字）を取り除くこと
+    // dropBlankRows: 行として存在しないもの（値を 1 つも持たない行）だけを取り除くこと
     // ========================================================================
 
     /**
-     * [YamlSection] dropBlankRows: 空マッピング行と全ての値が空文字の行が取り除かれること。
+     * [YamlSection] dropBlankRows: 空マッピング行だけが取り除かれ、全ての値が空文字の行は残ること。
      *
      * <p>
+     * 出典: 解説書「コメント・マーカーカラム・空エントリを扱う」節「記法として空のエントリは
+     * 読み飛ばされる。（中略）YAML 形式では {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。
+     * {@code ""} と書いた空文字は値であり、すべての値が {@code ""} のエントリは読み飛ばされず、
+     * 全カラムが空文字のエントリとして読み込まれる。」<br>
      * Given: 空マッピング行・全ての値が空文字の行・値を持つ行 からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
-     * Then:  値を持つ行 1 件のみが記述順で返ること
+     * Then:  空マッピング行だけが取り除かれ、残る 2 件が記述順で返ること
      * </p>
      */
     @Test
-    public void dropBlankRows_removesEmptyMappingAndAllBlankValueRows() {
+    public void dropBlankRows_removesOnlyEmptyMappingRow() {
         // Given
         List<Object> rows = Arrays.<Object>asList(
                 rowOf(),
@@ -481,8 +485,10 @@ public class YamlSectionTest {
         List<Object> result = YamlSection.dropBlankRows(rows);
 
         // Then
-        assertThat("値を持つ行のみ残ること", result.size(), is(1));
-        assertThat("残った行が値を持つ行であること", result.get(0), is((Object) rowOf("COL_A", "v", "COL_B", "")));
+        assertThat("空マッピング行だけが取り除かれること", result.size(), is(2));
+        assertThat("1 件目が全ての値が空文字の行であること",
+                result.get(0), is((Object) rowOf("COL_A", "", "COL_B", "")));
+        assertThat("2 件目が値を持つ行であること", result.get(1), is((Object) rowOf("COL_A", "v", "COL_B", "")));
     }
 
     /**
@@ -507,39 +513,39 @@ public class YamlSectionTest {
     }
 
     /**
-     * [YamlSection] dropBlankRows: 値が空白文字（半角スペース）だけの行も残ること。
+     * [YamlSection] dropBlankRows: 全ての値が空文字の行が残ること。
      *
      * <p>
-     * 空判定は {@code String.isEmpty()} で行い、値を trim してからは判定しない。依存先 nablarch-testing の
-     * {@code PoiXlsReader#isBlankLine} が各セルを {@code String#isEmpty()} で判定し trim しないのに
-     * 合わせるため、半角スペース 1 個は「値がある」として扱う。<br>
-     * Given: 半角スペース 1 個だけを値に持つ行と、空文字の値を持つ行 からなる rows<br>
+     * 空文字 {@code ""} は値であって空セルではない。依存先 nablarch-testing の
+     * {@code PoiXlsReader#isBlankLine} は生セル（{@code Cell#toString()}）を {@code String#isEmpty()} だけで
+     * 判定するため、Excel で {@code ""} と書いたセルは 2 文字の文字列として非空になり、その行は
+     * 読み飛ばされない（セルから引用符を外す {@code QuotationTrimmer} は空行判定より後の値加工である）。<br>
+     * Given: 全ての値が空文字の行 1 件からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
-     * Then:  半角スペースの行だけが残ること
+     * Then:  その行が残ること
      * </p>
      */
     @Test
-    public void dropBlankRows_keepsRowHavingOnlyWhitespaceValue() {
+    public void dropBlankRows_keepsRowHavingOnlyEmptyStringValues() {
         // Given
-        List<Object> rows = Arrays.<Object>asList(
-                rowOf("COL_A", " ", "COL_B", ""),
-                rowOf("COL_A", "", "COL_B", ""));
+        List<Object> rows = Arrays.<Object>asList(rowOf("COL_A", "", "COL_B", ""));
 
         // When
         List<Object> result = YamlSection.dropBlankRows(rows);
 
         // Then
-        assertThat("空白文字だけの値は trim されずに非空として扱われ、行が残ること", result.size(), is(1));
-        assertThat("残ったのが半角スペースを持つ行であること",
-                result.get(0), is((Object) rowOf("COL_A", " ", "COL_B", "")));
+        assertThat("空文字は値であるため行が残ること", result.size(), is(1));
+        assertThat("残った行が全ての値が空文字の行であること",
+                result.get(0), is((Object) rowOf("COL_A", "", "COL_B", "")));
     }
 
     /**
      * [YamlSection] dropBlankRows: マーカーカラムだけが値を持つ行も残ること。
      *
      * <p>
-     * 依存先 nablarch-testing の空行判定は行の全セルを対象とするため、マーカーカラムの値も
-     * 空行判定の対象に含める。<br>
+     * 出典: 解説書「コメント・マーカーカラム・空エントリを扱う」節「この判定はマーカーカラムを
+     * 除外する前に行われる。そのため、マーカーカラムだけに値があるエントリは読み飛ばされず、
+     * 他のカラムがすべて空文字のエントリとして読み込まれる。」<br>
      * Given: "[NO]" のみ値を持ち他は空文字の行 1 件からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  その行が残ること
@@ -554,7 +560,7 @@ public class YamlSectionTest {
         List<Object> result = YamlSection.dropBlankRows(rows);
 
         // Then
-        assertThat("マーカーカラムの値も空行判定の対象になるため残ること", result.size(), is(1));
+        assertThat("マーカーカラムを除外する前に判定するため行が残ること", result.size(), is(1));
     }
 
     /**
@@ -583,9 +589,9 @@ public class YamlSectionTest {
      * [YamlSection] dropBlankRows: 値が全て Java null の行は残ること。
      *
      * <p>
-     * スキップ条件は空マッピング（{@code {}}）と全ての値が空文字の 2 つだけであり、Java null は
-     * 空文字ではないため行として残る。YAML ではクォートなしの {@code null} とキーだけ書いた
-     * {@code COL:} がロード時点で Java null になるため、どちらの書き方の行もここで残る。<br>
+     * スキップ条件は値を 1 つも持たない行（空マッピング {@code {}}）だけであり、Java null は値であるため
+     * 行として残る。YAML ではクォートなしの {@code null} とキーだけ書いた {@code COL:} がロード時点で
+     * Java null になるため、どちらの書き方の行もここで残る。<br>
      * Given: 全ての値が Java null の行 1 件からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  その行が残ること

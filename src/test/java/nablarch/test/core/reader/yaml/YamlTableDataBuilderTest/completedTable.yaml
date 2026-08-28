@@ -20,9 +20,9 @@ expected_complete_tables:
         PK_COL2: "XY"
 
   # 全ての値が空文字の行は、fillDefaults=true の経路（expected_complete_tables）でも
-  # 行として存在しないものとして扱われる。1 行目を先頭、3 行目を中間（非空行に挟まれた位置）、
+  # 値を持つ行として残る。1 行目を先頭、3 行目を中間（非空行に挟まれた位置）、
   # 5 行目を末尾に置いてあり、3 位置すべてを 1 グループで担保する。
-  # 列名解決からも除外されることを固定するため、空行のキー集合を非空行と変えてある。
+  # 列名解決の基準が先頭行であることを固定するため、この行のキー集合を他の行と変えてある。
   - group_id: blankValueRowComplete
     table: TEST_TABLE
     rows:

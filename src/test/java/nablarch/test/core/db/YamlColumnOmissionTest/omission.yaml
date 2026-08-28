@@ -48,11 +48,11 @@ setup_tables:
         DATE_COL: "2024-01-02"
         TIMESTAMP_COL: "2024-01-02 02:02:02"
 
-  # 行の並びだけが違う2グループ（先頭に「全値が空の行」を置く）
+  # 行の並びだけが違う2グループ（先頭に「空エントリ {}」を置く）
   - group_id: s4a
     table: TEST_TABLE
     rows:
-      - NULL_COL: ""
+      - {}
       - PK_COL1: "00001"
         PK_COL2: "1"
         VARCHAR2_COL: "AAA"
@@ -70,7 +70,7 @@ setup_tables:
   - group_id: s4b
     table: TEST_TABLE
     rows:
-      - NULL_COL: ""
+      - {}
       - PK_COL1: "00002"
         PK_COL2: "2"
         NUMBER_COL: "8"

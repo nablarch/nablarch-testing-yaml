@@ -1,0 +1,92 @@
+# YamlBlankEntryOracleTest 用フィクスチャ。
+# 「記法として空のエントリ」（testdata_notation.rst「コメント・マーカーカラム・空エントリを扱う」節）の
+# 4 種を、テーブルデータ（setup_tables）と LIST_MAP（list_maps）の双方に置く。
+# 各グループは「値を持つ通常行」を先頭に置き、2 行目に判定対象の行を置く。
+# 通常行を先頭に置くのは、カラム名が常に同じキー集合から決まるようにして
+# Excel（ヘッダ行でカラム名が決まる）と条件をそろえるためである。
+
+setup_tables:
+  # T1: 空マッピング {}（Excel の全セル空行に対応）。読み飛ばされる。
+  - group_id: T1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        VARCHAR2_COL: "v1"
+        NULL_COL: "n1"
+      - {}
+
+  # T2: すべての値が空文字 ""（Excel の全セル "" に対応）。値であり読み飛ばされない。
+  - group_id: T2
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        VARCHAR2_COL: "v1"
+        NULL_COL: "n1"
+      - PK_COL1: ""
+        VARCHAR2_COL: ""
+        NULL_COL: ""
+
+  # T3: すべての値がクォートなし null（Excel の全セル null に対応）。読み飛ばされない。
+  - group_id: T3
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        VARCHAR2_COL: "v1"
+        NULL_COL: "n1"
+      - PK_COL1: null
+        VARCHAR2_COL: null
+        NULL_COL: null
+
+  # T4: マーカーカラム [NO] だけに値がある行。他のカラムはすべて空文字。読み飛ばされない。
+  - group_id: T4
+    table: TEST_TABLE
+    rows:
+      - "[NO]": "1"
+        PK_COL1: "00001"
+        VARCHAR2_COL: "v1"
+        NULL_COL: "n1"
+      - "[NO]": "2"
+        PK_COL1: ""
+        VARCHAR2_COL: ""
+        NULL_COL: ""
+
+list_maps:
+  # L1: 空マッピング {}。読み飛ばされる。
+  - id: L1
+    rows:
+      - KEY1: "v1"
+        KEY2: "v2"
+        KEY3: "v3"
+      - {}
+
+  # L2: すべての値が空文字 ""。読み飛ばされない。
+  - id: L2
+    rows:
+      - KEY1: "v1"
+        KEY2: "v2"
+        KEY3: "v3"
+      - KEY1: ""
+        KEY2: ""
+        KEY3: ""
+
+  # L3: すべての値がクォートなし null。読み飛ばされない。
+  - id: L3
+    rows:
+      - KEY1: "v1"
+        KEY2: "v2"
+        KEY3: "v3"
+      - KEY1: null
+        KEY2: null
+        KEY3: null
+
+  # L4: マーカーカラム [NO] だけに値がある行。他のキーはすべて空文字。読み飛ばされない。
+  - id: L4
+    rows:
+      - "[NO]": "1"
+        KEY1: "v1"
+        KEY2: "v2"
+        KEY3: "v3"
+      - "[NO]": "2"
+        KEY1: ""
+        KEY2: ""
+        KEY3: ""

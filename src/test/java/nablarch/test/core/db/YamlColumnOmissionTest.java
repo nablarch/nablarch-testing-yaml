@@ -169,12 +169,12 @@ public class YamlColumnOmissionTest {
                 raw("00002", "VARCHAR2_COL"), is((Object) " "));
     }
 
-    /** カラム名は空行除去のあとに残った先頭行のキーだけで決まる。行の並びだけが違うと (1)/(2) の帰属が変わる。 */
+    /** カラム名は空エントリ（{}）除去のあとに残った先頭行のキーだけで決まる。行の並びだけが違うと (1)/(2) の帰属が変わる。 */
     @Test
     public void columnNamesDependOnRowOrderAfterBlankRowRemoval() {
         List<String> a = Arrays.asList(sut.getSetupTableData(DIR, RES, "s4a").get(0).getColumnNames());
         List<String> b = Arrays.asList(sut.getSetupTableData(DIR, RES, "s4b").get(0).getColumnNames());
-        assertThat("先頭の空行（NULL_COL: \"\"）は除去されカラム名決定に使われないこと",
+        assertThat("先頭の空エントリ（{}）は除去されカラム名決定に使われないこと",
                 a.contains("NULL_COL"), is(false));
         assertThat(b.contains("NULL_COL"), is(false));
         assertThat("s4a は VARCHAR2_COL を含むこと", a.contains("VARCHAR2_COL"), is(true));

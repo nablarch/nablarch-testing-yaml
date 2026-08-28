@@ -34,9 +34,9 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * YAML トップレベル Map（{@link YamlLoader#load} が返す順序保持 Map）を走査し、構造の写し取りと
  * 値加工（特殊記法 {@code ${...}} の解釈・{@code ${binaryFile:}} の basePath 解決・マーカーカラム除外・
- * デフォルト値補完・グループ ID 絞り込み）を一括で行う。空マッピング（{@code {}}）の行と全ての値が
- * 空文字の行は、列名解決より前に {@link YamlSection#dropBlankRows} で取り除く（Java null は空文字では
- * ないため非空として扱い、{@code COL: null} や {@code COL:} だけの行は残る）。
+ * デフォルト値補完・グループ ID 絞り込み）を一括で行う。値を 1 つも持たない行（空マッピング
+ * {@code {}}）は、列名解決より前に {@link YamlSection#dropBlankRows} で取り除く（空文字 {@code ""} も
+ * Java null も値であるため、全ての値が {@code ""} の行や {@code COL: null}・{@code COL:} だけの行は残る）。
  * カラム名は取り除いた後の先頭行のキー（マーカー含む・YAML 記述順）から決定する。
  * </p>
  *
@@ -167,8 +167,8 @@ public final class YamlTableDataBuilder {
      * <p>
      * 出力 Map のキー順は従来どおり {@link TreeMap} でソートする（本体読み込みの振る舞い不変）。
      * マーカーカラム（{@code [COL]}）は DB 操作対象外として除外する。行として存在しないもの
-     * （空マッピング、および全ての値が空文字の行）は列名解決より前に取り除く（Java null は空文字では
-     * ないため非空として扱い、その行は残る）。
+     * （値を 1 つも持たない行＝空マッピング）は列名解決より前に取り除く（空文字 {@code ""} も
+     * Java null も値であるため、それだけの行は残る）。
      * </p>
      *
      * @param yaml     YAML トップレベル Map
@@ -210,8 +210,8 @@ public final class YamlTableDataBuilder {
      * 各行をカラム名に揃えた未加工値リストへ写す。
      *
      * <p>
-     * 引数の rows は {@link YamlSection#dropBlankRows} を通した後の行であり、値を持つマッピングだけが
-     * 残っている。そのためマッピングでない行・空マッピング行の除外はここでは行わない。
+     * 引数の rows は {@link YamlSection#dropBlankRows} を通した後の行であり、キーを 1 つ以上持つ
+     * マッピングだけが残っている。そのためマッピングでない行・空マッピング行の除外はここでは行わない。
      * </p>
      */
     private static List<List<String>> extractRows(List<Object> rows, List<String> columnNames) {
