@@ -1852,7 +1852,7 @@ public class YamlTestDataParserTest {
      * リクエスト ID と同じ名前のディレクトリ配下の固定名 {@code message.yaml} から読まれること。
      * {@code <リクエストID>.yaml}（Excel 形式の {@code <リクエストID>.xlsx} に相当する置き方）は
      * 読み込み単位にならない。<br>
-     * 根拠: implementation/deal_unit_test/mom.rst:72、implementation/testdata_notation.rst:1149<br>
+     * 根拠: implementation/deal_unit_test/mom.rst:72、implementation/testdata_notation.rst:1151<br>
      * 呼び出し方は、モックアップクラス経路の入口である nablarch-testing の
      * {@code SendSyncSupport#createTestDataInfo}（{@code SendSyncSupport.java:347} が
      * リソース名を {@code リクエストID + "/" + "message"} として組み立て、
