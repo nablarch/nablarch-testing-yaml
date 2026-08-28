@@ -1425,7 +1425,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #42: 2-7 — スキーマ `description` の追随
+### ~~#42: 2-7 — スキーマ `description` の追随~~
 
 **Purpose**: スキーマ `description` も SSoT の適用範囲である（2026-08-25 ユーザー確定）。指示書 2-7 の表が挙げる4箇所を、2-1〜2-4 の是正後の解説書の文言に合わせる。**`description` の文言は解説書に合わせる。実装の挙動を写さない。**
 
@@ -1433,14 +1433,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `:108`（`table_data.rows`）・`:136`（`list_map_data.rows`）の「全ての値が空文字 `""` の行は、行が無いものとして取り除かれる」を `notation.rst:1502` に合わせる（`{}` だけ。2-4）
-- [ ] B. `:216`（`message_data.fw_header` の `description`）・`:433`（`$defs.fw_header` の `description`）・`:434`（同 `$comment`）の「記述したキーはすべて FW 制御ヘッダとして NTF に渡される（値でのフィルタリングは行われない）」「任意のヘッダ名を許容する」を `notation.rst:1295` に合わせる（`reader.fwHeaderfields` の名前だけ。他はエラー。2-3）。**`additionalProperties: {"type": "string"}`（`:429`-`:432`）の構造は締めないこと** — 許可集合は `reader.fwHeaderfields` に依存するため静的スキーマでは表現できず（#38 が実装検査を選んだ前提）、締めると `YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml` が成立しなくなり「誤記エントリが他エントリを巻き添えにしない」遅延実行の性質も消える
-- [ ] C. `:209`（`message_data.records`）・`:243`（`expected_request_message_data.records`）・`:275`（`group_message_data.records`）の `description` を `notation.rst:1153`・`:1299` に合わせる（レコードレイアウトは1つ。2-2）。`:182`（`file_data.records`）は対象外（ファイルは複数レコードレイアウトを持てる）
-- [ ] D. `:380`（`record_fragment.rows` の `description`）の「不足した末尾のフィールドは `""` として扱われる」に末尾の `null` の扱いを加える（`notation.rst:889`・`:1155`。2-1）
-- [ ] E. 是正の前後で挙動テストの結果が変わらないことを実測する（`description` は挙動を変えないため）
-- [ ] F. `mvn -o clean test` 緑を確認
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-42.md)
+- [x] A. `:108`（`table_data.rows`）・`:136`（`list_map_data.rows`）の「全ての値が空文字 `""` の行は、行が無いものとして取り除かれる」を `notation.rst:1502` に合わせる（`{}` だけ。2-4）
+- [x] B. `:216`（`message_data.fw_header` の `description`）・`:433`（`$defs.fw_header` の `description`）・`:434`（同 `$comment`）の「記述したキーはすべて FW 制御ヘッダとして NTF に渡される（値でのフィルタリングは行われない）」「任意のヘッダ名を許容する」を `notation.rst:1295` に合わせる（`reader.fwHeaderfields` の名前だけ。他はエラー。2-3）。**`additionalProperties: {"type": "string"}`（`:429`-`:432`）の構造は締めないこと** — 許可集合は `reader.fwHeaderfields` に依存するため静的スキーマでは表現できず（#38 が実装検査を選んだ前提）、締めると `YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml` が成立しなくなり「誤記エントリが他エントリを巻き添えにしない」遅延実行の性質も消える
+- [x] C. `:209`（`message_data.records`）・`:243`（`expected_request_message_data.records`）・`:275`（`group_message_data.records`）の `description` を `notation.rst:1153`・`:1299` に合わせる（レコードレイアウトは1つ。2-2）。`:182`（`file_data.records`）は対象外（ファイルは複数レコードレイアウトを持てる）
+- [x] D. `:380`（`record_fragment.rows` の `description`）の「不足した末尾のフィールドは `""` として扱われる」に末尾の `null` の扱いを加える（`notation.rst:889`・`:1155`。2-1）
+- [x] D2. **【コーディネータ追加 2026-08-29・指示書には無い】** `src/` 配下の解説書出典のうち、ピン `afa4f9e` に対して行番号が **+2 ずれている 13 箇所**を実測値へ訂正する。原因は `nablarch-document@6ba3c83`「docs(ntf): 交互記述は警告して変換、電文のレコードレイアウトは1つ」が `testdata_notation.rst` に 2 行挿入したことで、`:1299` 以降を指す出典がすべてずれた（`:1149`・`:1153`・`:1155` を指すものは挿入位置より前で影響なし）。**4 箇所だけ直すと同一ファイル内で `:1322` が「14 種類の list-table 行」と「組み合わせ記法の文」の両方を指す形になり、かえって読み手を誤らせるため、13 箇所まとめて直すこと。**
+  対象と訂正後（コーディネータと #41 のレビューが実測済み。**着手時に自分で数え直して確かめること**）:
+  `YamlDateNotationTest.java:30`・`:113`・`:133` と `YamlDateNotationTest/date.yaml:1` の `:1326`(-`:1331`) → `:1328`-`:1333`／`YamlTestDataParserTest.java:356` と `YamlTestDataParserTest/nativeTypes.yaml:33` の `:1337` → `:1339`／`YamlTableDataBuilderTest.java:56`・`:914` と `YamlTableDataBuilderTest/nativeTypes.yaml:88` の `:1313-:1320` → `:1315`-`:1322`／`YamlTableDataBuilderTest.java:967` と 同 `nativeTypes.yaml:133` の `:1322` → `:1324`／`YamlTableDataBuilderTest.java:1000` と 同 `nativeTypes.yaml:83` の `:1441-:1443` → `:1443`-`:1445`
+  **理由**: 出典は読み手が同じ場所を開いて確かめられなければ意味を持たない（案件の原則）。#42 が解説書との追随を担うタスクであるため、その一部として扱う。**#44 の報告でスコープ拡張として明示的に報告すること。**
+- [x] D3. **【同上】** 行番号出典は解説書の改版のたびに壊れる。13 箇所を直したうえで、**今後の出典は行番号ではなく節見出し＋引用文で書く**方針を `src/` 配下に適用できたか（できない箇所があればその理由）を記録する。先例は #38 の `YamlMessageBuilder` クラス javadoc と #39 の `YamlSection.dropBlankRows` javadoc。**ただし 13 箇所すべてを節見出し方式へ書き換えるのは #42 の範囲を超えるので、まず +2 の訂正を確実に行い、方式の切り替えは判断と根拠の記録に留めてよい。**
+- [x] E. 是正の前後で挙動テストの結果が変わらないことを実測する（`description` は挙動を変えないため）
+- [x] F. `mvn -o clean test` 緑を確認
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-42.md)
 
 **Completion criteria**:
 
