@@ -2,7 +2,8 @@
 # messages エントリ直下の fw_header: マップから FW 制御ヘッダを取得することを検証する
 
 messages:
-  # 既定キー（requestId/userId/resendFlag/resultCode）+ プロジェクト独自キーを含む
+  # 既定キー（requestId/userId/resendFlag/resultCode）のみ
+  # 既定キー以外は reader.fwHeaderfields に設定しない限り書けない（出典: implementation/testdata_notation.rst:1295）
   - id: req001
     directives:
       text-encoding: Windows-31J
@@ -11,7 +12,6 @@ messages:
       userId: "testUser01"
       resendFlag: "0"
       resultCode: "0000"
-      customProjectKey: "PROJECT_VALUE"
     records:
       - record_type: BODY
         fields:
@@ -32,7 +32,7 @@ messages:
         rows:
           - ["HELLO"]
 
-  # fw_header の値がクォートなし数値・真偽値（YAML ネイティブ型変換の確認）
+  # fw_header の値の文字列化の確認。独自キー boolFlag はテスト側で reader.fwHeaderfields に設定する
   - id: numericValues001
     fw_header:
       resendFlag: "0"

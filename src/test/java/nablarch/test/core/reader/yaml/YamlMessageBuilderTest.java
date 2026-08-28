@@ -48,6 +48,9 @@ public class YamlMessageBuilderTest {
     private static final String RESOURCE_ROOT = "src/test/java/";
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
 
+    /** FW 制御ヘッダの項目名を設定する SystemRepository のキー */
+    private static final String FW_HEADER_FIELDS_KEY = "reader.fwHeaderfields";
+
     private YamlMessageBuilder builder;
 
     @Before
@@ -60,6 +63,8 @@ public class YamlMessageBuilderTest {
     @After
     public void after() {
         YamlLoader.clearCacheForTest();
+        // reader.fwHeaderfields を設定したテストの影響を他テストへ持ち越さない（空文字は未設定と同じ扱い）
+        repositoryResource.addComponent(FW_HEADER_FIELDS_KEY, "");
     }
 
     // ------------------------------------------------------------------------
@@ -75,6 +80,11 @@ public class YamlMessageBuilderTest {
     private List<RequestTestingMessagePool> buildSendSyncMessageList(Map<String, Object> yaml, String sectionKey,
                                                                      String groupId, String path) {
         return builder.buildSendSyncList(yaml, sectionKey, groupId, path);
+    }
+
+    /** FW 制御ヘッダの項目名（{@code reader.fwHeaderfields}）を設定するヘルパー。{@link #after()} で解除される。 */
+    private void setFwHeaderFields(String fwHeaderFields) {
+        repositoryResource.addComponent(FW_HEADER_FIELDS_KEY, fwHeaderFields);
     }
 
     /** MessagePool の内部 FixedLengthFile（source）を取り出すヘルパー。 */
@@ -779,24 +789,26 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: マップにプロジェクト独自キーと既定キーが混在する場合、
-     * fw_header に記述した全キーが保持されること（fwHeaderFields フィルタ廃止後の確認）。
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} にプロジェクト独自キーを
+     * 設定した場合、そのキーを {@code fw_header:} に記載でき FW ヘッダに保持されること。
      *
      * <p>
-     * Given: messages に id=req001 の fw_header マップに customField/requestId を記述<br>
+     * Given: {@code reader.fwHeaderfields} に customField,requestId を設定、
+     *        messages に id=req001 の fw_header マップに customField/requestId を記述<br>
      * When:  buildMessagePool を呼ぶ<br>
      * Then:  customField と requestId の両方が FW ヘッダに含まれること
      * </p>
      */
     @Test
     public void buildMessagePool_customFwHeaderFields() throws Exception {
-        // Given
+        // Given: 独自キーを含む項目名を設定する
+        setFwHeaderFields("customField,requestId");
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
 
-        // Then: fw_header に記述した全キーが保持されること（フィルタなし）
+        // Then: 設定した項目名のキーが保持されること
         assertNotNull(result);
         Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
         fwHeaderField.setAccessible(true);
@@ -807,21 +819,114 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
+    // fw_header: のキーは reader.fwHeaderfields の名前だけを許すこと
+    // 出典: implementation/testdata_notation.rst:1295
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} を設定していない場合、
+     * 既定 4 キー（requestId・userId・resendFlag・resultCode）以外のキーを {@code fw_header:} に
+     * 書くと {@link IllegalStateException} がスローされること。
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} 未設定、messages の id=req001 の fw_header に独自キー customField<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、電文の id（req001）と不正なキー名（customField）が
+     *        メッセージに含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderKeyNotInDefaultFieldsThrows() {
+        // Given: reader.fwHeaderfields は設定しない（既定 4 キーが許可される）
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "req001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("req001"));
+            assertThat("不正なキー名がメッセージに含まれること", e.getMessage(), containsString("'customField'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} を設定した場合、
+     * 設定した名前だけが許可され、既定 4 キーであっても設定に無ければ
+     * {@link IllegalStateException} がスローされること。
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} に customField のみを設定、messages の id=req001 の
+     *        fw_header に customField と requestId<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、電文の id（req001）と設定に無いキー名（requestId）が
+     *        メッセージに含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderKeyNotInConfiguredFieldsThrows() {
+        // Given: 既定 4 キーは設定値で置き換えられる
+        setFwHeaderFields("customField");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "req001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("req001"));
+            assertThat("設定に無いキー名がメッセージに含まれること", e.getMessage(), containsString("'requestId'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} はカンマで分割されるだけで
+     * 前後の空白は取り除かれないこと（本体 {@code MessageParser} が使う
+     * {@code NablarchTestUtils.makeArray} と同じ分割）。
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} に {@code "customField, requestId"}（カンマの後に空白）を設定<br>
+     * When:  fw_header に customField と requestId を持つ messages の id=req001 を組み立てる<br>
+     * Then:  空白付きの {@code " requestId"} が項目名になるため requestId が不正キーとなり
+     *        IllegalStateException がスローされること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderFieldsAreSplitByCommaWithoutTrimming() {
+        // Given: カンマの後に空白を置いた設定
+        setFwHeaderFields("customField, requestId");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "req001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("空白が取り除かれないため requestId が不正キーになること",
+                    e.getMessage(), containsString("has unknown key 'requestId'"));
+        }
+    }
+
+    // ========================================================================
     // T2: fw_header マップ対応（ランタイム、messages 限定）
     // ========================================================================
 
     /**
-     * [MS-04] messages の fw_header: マップの全キー（既定＋独自）が getFwHeader() に保持されること。
+     * [MS-04] {@code reader.fwHeaderfields} を設定しない場合、messages の fw_header: マップの
+     * 既定 4 キーが getFwHeader() に保持されること。
      *
      * <p>
-     * Given: messages に id=req001 のエントリが fw_header: マップ
-     *        （requestId/userId/resendFlag/resultCode + customProjectKey）を持つ YAML<br>
+     * Given: {@code reader.fwHeaderfields} 未設定、messages に id=req001 のエントリが fw_header: マップ
+     *        （requestId/userId/resendFlag/resultCode）を持つ YAML<br>
      * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
-     * Then:  fwHeader に全キー（既定＋独自）が保持されること
+     * Then:  fwHeader に既定 4 キーが保持されること
      * </p>
      */
     @Test
-    public void buildMessagePool_fwHeaderMapAllKeysRetainedIncludingCustom() throws Exception {
+    public void buildMessagePool_fwHeaderMapAllDefaultKeysRetained() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -838,7 +943,7 @@ public class YamlMessageBuilderTest {
         assertThat("userId が設定されていること", fwHeader.get("userId"), is("testUser01"));
         assertThat("resendFlag が設定されていること", fwHeader.get("resendFlag"), is("0"));
         assertThat("resultCode が設定されていること", fwHeader.get("resultCode"), is("0000"));
-        assertThat("独自キー customProjectKey が黙って消えないこと", fwHeader.get("customProjectKey"), is("PROJECT_VALUE"));
+        assertThat("既定 4 キーだけが設定されていること", fwHeader.size(), is(4));
     }
 
     /**
@@ -976,14 +1081,16 @@ public class YamlMessageBuilderTest {
      * [MS-04] fw_header: の値がクォートなしの数値・真偽値の場合、文字列に変換されること。
      *
      * <p>
-     * Given: messages に id=numericValues001 の fw_header にクォートなし数値 (0, 1234) と真偽値 (true) を記述<br>
+     * Given: {@code reader.fwHeaderfields} に resendFlag,resultCode,boolFlag を設定、
+     *        messages に id=numericValues001 の fw_header にクォートなし数値 (0, 1234) と真偽値 (true) を記述<br>
      * When:  buildMessagePool(yaml, "messages", "numericValues001", path) を呼ぶ<br>
      * Then:  fwHeader の各値が文字列に変換されていること（"0", "1234", "true"）
      * </p>
      */
     @Test
     public void buildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
-        // Given
+        // Given: 独自キー boolFlag を項目名に含める
+        setFwHeaderFields("resendFlag,resultCode,boolFlag");
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When

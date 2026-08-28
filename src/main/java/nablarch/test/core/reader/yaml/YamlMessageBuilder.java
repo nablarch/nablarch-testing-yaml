@@ -1,5 +1,8 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.repository.SystemRepository;
+import nablarch.core.util.StringUtil;
+import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.messaging.MessagePool;
@@ -11,6 +14,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FW_HEADER;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_GROUP_ID;
@@ -28,7 +33,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  *
  * <p>
  * 本文レコード・データ行・ディレクティブの組み立ては {@link YamlFileBuilder} の処理を再利用する
- * （重複ゼロ）。FW 制御ヘッダ（{@code fw_header:}）は「マップであること」の検証・文字列化を、
+ * （重複ゼロ）。FW 制御ヘッダ（{@code fw_header:}）は「マップであること」「キーが
+ * {@code reader.fwHeaderfields} の名前であること」の検証・文字列化を、
  * <b>実際に読み出すメッセージに対してのみ遅延実行</b>する（同一ファイル内の誤記エントリが他エントリの
  * 読み出しを巻き添えにしない挙動）。値の解釈（interpret）は行わず文字列化のみを行う。
  * </p>
@@ -36,6 +42,12 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * @author kiyotis
  */
 public final class YamlMessageBuilder {
+
+    /** FW 制御ヘッダの項目名を設定する {@link SystemRepository} のキー（本体 {@code MessageParser} と同じ） */
+    private static final String FW_HEADER_KEY = "reader.fwHeaderfields";
+
+    /** {@code reader.fwHeaderfields} 省略時の FW 制御ヘッダの項目名（本体 {@code MessageParser} と同じ） */
+    private static final String[] DEFAULT_FW_HEADER_FIELDS = {"requestId", "userId", "resendFlag", "resultCode"};
 
     private final InterpreterResolver interpreterResolver;
 
@@ -222,7 +234,8 @@ public final class YamlMessageBuilder {
      * 生の {@code fw_header} 値を検証・文字列化して {@code Map<String,String>} へ変換する（{@code messages} 経路のみ呼ばれる）。
      *
      * <p>
-     * 値は文字列化のみで解釈（interpret）はしない。マップ以外が指定された場合は ID 付きで
+     * 値は文字列化のみで解釈（interpret）はしない。マップ以外が指定された場合、および
+     * {@link #fwHeaderFields()} に無いキーが記載された場合は ID 付きで
      * {@link IllegalStateException} を投げる。
      * </p>
      *
@@ -239,10 +252,40 @@ public final class YamlMessageBuilder {
                     "fw_header in message entry id='" + id + "' must be a map, "
                             + "but was: " + fwHeaderObj.getClass().getSimpleName());
         }
+        Set<String> allowedFields = fwHeaderFields();
         Map<String, String> fwHeader = new LinkedHashMap<String, String>();
         for (Map.Entry<?, ?> kv : ((Map<?, ?>) fwHeaderObj).entrySet()) {
-            fwHeader.put(objectToString(kv.getKey()), objectToString(kv.getValue()));
+            String key = objectToString(kv.getKey());
+            if (!allowedFields.contains(key)) {
+                throw new IllegalStateException(
+                        "fw_header in message entry id='" + id + "' has unknown key '" + key + "'. "
+                                + "allowed keys (" + FW_HEADER_KEY + "): " + new TreeSet<String>(allowedFields));
+            }
+            fwHeader.put(key, objectToString(kv.getValue()));
         }
         return fwHeader;
+    }
+
+    /**
+     * {@code fw_header:} に記載できる FW 制御ヘッダの項目名を取得する。
+     *
+     * <p>
+     * {@code reader.fwHeaderfields} が設定されていればその名前（カンマ区切り。前後の空白は取り除かない）、
+     * 設定されていなければ既定の 4 つ（{@code requestId}・{@code userId}・{@code resendFlag}・{@code resultCode}）を
+     * 返す。本体 {@code MessageParser} と同じキー・同じ既定値・同じ分割（{@link NablarchTestUtils#makeArray}）である。
+     * </p>
+     * <p>
+     * 本体は読み込み単位ごとに生成される {@code MessageParser} のフィールド初期化で 1 回だけ集合を作るが、
+     * 本クラスは {@code SystemRepository} に登録される {@code YamlTestDataParser} が保持し続けるため、
+     * 設定の変更を取りこぼさないよう呼び出しのたびに引く。
+     * </p>
+     *
+     * @return FW 制御ヘッダの項目名の集合
+     */
+    private static Set<String> fwHeaderFields() {
+        String configured = SystemRepository.getString(FW_HEADER_KEY);
+        return StringUtil.isNullOrEmpty(configured)
+                ? NablarchTestUtils.asSet(DEFAULT_FW_HEADER_FIELDS)
+                : NablarchTestUtils.asSet(NablarchTestUtils.makeArray(configured));
     }
 }
