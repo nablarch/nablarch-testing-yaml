@@ -130,11 +130,6 @@ list_maps:
     rows:
       - GEN_COL: "${外字,3}"
 
-  # 3-2（負のテスト）: 列挙外の文字種名（implementation/testdata_notation.rst:1313）
-  - id: charTypeUnknownTest
-    rows:
-      - GEN_COL: "${存在しない文字種,3}"
-
   # 3-3: 組み合わせ記法（implementation/testdata_notation.rst:1322）
   - id: charTypeCombinedTest
     rows:

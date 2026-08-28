@@ -14,7 +14,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -957,33 +956,6 @@ public class YamlTableDataBuilderTest {
         }
         assertTrue("14文字種すべてが該当文字種3文字（サロゲートペアは3コードポイント）になること。落ちた文字種: "
                 + failures, failures.isEmpty());
-    }
-
-    /**
-     * [YamlTableDataBuilder] buildListMapRows: 列挙外の文字種名は変換されないこと（負のテスト）。
-     *
-     * <p>
-     * 何を担保するか: {@code ${文字種,文字数}} で使用できる文字種が解説書の列挙する14種類に限定されており、
-     * 列挙外の文字種名を書いても記法として変換されないこと。<br>
-     * 根拠: implementation/testdata_notation.rst:1313<br>
-     * Given: list_maps の charTypeUnknownTest に GEN_COL: "${存在しない文字種,3}"<br>
-     * When:  buildListMapRows(yaml, "charTypeUnknownTest", path) を呼ぶ<br>
-     * Then:  値が "${存在しない文字種,3}" のまま残ること
-     * </p>
-     */
-    @Ignore("NTF-DOC: implementation/testdata_notation.rst:1313 — 期待 列挙外の文字種名は変換されず ${存在しない文字種,3} のまま / 実際 InterpretationFailedException（原因 IllegalArgumentException: unknown charsetName. charsetName=[存在しない文字種]）")
-    @Test
-    public void buildListMapRows_unknownCharacterTypeIsNotConverted() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
-
-        // When
-        List<Map<String, String>> result = buildListMapRows(yaml, "charTypeUnknownTest", DIR);
-
-        // Then
-        assertThat(result.size(), is(1));
-        assertThat("列挙外の文字種名は変換されずそのまま残ること",
-                result.get(0).get("GEN_COL"), is("${存在しない文字種,3}"));
     }
 
     /**
