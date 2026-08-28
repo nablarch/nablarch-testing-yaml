@@ -84,12 +84,12 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
 
 | 種別 | 件数 | 是正で挙動が変わるか |
 |---|---|---|
-| 空マッピング `{}` | 10 | 変わらない（前後とも読み飛ばす） |
-| 全値が `""` | 15 | **変わる**（読み飛ばす → 残す） |
+| 空マッピング `{}` | 11 | 変わらない（前後とも読み飛ばす） |
+| 全値が `""` | 14 | **変わる**（読み飛ばす → 残す） |
 | 全値が Java null | 2 | 変わらない（前後とも残す） |
 | マーカーカラムだけに値 | 1 | 変わらない（前後とも残す） |
 
-「全値 `""`」15件の内訳:
+「全値 `""`」14件の内訳（全件）:
 
 | ファイル | 行 | セクション | エントリ |
 |---|---|---|---|
@@ -107,9 +107,10 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
 | 同上 | 40 | `expected_complete_tables` | `blankValueRowComplete` |
 | `…/db/YamlColumnOmissionTest/omission.yaml` | 55 | `setup_tables` | `s4a` |
 | 同上 | 73 | `setup_tables` | `s4b` |
-| `…/yaml/YamlTableDataBuilderTest/tableData.yaml` | 161 は全値 null のため対象外 | — | — |
 
-（表の最終行は対象外の注記。「全値 `""`」は14行＋`completedTable.yaml:31`/`:37` を除く。是正時に実測で確定する）
+参考: 空マッピング `{}` 11件は `tableData.yaml:60`・`:61`・`:71`・`:82`・`:236`・`:242`・`:298`・`:301`・`:340`・`:359` と
+`completedTable.yaml:15`。全値 Java null 2件は `tableData.yaml:161`（`nullValueOnlyRow`）と `:291`（`nullValueOnlyRowListMap`）。
+マーカーカラムだけに値 1件は `tableData.yaml:308`（`markerOnlyRowListMap`）。
 
 挙動が変わる見込みの既存テスト（**14件**）:
 
