@@ -1313,7 +1313,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #38: 2-3 — `fw_header:` に `reader.fwHeaderfields` に無いキーを書いても通る
+### ~~#38: 2-3 — `fw_header:` に `reader.fwHeaderfields` に無いキーを書いても通る~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:1295`（ピン `afa4f9e`）は、`fw_header:` に記載できるキーは `reader.fwHeaderfields` の名前（省略時は `requestId`・`userId`・`resendFlag`・`resultCode`）だけであり、それ以外のキーがあるとエラーになると定める。本体 `MessageParser.java:33`・`:102`-`:110` と同じ集合の作り方に揃える。設定に依存するため実装（`YamlMessageBuilder.convertFwHeader`）で検査する。
 
@@ -1321,13 +1321,13 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `YamlMessageBuilder.convertFwHeader`（`:233`-`:246`）で、キーが集合に無ければ例外にする。集合は本体と同じく `SystemRepository.getString("reader.fwHeaderfields")` が空なら既定4つ、あれば `NablarchTestUtils.makeArray`（カンマ分割・前後空白を取り除かない）で作る。例外には電文の `id` と不正なキー名を含める（同メソッドの既存の `IllegalStateException` と同じ形）
-- [ ] B. テストを足す — `reader.fwHeaderfields` を設定した場合・しない場合の両方。例外の型と、メッセージに `id` と不正キー名が入ることを assert する
-- [ ] C. 既存フィクスチャ・テストの是正 — 着手前調査で該当は**キー3件・テスト4件**。キー: `YamlMessageBuilderTest/customFwHeaderData.yaml:9` `customField`、`YamlMessageBuilderTest/fwHeaderMapData.yaml:14` `customProjectKey`、同 `:40` `boolFlag`。テスト（いずれも `reader.fwHeaderfields` を設定していないため是正後に落ちる）: `buildMessagePool_customFwHeaderFields`（`YamlMessageBuilderTest.java:792`）・`buildMessagePool_fwHeaderMapAllKeysRetainedIncludingCustom`（同 `:824`）・`buildMessagePool_fwHeaderMapReadableWithoutHeaderRecord`（同 `:854`）・`buildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues`（同 `:985`）。どれを変えどれを変えなかったかを件数つきで記録する
-- [ ] D. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
-- [ ] E. `mvn -o clean test` 緑を確認
-- [ ] F. commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-38.md)
+- [x] A. `YamlMessageBuilder.convertFwHeader`（`:233`-`:246`）で、キーが集合に無ければ例外にする。集合は本体と同じく `SystemRepository.getString("reader.fwHeaderfields")` が空なら既定4つ、あれば `NablarchTestUtils.makeArray`（カンマ分割・前後空白を取り除かない）で作る。例外には電文の `id` と不正なキー名を含める（同メソッドの既存の `IllegalStateException` と同じ形）
+- [x] B. テストを足す — `reader.fwHeaderfields` を設定した場合・しない場合の両方。例外の型と、メッセージに `id` と不正キー名が入ることを assert する
+- [x] C. 既存フィクスチャ・テストの是正 — 着手前調査で該当は**キー3件・テスト4件**。キー: `YamlMessageBuilderTest/customFwHeaderData.yaml:9` `customField`、`YamlMessageBuilderTest/fwHeaderMapData.yaml:14` `customProjectKey`、同 `:40` `boolFlag`。テスト（いずれも `reader.fwHeaderfields` を設定していないため是正後に落ちる）: `buildMessagePool_customFwHeaderFields`（`YamlMessageBuilderTest.java:792`）・`buildMessagePool_fwHeaderMapAllKeysRetainedIncludingCustom`（同 `:824`）・`buildMessagePool_fwHeaderMapReadableWithoutHeaderRecord`（同 `:854`）・`buildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues`（同 `:985`）。どれを変えどれを変えなかったかを件数つきで記録する
+- [x] D. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
+- [x] E. `mvn -o clean test` 緑を確認
+- [x] F. commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-38.md)
 
 **Completion criteria**:
 
@@ -1431,9 +1431,9 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 **Steps**:
 
 - [ ] A. `:108`（`table_data.rows`）・`:136`（`list_map_data.rows`）の「全ての値が空文字 `""` の行は、行が無いものとして取り除かれる」を `notation.rst:1502` に合わせる（`{}` だけ。2-4）
-- [ ] B. `:213`-`:215`（`message_data.fw_header`）・`:424`-`:430`（`$defs.fw_header`）の「記述したキーはすべて FW 制御ヘッダとして NTF に渡される」「任意のヘッダ名を許容する」を `notation.rst:1295` に合わせる（`reader.fwHeaderfields` の名前だけ。他はエラー。2-3）
-- [ ] C. `:208`・`:241`・`:272`（3つの `records`）の `description` を `notation.rst:1153`・`:1299` に合わせる（レコードレイアウトは1つ。2-2）
-- [ ] D. `:377`（`record_fragment.rows`）の「不足した末尾のフィールドは `""` として扱われる」に末尾の `null` の扱いを加える（`notation.rst:889`・`:1155`。2-1）
+- [ ] B. `:216`（`message_data.fw_header` の `description`）・`:433`（`$defs.fw_header` の `description`）・`:434`（同 `$comment`）の「記述したキーはすべて FW 制御ヘッダとして NTF に渡される（値でのフィルタリングは行われない）」「任意のヘッダ名を許容する」を `notation.rst:1295` に合わせる（`reader.fwHeaderfields` の名前だけ。他はエラー。2-3）。**`additionalProperties: {"type": "string"}`（`:429`-`:432`）の構造は締めないこと** — 許可集合は `reader.fwHeaderfields` に依存するため静的スキーマでは表現できず（#38 が実装検査を選んだ前提）、締めると `YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml` が成立しなくなり「誤記エントリが他エントリを巻き添えにしない」遅延実行の性質も消える
+- [ ] C. `:209`（`message_data.records`）・`:243`（`expected_request_message_data.records`）・`:275`（`group_message_data.records`）の `description` を `notation.rst:1153`・`:1299` に合わせる（レコードレイアウトは1つ。2-2）。`:182`（`file_data.records`）は対象外（ファイルは複数レコードレイアウトを持てる）
+- [ ] D. `:380`（`record_fragment.rows` の `description`）の「不足した末尾のフィールドは `""` として扱われる」に末尾の `null` の扱いを加える（`notation.rst:889`・`:1155`。2-1）
 - [ ] E. 是正の前後で挙動テストの結果が変わらないことを実測する（`description` は挙動を変えないため）
 - [ ] F. `mvn -o clean test` 緑を確認
 - [ ] G. commit・push
