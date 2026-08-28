@@ -1258,7 +1258,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #36: 2-1 — ファイル・電文の末尾フィールドの `null` が `null` のまま残る
+### ~~#36: 2-1 — ファイル・電文の末尾フィールドの `null` が `null` のまま残る~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:889`（ファイル）・`:1155`（電文）（ピン `afa4f9e`）は、末尾のフィールドに `null` と記述した場合は形式によらず `""` になり、後ろに値のあるフィールドがあれば `null` のまま保持されると定める。本体は `DataFileParser.java:68` が `NablarchTestUtils.trimTailCopy` を掛けてから `DataFileFragment.addValue`（名前の数まで `""` で埋める）に渡す。現行 `YamlFileBuilder.java:243`-`:249` は `trimTail` 相当を持たない。本体の実装をそのまま使って追随する（規則を手写ししない）。
 
@@ -1266,14 +1266,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 本体を oracle にしたテストを**先に**書き、是正前に落ちることを実測する。入力は指示書 §3 の F1〜F6・M1・S2（送信同期は4種のうち1つ以上）。oracle は POI で組んだ `.xlsx` を本体 `BasicTestDataParser`（`PoiXlsReader` ＋ `NullInterpreter` → `QuotationTrimmer` → `LineSeparatorInterpreter`）で読み、`DataFile#toDataRecords()` の値を比べる
-- [ ] B. `YamlFileBuilder.buildFragmentsInternal` で `rowValues` を `addValueWithId`（`:247`）／`addValue`（`:249`）に渡す直前に `NablarchTestUtils.trimTailCopy` を通す。`interpret` → `trimTail` → `addValue` の順は本体と同じ
-- [ ] C. A のテストが是正後に通ることを実測する
-- [ ] D. 既存テストの期待値見直し — 着手前調査で末尾 `null` のフィクスチャは**0件**と実測済み。是正後に落ちた既存テストがあれば全件挙げ、解説書に合わせて直す。変えた／変えなかったを件数つきで記録する
-- [ ] E. **変異確認**: 追加/変更した各テストについて、期待値をわざと崩すと落ちることを1度実行して確認し、コマンドと結果を記録する
-- [ ] F. `mvn -o clean test` 緑を確認（`Tests run:` 行を読む）
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-36.md)
+- [x] A. 本体を oracle にしたテストを**先に**書き、是正前に落ちることを実測する。入力は指示書 §3 の F1〜F6・M1・S2（送信同期は4種のうち1つ以上）。oracle は POI で組んだ `.xlsx` を本体 `BasicTestDataParser`（`PoiXlsReader` ＋ `NullInterpreter` → `QuotationTrimmer` → `LineSeparatorInterpreter`）で読み、`DataFile#toDataRecords()` の値を比べる
+- [x] B. `YamlFileBuilder.buildFragmentsInternal` で `rowValues` を `addValueWithId`（`:247`）／`addValue`（`:249`）に渡す直前に `NablarchTestUtils.trimTailCopy` を通す。`interpret` → `trimTail` → `addValue` の順は本体と同じ
+- [x] C. A のテストが是正後に通ることを実測する
+- [x] D. 既存テストの期待値見直し — 着手前調査で末尾 `null` のフィクスチャは**0件**と実測済み。是正後に落ちた既存テストがあれば全件挙げ、解説書に合わせて直す。変えた／変えなかったを件数つきで記録する
+- [x] E. **変異確認**: 追加/変更した各テストについて、期待値をわざと崩すと落ちることを1度実行して確認し、コマンドと結果を記録する
+- [x] F. `mvn -o clean test` 緑を確認（`Tests run:` 行を読む）
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-36.md)
 
 **Completion criteria**:
 
@@ -1498,6 +1498,6 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: not suspended
 - **Date**: 2026-08-28
-- **Last completed**: #34 Evaluation sign-off（Step 4 第1回）— 2026-08-27 `/rn:ty` 承認
-- **Next**: #36 2-1 — ファイル・電文の末尾フィールドの `null` が `null` のまま残る
+- **Last completed**: #36 2-1 — 末尾の `null` を本体の `trimTailCopy` で `""` に畳む（`ce81530`）
+- **Next**: #37 2-2 — 電文の `records:` に `maxItems: 1` を入れる
 - **Notes**: ブランチ `feature/ntf-yaml`（`3ee39c9`）。Step 4 第2回の指示書（`nablarch-document@origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`）に基づき #36〜#44 を追加。着手前の実測ベースラインは `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test`）
