@@ -1138,6 +1138,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 - [x] 3-1. YAML 1.2 Core Schema で解釈されるため、クォートなしの `no`・`yes`・`on`・`off` がキーでも値でも文字列のままになる（`notation.rst:92`・`:1399`、`implementation/deal_unit_test/batch.rst:352` の実例 `- no: "1"`）
 - [x] 3-2. `${<文字種>,3}` が14文字種それぞれで該当文字種3文字になる（サロゲートペアは3コードポイント）。**列挙外の文字種名は変換されないという負のテストも必ず書く**（`notation.rst:1313`-`:1320`）
+  （#41 で失効: この負のテストは解説書に無い「あるべき姿」を追っていたため #41 で削除した。根拠は `nablarch-document@09779f6`「docs: 限定列挙に付けた「それ以外はエラー」を落とす」が当該文から `（それ以外を指定するとエラーになる）` を意図的に削除していること。14種類が使えること自体は `YamlTableDataBuilderTest.buildListMapRows_allFourteenCharacterTypesAreGenerated` が引き続き担保する）
 - [x] 3-3. `"${半角数字,2}-${半角数字,4}"` が7文字になり3文字目が `-` のまま残る（`notation.rst:1322`）
 - [x] 3-4. `"\n"` が LF 1文字（`U+000A`）になる（`notation.rst:1441`-`:1443`）
 - [x] 3-5. `"20210123123456"` が `2021-01-23 12:34:56.000`、`"20210123"` が `2021-01-23 00:00:00.000` に評価される（`notation.rst:1326`-`:1331`）
@@ -1151,6 +1152,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - 3-1〜3-6 の6件すべてについてテストが存在する
 - 落ちたものは `@Ignore` ＋ `NTF-DOC:` 印つきの理由で記録されている（実装は直していない）
 - 3-2 の負のテスト（列挙外の文字種名は変換されない）が書かれている
+  （#41 で失効。上と同じ理由。当時の実測記録としては真だが、現在の src/ には該当テストは存在しない）
 - 通った各テストについて、期待値を崩すと落ちることを確認した記録がある
 - `mvn -o clean test` が BUILD SUCCESS
 
@@ -1398,26 +1400,27 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #41: 2-6 — `@Ignore` 1件の削除
+### ~~#41: 2-6 — `@Ignore` 1件の削除~~
 
-**Purpose**: `YamlTableDataBuilderTest.java:751` `buildListMapRows_unknownCharacterTypeIsNotConverted` は「列挙外の文字種名は変換されず `${存在しない文字種,3}` のまま」を期待するが、解説書 `implementation/testdata_notation.rst:1315`（ピン `afa4f9e`）は「使用できる文字種は14種類に限定される」としか書かない。列挙外の名前は本体 `CharacterGeneratorBase.java:53`-`:56` が `IllegalArgumentException` を投げ、Excel でも YAML でも同じである。「間違えたときにどうなるか」は解説書に書かない基準（2026-08-25 ユーザー確定）どおりであり、このテストは解説書に無い「あるべき姿」を追っている。
+**Purpose**: `YamlTableDataBuilderTest.java:976` `buildListMapRows_unknownCharacterTypeIsNotConverted` は「列挙外の文字種名は変換されず `${存在しない文字種,3}` のまま」を期待するが、解説書 `implementation/testdata_notation.rst:1315`（ピン `afa4f9e`）は「使用できる文字種は14種類に限定される」としか書かない。列挙外の名前の扱いは Excel でも YAML でも同じである（`${文字種,文字数}` を解釈するのは `BasicJapaneseCharacterInterpreter` 1クラスだけで、`unit-test.xml` の Excel 用 `interpreters`・`yamlInterpreters`・`yamlMessagingInterpreters` の3つの鎖すべてに同じクラスが入る）。ただし**挙動は名前の字種に依存し一律ではない**（コーディネータ実測 2026-08-29）: 同クラスのパターン `\$\{(\W+)\s*,\s*([0-9]+)\}`（`BasicJapaneseCharacterInterpreter.java:24`）は文字種名部が `\W+` のため、`${存在しない文字種,3}` はマッチして `CharacterGeneratorBase.generate` に届き `IllegalArgumentException`（`CharacterGeneratorBase.java:56`）になるが、`${abc,3}` のような ASCII 英数字の名前はマッチせず**そのまま残る**。この一貫しない挙動こそ解説書が定めていないことの裏づけである。なお解説書側は `nablarch-document@09779f6`「docs: 限定列挙に付けた「それ以外はエラー」を落とす」で当該文から `（それ以外を指定するとエラーになる）` を意図的に削除している。「間違えたときにどうなるか」は解説書に書かない基準（2026-08-25 ユーザー確定）どおりであり、このテストは解説書に無い「あるべき姿」を追っている。
 
 **Prerequisites**: none
 
 **Steps**:
 
-- [ ] A. テストメソッド `buildListMapRows_unknownCharacterTypeIsNotConverted`（`:740`-`:766` の javadoc・`@Ignore`・`@Test` を含む）を削除する
-- [ ] B. フィクスチャ `charTypeUnknownTest`（`YamlTableDataBuilderTest/nativeTypes.yaml:94`）が他から参照されていないことを実測し、参照が無ければ併せて削除する
-- [ ] C. `@Ignore` が src/test 全体で0件になったことを実測する（`grep -rn '@Ignore' src/test`）。**他に `@Ignore` を足さない**
-- [ ] D. `mvn -o clean test` 緑を確認（`Skipped: 0` になること）
-- [ ] E. commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-41.md)
+- [x] A. テストメソッド `buildListMapRows_unknownCharacterTypeIsNotConverted`（`:962`-`:987` の javadoc・`@Ignore`・`@Test` を含む）を削除する
+- [x] B. フィクスチャ `charTypeUnknownTest`（`YamlTableDataBuilderTest/nativeTypes.yaml:134`）が他から参照されていないことを実測し、参照が無ければ併せて削除する
+- [x] C. **アノテーションとしての** `@Ignore` が src/test 全体で0件になったことを実測する。**他に `@Ignore` を足さない**
+  （コーディネータ訂正 2026-08-29: 素の `grep -rn '@Ignore' src/test` は0件にならない。`YamlMessageBuilderTest.java:1125` に `{@code @Ignore}` が **javadoc の散文**として存在するため（#38 の変異実験の記録。アノテーションではない）。指示書 §4 の完了条件が求めているのは「読み飛ばされるテストが無いこと」＝アノテーションなので、検証は `grep -rnE '^\s*@Ignore' src/test` が0件、かつ `mvn -o clean test` が `Skipped: 0` で行う。javadoc の言及は妥当な記録なので削除しない）
+- [x] D. `mvn -o clean test` 緑を確認（`Skipped: 0` になること）
+- [x] E. commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-41.md)
 
 **Completion criteria**:
 
 - `buildListMapRows_unknownCharacterTypeIsNotConverted` が削除されている
 - `charTypeUnknownTest` の参照有無が実測され、参照が無ければ削除されている
-- `grep -rn '@Ignore' src/test` が0件
+- アノテーションとしての `@Ignore` が src/test 全体で0件（`grep -rnE '^\s*@Ignore' src/test` が0件。javadoc 散文中の `{@code @Ignore}` は対象外）
 - `mvn -o clean test` が BUILD SUCCESS で `Skipped: 0`
 
 ---

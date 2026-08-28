@@ -83,3 +83,25 @@ Step 4 では4観点レビューを回さない（指示書 §7）。コーデ�
 
 - コーディネーター独立レビュー: OK
 - Ready to check off: Yes
+
+## 後続タスクによる失効（2026-08-29 コーディネータ追記）
+
+本記録は **#31 完了時点（Step 4 第1回）の実測**であり、その後の是正で次の2点が失効した。
+記録そのものは当時の事実として残し、書き換えていない。
+
+| 失効した記述 | 失効させたタスク | 現在の事実 |
+|---|---|---|
+| 完了条件「落ちたものは `@Ignore` ＋ `NTF-DOC:` 印つきの理由で記録されている」（`:8`）、および 3-2 の負のテストに関する記述（`:9`・`:23`） | **#41** | 当該テスト `buildListMapRows_unknownCharacterTypeIsNotConverted` は #41 で削除済み。`grep -rnE '^\s*@Ignore' src/test` は 0 件、`mvn -o clean test` は `Skipped: 0` |
+
+**削除の根拠**（#41 で実測。詳細は `checks/task-41.md`）:
+
+- 解説書は列挙外の文字種名を書いたときの挙動を定めていない。`nablarch-document@09779f6`
+  「docs: 限定列挙に付けた「それ以外はエラー」を落とす」が当該文から `（それ以外を指定するとエラーになる）`
+  を意図的に削除している（その親 `3e01b69` の時点では在った）。
+- 挙動は名前の字種に依存し一律ではない。`BasicJapaneseCharacterInterpreter.java:24` のパターン
+  `\$\{(\W+)\s*,\s*([0-9]+)\}` は文字種名部が `\W+` のため、`${存在しない文字種,3}` は例外になるが
+  `${abc,3}` はマッチせずそのまま残る。この不一貫さ自体が「解説書が定めていない」ことの裏づけである。
+- 14 種類が使えること自体は `YamlTableDataBuilderTest#buildListMapRows_allFourteenCharacterTypesAreGenerated`
+  が引き続き担保する。
+
+`steering.md` の #31 該当箇所（Step 3-2 と Completion criteria）にも同趣旨の注記を入れてある。
