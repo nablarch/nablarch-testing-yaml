@@ -7,8 +7,71 @@
 着手前ベースライン（実測。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test`）:
 `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1` / `BUILD SUCCESS`。`@Test` 268件・`@Ignore` 1件。
 
-完了時（実測。同コマンド。HEAD `00fc164`）:
+完了時（実測。同コマンド。`src/` の最終コミット `00fc164`）:
 `Tests run: 318, Failures: 0, Errors: 0, Skipped: 0` / `BUILD SUCCESS`。`@Test` 318件・`@Ignore` 0件。
+
+---
+
+## 結論
+
+**指示書 第2節の7件はすべて是正した。** `mvn -o clean test` は `Tests run: 318, Failures: 0, Errors: 0, Skipped: 0` / `BUILD SUCCESS`。
+`@Test` は 268件 → 318件、`@Ignore` は 1件 → 0件になった（§3）。7件のうち `src/main` の挙動を変えた5件（2-6・2-7 を除く）
+それぞれについて、その `src/main` の変更だけを取り消すと
+そのために足したテストが落ちることを最終状態で測り直してある（§3.2・§5.1。取り消しで落ちるテストは計43件）。
+
+**カバレッジは第1回から下がった箇所が無い。** C0 99.29%（`INSTRUCTION_MISSED` 13）／C1 98.86%（`BRANCH_MISSED` 2）。
+9クラスすべてで `INSTRUCTION_MISSED`・`BRANCH_MISSED` が第1回 `8eacaa7` と一致し、
+未達は `#19` でユーザーが「到達不能」として承認済みの2箇所だけである（§7.1）。
+
+**下流 `nablarch-testing-converter`（`d611bec`、未変更）で4件が新たに落ちる。** 着手前
+`Tests run: 656, Failures: 0, Errors: 0, Skipped: 0` に対し、完了後は `Tests run: 656, Failures: 3, Errors: 1, Skipped: 0` /
+**`BUILD FAILURE`**。内訳は 2-1 が2件・2-2 が1件・2-4 が1件で、いずれも converter 側のテストが是正前の挙動を期待して書かれているためである。
+指示書 §5 が「converter を直さない」と定めているため本タスクでは直しておらず、
+**共有ブランチ `ntf-test-data-converter` は現在 BUILD FAILURE のまま残っている**（§7.2）。
+
+**決めていただきたいことが5件ある**（§8）。
+(1) **本体と恒久的に食い違う仕様差を、この差のまま確定してよいか。** マーカーカラムだけに値があり他のキーを省略した行は、
+行が残る点・カラム名は本体と一致するが、省略したカラムの値が**本体 `""`・YAML null** で食い違う（§4.2 の T5・L5）。
+2-4 の決定の帰結として意図的に固定したものである。本体を oracle にして突き合わせた18ケース
+（§4 の F1〜F6・M1・S2・T1〜T5・L1〜L5）のうち、**値が食い違うのは T5・L5 の1点だけ**である（§8.1）。
+(2) converter の4件を誰がいつ直すか（§8.2）。
+(3) 解説書 `testdata_notation.rst:889` の曖昧さ（`""` を「値」と数えるか）を起票するか（§8.3）。
+(4) 2-5 の規則がスキーマ `description` の5箇所以上に未追随であることを、いま追随させるか（§8.4）。
+(5) 行番号出典の方式を変えるか（§8.5）。
+
+**指示書の外で行ったことが1件ある。** 2-7（スキーマ `description` の追随）に付随して、`src/` 配下の解説書出典の行番号を
+**18箇所**訂正した（解説書の改版で `+2` ずれたもの13箇所と、着手前から指す先が誤っていたもの5箇所）。全件を §8.6 に挙げてある。
+
+**出典の書き方**: 本モジュールは `<パス>:<行>`。断りが無ければ **`src/` の最終コミット `00fc164`** を指す
+（`00fc164` 以降のコミットは本報告書だけを変更しており、`git diff --stat 00fc164 HEAD -- src/` は空である。
+そのため `src/` については現在のブランチ HEAD と同じ内容を指す）。
+**ただし §1 の `file:line` と grep 結果はすべて着手前 `3ee39c9` を指す**（同節の冒頭にも明記した）。
+他の節で `3ee39c9` を指す箇所は、そのつど `3ee39c9` と書いてある。
+解説書は `nablarch-document` のピン `afa4f9e` の `<パス>:<行>`（パスは `ja/development_tools/testing_framework/` からの相対）。
+依存先はピン（`nablarch-testing` `3c4bd2a`／`nablarch-testing-converter` `d611bec`）。
+指示書は `nablarch-document@origin/ntf-yaml-support`（`ef3a914`）の
+`.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`。
+
+---
+
+## 指示書 §4 の完了条件10項目の充足
+
+条件の文面は指示書 `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md:259`-`:269` からの逐語である。
+
+| # | 完了条件（逐語） | 判定 | 根拠 |
+|---|---|---|---|
+| 1 | **第2節の7件がすべて是正されている。** 是正ごとに、直す前は落ちて直したあとは通るテストがあること（2-6・2-7 は除く） | 満たす | §3.2。5件それぞれの「取り消し方」と、取り消したときに落ちるテスト（4・4・8・12・15 = 計43件）を挙げてある |
+| 2 | **2-1〜2-5 の「着手前に特定すること」の結果が、実装に入る前に報告されている** | **結果は満たす。「実装に入る前に報告した」ことは本報告書だけでは判断できない** | 結果は §1（2-1〜2-5 の全件）。報告した時点を示す記録は本報告書に無い |
+| 3 | **足したテスト・直したテストそれぞれについて、期待値をわざと崩すと落ちることを1度確認している。** 確認したことを報告に書く | 満たす（§5.2 は本タスクでは再実行していない） | §5.1（実装側の変異5件。本タスクで実測）・§5.2（#36〜#40 の各タスクの記録）・§5.3（記録から辿れなかった11件。本タスクで実測し11件すべてが落ちた） |
+| 4 | **既存テストの期待値を変えた箇所が全件挙がっている。** どれを変えどれを変えなかったかを、件数を数えたうえで報告する | 満たす | §6。251（共通）＝ 7（assert の行が変わった。うち期待値リテラルが変わったのは5件、assert の説明文だけが変わったのが2件）＋ 9（入力だけ変えた）＋ 235（テスト本体は不変。うち読むフィクスチャのエントリが変わったものが4件）。ほかに改名・統合・削除17件・新規67件 |
+| 5 | **`@Ignore` が0件**（2-6 で削除し、新たに足していない） | 満たす | §3.2 の 2-6。`grep -rnE "^\s*@Ignore" src/` が0件、`mvn -o clean test` が `Skipped: 0` |
+| 6 | **カバレッジ C0/C1 を計測し、結果を報告する。** `src/main` の是正で下がった箇所があれば挙げる | 満たす | §7.1。下がった箇所は無し（9クラス全件の `INSTRUCTION_MISSED`／`BRANCH_MISSED` が第1回と一致） |
+| 7 | `mvn -o clean test` が緑。着手前は **267件成功・`@Ignore` 1件**（2026-08-27 ディレクター実測） | 満たす | 本報告書の冒頭。着手前 `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（成功267・`@Ignore` 1）で指示書の数と一致。完了時 `Tests run: 318, Failures: 0, Errors: 0, Skipped: 0` |
+| 8 | `git status --short` が空。`tmp/` はテストスイート自身が作る空ディレクトリなので残ってよい | **報告書の外**（作業ツリーの状態） | `git status --short` で確認できる |
+| 9 | 変更を push する | **報告書の外**（リポジトリの状態） | `git log --oneline origin/feature/ntf-yaml` で確認できる |
+| 10 | **converter で落ちるテストを報告する**（直さない）。少なくとも `YamlFormatReaderScalarTest#skipsRowWhoseValuesAreAllEmpty`（`d611bec`）は 2-4 で落ちる見込み。着手前（`Tests run: 656, Failures: 0, Errors: 0, Skipped: 0`）からの差分を全件挙げる | 満たす | §7.2。着手前の 656／0 を本タスクで測り直し、完了後 `Failures: 3, Errors: 1` の全4件を挙げた。指示書が名指しした1件も実測で落ちた |
+
+---
 
 **指示書 §6 の6項目と本報告書の節の対応**（§6 の順序どおりに並べてある。§2 は着手前調査の過程で判明した食い違いを別立てにしたもの）:
 
@@ -21,11 +84,16 @@
 | 4. 期待値をわざと崩す確認の結果 | §5 |
 | 5. 既存テストの期待値を変えた箇所の全件 | §6 |
 | 6. カバレッジ C0/C1 と converter で落ちたテストの全件 | §7 |
-| （追加） | §8 申し送り |
+| （追加） | §8 決めていただきたいこと・記録 |
 
 ---
 
 ## 1. 2-1〜2-5 の「着手前に特定すること」の結果
+
+**本節の `file:line`・grep 結果・件数はすべて着手前 `3ee39c9` を指す。**
+HEAD で同じコマンドを打つと数が合わない（例: `grep -rn 'fwHeaderfields' src/test` は `3ee39c9` で0ヒット、HEAD では41ヒット。
+`YamlSectionTest.java:473` は `3ee39c9` では `dropBlankRows_removesEmptyMappingAndAllBlankValueRows` の宣言行だが、HEAD では別の javadoc 行である）。
+検算するときは `git show 3ee39c9:<パス>` または `git grep <パターン> 3ee39c9 -- <パス>` を使う。
 
 走査対象は `src/test/**/*.yaml`（55ファイル）と `src/test/java/**/*.java` の全件。
 YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にしてから、セクション種別・エントリ・行を特定した。
@@ -36,9 +104,20 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
 `response_header_messages`・`response_body_messages` の全エントリの `records[].rows[]` を走査し、
 末尾要素が YAML の null タグ（クォートなし `null`／`~`／値の省略）である行を探した。**該当0件。**
 
-`nullValue()` を assert する既存テストも10箇所あるが、いずれもファイル・電文のデータ行ではない
-（`YamlColumnOmissionTest` のテーブル値7件、`YamlSectionTest` の `interpret`/`objectToString` の引数 null 2件、
-`YamlFileBuilderTest.java:570` の `record-length` ディレクティブ未設定1件、`YamlTestDataParserTest.java:1423` の `list_maps` 値1件）。
+`nullValue()` を assert する既存テストも **10箇所**あるが、いずれもファイル・電文のデータ行ではない。
+走査コマンドは `git grep -n 'nullValue()' 3ee39c9 -- src/test`（10行）。内訳は次のとおり。
+
+- `YamlColumnOmissionTest` のテーブル値 **6件**（`:190`・`:242`・`:251`・`:335`・`:357`・`:361`）
+- `YamlSectionTest` の `interpret`／`objectToString` の引数 null 2件（`:182`・`:243`）
+- `YamlFileBuilderTest.java:570` の `record-length` ディレクティブ未設定1件
+- `YamlTestDataParserTest.java:1423` の `list_maps` 値1件
+
+**この走査は `nullValue()` に限ったものである。** `assertNull` を使う assert も `3ee39c9` の `src/test` に **31箇所**ある
+（`git grep -n 'assertNull' 3ee39c9 -- src/test` の33行から `import` 2行を除いた数。
+`YamlTestDataParserTest` 10・`YamlMessageBuilderTest` 6・`YamlTableDataBuilderTest` 15）。
+31箇所すべてについて囲む `@Test` メソッド名を機械抽出して確かめたところ、対象は
+`getListMap`／`list_maps` の値、テーブルの値、`buildMessagePool`／`buildSendSyncMessageList` の戻り値または `requestId` であり、
+**ファイル・電文の `records[].rows[]` の末尾フィールドを見ているものは無い。**
 
 → 2-1 の是正で期待値を変える既存テストは、見込みとして0件。是正後の実測で確かめる。
 
@@ -144,8 +223,11 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
   - `buildListMapRows_blankValueRowMiddleExcluded`（`:1511`）
   - `buildListMapRows_partiallyBlankValueRowKept`（`:1534`）
   - `buildListMapRows_allBlankRowsReturnsEmptyList`（`:1687`）
-- `YamlColumnOmissionTest`（2件相当）
-  - `columnNamesDependOnRowOrderAfterBlankRowRemoval`（`:174`）ほか `omission.yaml` の `s4a`・`s4b` を使うテスト
+- `YamlColumnOmissionTest`（2件。`omission.yaml` の `s4a`・`s4b` を読む `@Test` の全件。
+  `git show 3ee39c9:…/YamlColumnOmissionTest.java` から `@Test` メソッドを機械抽出し、本体に `"s4a"` または `"s4b"` を
+  含むものを取った結果、次の2件だけだった）
+  - `columnNamesDependOnRowOrderAfterBlankRowRemoval`（`:174`）
+  - `insertedValueDependsOnRowOrder`（`:187`）
 
 変わらない見込みの既存テスト（`{}`・全値 null・マーカーカラムのみを扱うもの）:
 `dropBlankRows_keepsRowHavingAnyNonBlankValue`（`:498`）、`dropBlankRows_keepsRowHavingOnlyMarkerColumnValue`（`:549`）、
@@ -154,7 +236,8 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
 `buildTableDataList_emptyRowEntrySkipped`（`:429`）、`buildListMapRows_emptyRowEntrySkipped`（`:947`）、
 `buildTableDataList_leadingEmptyRow*`（`:1143`・`:1181`・`:1220`）、`buildListMapRows_leadingEmptyRowKeepsFollowingRows`（`:1256`）、
 `buildTableDataList_emptyRowEntryInExpectedTableSkipped`（`:1423`）、`buildTableDataList_rowInterpretedToAllBlankIsKept`（`:1564`）、
-`buildListMapRows_rowInterpretedToAllBlankIsKept`（`:1631`）ほか。件数は是正後の実測で確定する。
+`buildListMapRows_rowInterpretedToAllBlankIsKept`（`:1631`）ほか。**この一覧は全件ではない**（末尾の「ほか」）。
+実測との突き合わせは §6.6 にある。2-4 起因で実際に期待値または名前が変わった既存テストは、§6.2 の5件と §6.4 の11件の計16件である。
 
 ### 2-5. 2文字の `\` ＋ `r` を値に置いている既存フィクスチャ・テスト — **フィクスチャ1件 / テスト1件**
 
@@ -163,7 +246,9 @@ YAML はテキスト検索ではなく PyYAML の `compose()` で構文木にし
 - テスト: `YamlTableDataBuilderTest#buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser`（`:591`）。
   `:603` で `is("\\r")`（Java 文字列リテラル。実体は2文字）を assert している
 
-Java ソース中の `"\\r"` リテラルも全走査した。上記テストの `:600`（assert の説明文）と `:603`（期待値）の2箇所のみ。
+Java ソース中の `"\\r"` リテラルも全走査した。`git grep -nF '\\r' 3ee39c9 -- 'src/*.java'` は**5行**返すが、
+うち `:584`・`:585`・`:587` は javadoc のコメントで Java 文字列リテラルではない。
+リテラルは上記テストの `:600`（assert の説明文）と `:603`（期待値）の**2箇所のみ**である。
 `src/main` では `ntf-testdata-yaml-schema.json:290` の `description` 本文に `"\r\n"` の説明が出てくるが、これは値ではなく説明文。
 実際の CR（`"\r"`。1文字）は `nativeTypes.yaml:17` の `YAML_CR_COL`、`schemaFullCoverage.yaml:67` と
 `YamlFileBuilderTest/fileData.yaml:171`・`:369` の `record-separator` にあり、いずれも**対象外**（2文字の `\`＋`r` ではない）。
@@ -176,7 +261,6 @@ Java ソース中の `"\\r"` リテラルも全走査した。上記テストの
    `git ls-tree -r --name-only 3ee39c9 src/test/java` の全 `.java` を `grep -nE 'poi|Workbook|XSSF|HSSF'` に掛けると2ヒットするが、
    いずれも英単語 `point` の一部（`YamlTestDataParserTest.java:1391` の `required-decimal-point`、
    `YamlLoaderTest.java:504` の `error path must point to nested location`）であり、**POI の利用は0件**である。
-   （本報告書の第1版は「0ヒット」と書いていた。#43 で数え直して訂正した。結論は変わらない。）
    ただし POI 3.8（`poi`・`poi-ooxml`・`poi-ooxml-schemas`）は `nablarch-testing` 経由でテストクラスパスに載っている
    （`mvn -o dependency:build-classpath` で実測）。oracle 用の `.xlsx` を組む土台は新規に作る。作業自体は妨げられない。
 2. **解説書のパスは `ja/development_tools/testing_framework/` 配下である。**
@@ -190,7 +274,7 @@ Java ソース中の `"\\r"` リテラルも全走査した。上記テストの
 ## 3. 第2節7件の是正結果
 
 **7件すべて是正済み。** `mvn -o clean test` は `Tests run: 318, Failures: 0, Errors: 0, Skipped: 0` / `BUILD SUCCESS`
-（HEAD `00fc164`。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean install` のテストフェーズで実測）。
+（`src/` の最終コミット `00fc164`。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean install` のテストフェーズで実測）。
 着手前は `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（`@Test` 268件のうち1件が `@Ignore`）。
 
 ### 3.1 「直す前に落ちたテスト」の測り方（本タスクの実測）
@@ -337,7 +421,7 @@ cd <scratchpad>/mut && JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean 
   加えて `:293` `record-separator` に 2-5 の規則を追記）
 - コミット: `94f7e16`・`7daae89`
 - **挙動を変えていない**ため「直す前に落ちるテスト」は無い（完了条件1 の対象外）
-- スコープ拡張1件・別種の出典訂正5件を同時に行った。§8.1 に分けて記す
+- スコープ拡張1件・別種の出典訂正5件を同時に行った。§8.6 に分けて記す
 
 ---
 
@@ -397,6 +481,8 @@ oracle 側は POI で同じ意味の `.xlsx` を組み、本体の公開 API `Ba
 省略したカラムは YAML では null になる（`{}` だけを空とみなす 2-4 の決定の帰結）。行が残る点は本体と一致するが値は食い違う。
 値までそろえたい場合は T4・L4 のように `""` を明示する。テストは「本体は `""`・YAML は null」を両方 assert して差を固定している
 （`YamlBlankEntryOracleTest.java:329`-`:334`・`:443`-`:448`）。
+**§4 の18ケース（F1〜F6・M1・S2・T1〜T5・L1〜L5）のうち値が食い違うのはこの T5・L5 だけであり、
+この差は恒久的に残る。承認/差し戻しを分ける材料として、判断事項を §8.1 に立てた。**
 
 ---
 
@@ -417,10 +503,10 @@ oracle 側は POI で同じ意味の `.xlsx` を組み、本体の公開 API `Ba
 
 R4 で `*_rowInterpretedToAllBlankIsKept` の2件が落ちないのは、`dropBlankRows` が `interpret` より前に走るためで、意図どおりである。
 
-### 5.2 各タスクで実測した「期待値の崩し」（本タスクでは再実行していない）
+### 5.2 各タスクの check ファイルに記録がある「期待値の崩し」（本タスクでは再実行していない）
 
-追加・変更した個々のテストについて期待値リテラルを崩す確認は、**#36〜#40 の各タスクで実測済み**である。
-本タスクでは再実行していない（**未再実行**と明示する）。対象テスト名と `file:line` は本タスクで現物を開いて存在を確認した。
+下表は `.rn/ntf-yaml/checks/task-3*.md`・`task-4*.md` の「変異確認」節に**実測が記録されている**分である。
+**本タスクでは再実行していない（未再実行）。** 対象テスト名と `file:line` は本タスクで現物を開いて存在を確認した。
 
 | タスク | 崩した対象 | 件数 | 記録の場所 |
 |---|---|---|---|
@@ -432,11 +518,42 @@ R4 で `*_rowInterpretedToAllBlankIsKept` の2件が落ちないのは、`dropBl
 
 #41（2-6）はテスト削除のみ、#42（2-7）は `description` と出典コメントのみで、崩す対象となる期待値を作っていない。
 
+### 5.3 記録から辿れなかった11件（本タスクで実測した）
+
+**突き合わせ**: HEAD で新規に足した67件（§6.1）のテスト名を、(a) `.rn/ntf-yaml/checks/*.md` の見出しに「変異」を含む節の本文と、
+(b) §3.2／§5.1 で `src/main` を取り消したときに落ちる43件、の両方に機械照合した。
+**どちらにも現れないものが11件**残った。§5.2 の記録だけでは、この11件の期待値を崩す確認が済んでいるかを辿れない。
+
+**そこで本タスクで実測した。** 隔離コピー（`git worktree add --detach <scratchpad>/mut43 HEAD`）を作り、
+11件それぞれの期待値リテラルを1つずつ崩して（変異はすべて別々のテストメソッド内で閉じており互いに干渉しない）
+`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` を1度実行した。
+結果は **`Tests run: 318, Failures: 11, Errors: 0, Skipped: 0` / `BUILD FAILURE`** で、
+落ちたのは**狙った11件だけ**である。作業ツリーは崩していない（測定後 `git worktree remove --force` 済み。
+`git worktree list` は本体1件のみ、`.git/worktrees` も残っていない）。
+
+| # | テスト | 崩した内容 | 落ちた assert（失敗メッセージの行と要点） |
+|---|---|---|---|
+| M-a | `YamlBlankEntryOracleTest#getSetupTableData_emptyMappingRowIsSkipped`（`:232`） | 期待行を1行から2行（`{"", "", ""}` を追加）へ | `:233`→`assertTableValues:514` `T1 本体（Excel）: 行数`（`is <2>` / `was <1>`） |
+| M-b | `YamlBlankEntryOracleTest#getSetupTableData_allNullRowIsKept`（`:265`） | 2行目の期待値 `{null, null, null}` → `{"", "", ""}` | `:266`→`assertTableValues:517` `T3 本体（Excel）: 1 行目の PK_COL1`（`is ""` / `was null`） |
+| M-c | `YamlBlankEntryOracleTest#getSetupTableData_markerOnlyRowIsKept`（`:282`） | 2行目の期待値 `{"", "", ""}` → `{null, null, null}` | `:283`→`assertTableValues:517` `T4 本体（Excel）: 1 行目の PK_COL1`（`is null` / `was ""`） |
+| M-d | `YamlBlankEntryOracleTest#getListMap_emptyMappingRowIsSkipped`（`:353`） | 期待件数を1件から2件（`{"", "", ""}` を追加）へ | `:354`→`assertListMapValues:530` `L1 本体（Excel）: 件数`（`is <2>` / `was <1>`） |
+| M-e | `YamlBlankEntryOracleTest#getListMap_allNullRowIsKept`（`:384`） | 2件目の期待値 `{null, null, null}` → `{"", "", ""}` | `:385`→`assertListMapValues:535` `L3 本体（Excel）: 1 件目の KEY1`（`is ""` / `was null`） |
+| M-f | `YamlBlankEntryOracleTest#getListMap_markerOnlyRowIsKept`（`:400`） | 2件目の期待値 `{"", "", ""}` → `{null, null, null}` | `:401`→`assertListMapValues:535` `L4 本体（Excel）: 1 件目の KEY1`（`is null` / `was ""`） |
+| M-g | `YamlTableDataBuilderTest#buildListMapRows_yamlEscapeBecomesCr`（`:602`） | `YAML_CR_COL` の期待値 `is("\r")`（実 CR 1文字）→ `is("\\r")`（2文字） | `:611` `YAML のエスケープ "\r" は CR 文字になること` |
+| M-h | `YamlTableDataBuilderTest#buildListMapRows_backslashUpperCaseRIsKeptAsIs`（`:758`） | `UPPER_R_COL` の期待値 `is("\\R")` → `is("\r")` | `:767`（`is "\r"` / `was "\R"`） |
+| M-i | `YamlTableDataBuilderTest#buildListMapRows_literalBackslashRInMarkerColumnIsNotChecked`（`:785`） | `DATA_COL` の期待値 `is("ok")` → `is("ng")` | `:794`（`is "ng"` / `was "ok"`） |
+| M-j | `YamlTableDataBuilderTest#buildListMapRows_allEmptyMappingRowsReturnsEmptyList`（`:1908`） | `assertTrue(…, result.isEmpty())` → `assertTrue(…, result.size() == 1)` | `:1916` `全行が空マッピングの場合は空リストが返ること` |
+| M-k | `YamlSectionTest#entrySource_formatsSectionFieldAndValue`（`:330`） | `is("setup_tables entry table='USER'")` → `is("…table='OTHER'")` | `:331` `table 形式`（`is "…'OTHER'"` / `was "…'USER'"`） |
+
+なお M-g のテストは `3ee39c9` の `buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser` を改名したもの（§6.4）で、
+改名前の名前でなら `#40` の変異 M6（フィクスチャの `YAML_CR_COL: "\r"` を `"\n"` に変える）が同じ assert を落としている
+（`.rn/ntf-yaml/checks/task-40.md:113`）。突き合わせを名前で行ったため上の11件に残った。
+
 ---
 
 ## 6. 既存テストの期待値を変えた箇所の全件
 
-**測り方**: `3ee39c9` と HEAD `00fc164` の `src/test/java` から `@Test` メソッドを機械抽出し、
+**測り方**: `3ee39c9` と `00fc164`（`src/` の最終コミット）の `src/test/java` から `@Test` メソッドを機械抽出し、
 クラス名＋メソッド名の集合と、各メソッド本体の行（空行を除く）を突き合わせた。
 「期待値を変えた」は、本体のうち `assert*(`／`fail(`／`is(`／`containsString(`／`hasItem` を含む行の並びが変わったものとした。
 
@@ -452,17 +569,24 @@ R4 で `*_rowInterpretedToAllBlankIsKept` の2件が落ちないのは、`dropBl
 
 268 − 17 ＋ 67 ＝ 318（整合）。
 
-### 6.2 同じ名前のまま**期待値を変えた** — 7件
+### 6.2 同じ名前のまま assert の行が変わった — 7件（うち**期待値リテラルが変わったのは5件**、**assert の説明文だけが変わったのが2件**）
 
-| テスト | 是正 | 変えた内容 |
-|---|---|---|
-| `YamlColumnOmissionTest#columnNamesDependOnRowOrderAfterBlankRowRemoval` | 2-4 | 全値 `""` の行が残るようになったため、カラム名・件数の assert を差し替えた |
-| `YamlSectionTest#dropBlankRows_keepsRowHavingOnlyMarkerColumnValue` | 2-4 | 判定がマーカーカラム除外の**前**に行われることを assert の根拠に合わせた |
-| `YamlSectionTest#dropBlankRows_keepsRowHavingOnlyNullValues` | 2-4 | スキップ条件を「空マッピングだけ」に合わせた |
-| `YamlTableDataBuilderTest#buildTableDataList_partiallyBlankValueRowKept` | 2-4 | 行数 1 → 2 |
-| `YamlTableDataBuilderTest#buildListMapRows_partiallyBlankValueRowKept` | 2-4 | 件数 1 → 2 |
-| `YamlTestDataParserTest#getMessage_fwHeaderRecordTypeIsNotSkipped` | 2-2 | フィクスチャを1レコードに畳んだのに伴い、2レコード目の項目名・値の assert を差し替えた |
-| `YamlTestDataParserTest#getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped` | 2-2 | 同上。フラグメントをまたぐ連番リセットの assert は、複数レコードレイアウト自体が禁止になったため落とした |
+上の機械判定（`assert*(`／`fail(`／`is(`／`containsString(`／`hasItem` を含む行の並びが変わったもの）は7件を拾うが、
+そのうち2件は**期待値のリテラルが `is(1)` のまま変わっておらず、assert の第1引数（説明文）だけが変わっている**。
+指示書 完了条件4 が問う「期待値を変えた箇所」は残り**5件**である。両者を「種別」列で区別した。
+
+| テスト | 是正 | 種別 | 変えた内容 |
+|---|---|---|---|
+| `YamlColumnOmissionTest#columnNamesDependOnRowOrderAfterBlankRowRemoval` | 2-4 | **期待値** | 空エントリ `{}` の行が取り除かれることを前提に、行数（`is(2)`）とカラム名リストの assert を足し、`contains("NULL_COL"), is(false)` を差し替えた |
+| `YamlSectionTest#dropBlankRows_keepsRowHavingOnlyMarkerColumnValue` | 2-4 | 説明文のみ | `result.size(), is(1)` は不変。説明文を「マーカーカラムの値も空行判定の対象になるため残ること」→「マーカーカラムを除外する前に判定するため行が残ること」に変えた |
+| `YamlSectionTest#dropBlankRows_keepsRowHavingOnlyNullValues` | 2-4 | 説明文のみ | `result.size(), is(1)` は不変。説明文を「Java null は空文字ではないため行が残ること」→「値が全て Java null でもキーを持つ行であるため残ること」に変えた |
+| `YamlTableDataBuilderTest#buildTableDataList_partiallyBlankValueRowKept` | 2-4 | **期待値** | 行数 1 → 2。2行目が全カラム空文字であることの assert を2行足した |
+| `YamlTableDataBuilderTest#buildListMapRows_partiallyBlankValueRowKept` | 2-4 | **期待値** | 件数 1 → 2。2件目の `KEY1` が `""` であることの assert を足した |
+| `YamlTestDataParserTest#getMessage_fwHeaderRecordTypeIsNotSkipped` | 2-2 | **期待値** | フィクスチャを1レコードに畳んだのに伴い、`getString("SEARCH_KEY"), is("SEARCHKEY1")` → `getString("HEAD_KEY"), is("HEADKEY002")` |
+| `YamlTestDataParserTest#getSendSyncMessage_fwHeaderRecordTypeIsNotSkipped` | 2-2 | **期待値** | 件数 3 → 2、`BODY_KEY` の assert を `HEAD_KEY` へ、レコード種別 `BODY` → `FW_HEADER`。フラグメントをまたぐ連番リセットの assert は、複数レコードレイアウト自体が禁止になったため落とした |
+
+（「説明文のみ」の2件は `.rn/ntf-yaml/checks/task-39.md:77`-`:82` でも
+「落ちなかったが記述だけ直したもの: 6 件」に分類してある。）
 
 ### 6.3 同じ名前のまま**期待値は変えず**、入力側だけ変えた — 9件
 
@@ -502,7 +626,24 @@ R4 で `*_rowInterpretedToAllBlankIsKept` の2件が落ちないのは、`dropBl
 
 ### 6.5 期待値を変えなかった既存テスト
 
-251 − 7（6.2）− 9（6.3）＝ **235件**は本体も入力も触っていない。
+251 − 7（6.2）− 9（6.3）＝ **235件**は**テスト本体**を触っていない
+（`@Test` メソッド本体の行が、空行を除いて `3ee39c9` と `00fc164` で完全に一致する）。
+
+**ただし「入力も変わっていない」わけではない。** 235件のうち **139件**は §6.7 の変更フィクスチャのいずれかを読んでいる。
+さらに、変更フィクスチャの中で**記述が変わったエントリ**（コメントの書き換えでも、別エントリの追加・削除でもないもの）に絞ると、
+それを読むテストは次の **4件**である（全件）。
+
+| テスト（`00fc164`） | 読むエントリと、その変更 |
+|---|---|
+| `YamlColumnOmissionTest#insertedValueDependsOnRowOrder`（`:206`） | `…/db/YamlColumnOmissionTest/omission.yaml` の `s4a`（先頭行 `:55`）・`s4b`（先頭行 `:73`）。先頭行が `NULL_COL: ""` → `{}` |
+| `YamlMessageBuilderTest#buildMessagePool_fwHeaderMapReadableWithoutHeaderRecord`（`:1436`） | `…/yaml/YamlMessageBuilderTest/fwHeaderMapData.yaml` の `messages`／`req001` から独自キー `customProjectKey` を外した |
+| `YamlTableDataBuilderTest#buildListMapRows_quotedNullIsKeptAsString`（`:547`） | `…/yaml/YamlTableDataBuilderTest/nativeTypes.yaml` の `interpreterTest` から `LITERAL_CR_COL: "\\r"` を外した |
+| `YamlTableDataBuilderTest#buildListMapRows_spaceBetweenQuotesIsSpace`（`:572`） | 同上 |
+
+測り方: `git diff --name-status 3ee39c9 00fc164 -- src/test` から変更（`M`）のフィクスチャ12件を取り、
+その全差分を1件ずつ読んで「記述が変わったエントリ」を特定したうえで、235件の本体からそのエントリ ID を機械検索した。
+残る135件が読むフィクスチャの変更は、コメント（出典・説明文）の書き換えか、**別の**エントリの追加・削除だけである。
+
 17件（6.4）のうち期待値を実質的に変えたのは 11件（改名だけで期待値が不変のもの・統合されたもの・削除したものを除く）。
 
 ### 6.6 §1 の「見込み」と実測の突き合わせ
@@ -526,8 +667,8 @@ R4 で `*_rowInterpretedToAllBlankIsKept` の2件が落ちないのは、`dropBl
 |---|---|---|
 | `YamlTestDataParserTest/messageData.yaml` | 2-2 | `records` 2件のエントリ3件を、1件へ畳む（2件）／別ファイル `legacyFwHeaderRecord.yaml` へ切り出す（1件） |
 | `YamlMessageBuilderTest/fwHeaderMapData.yaml` | 2-3 | 独自キー `customProjectKey`・`boolFlag` を外した |
-| `YamlMessageBuilderTest/customFwHeaderData.yaml` | 2-3 | `customField` の扱いを `reader.fwHeaderfields` 設定つきに変えた |
-| `YamlColumnOmissionTest/omission.yaml` | 2-4 | `s4a`・`s4b` の全値 `""` の行の扱いに合わせて調整 |
+| `YamlMessageBuilderTest/customFwHeaderData.yaml` | 2-3 | 冒頭コメントを「`fwHeaderFields` フィルタが廃止され全キーが保持される」から「`reader.fwHeaderfields` の名前だけ書ける」へ差し替えた（**データ本体は不変**。`customField` を通すための設定はテスト側の Given に置いた。§6.3） |
+| `YamlColumnOmissionTest/omission.yaml` | 2-4 | `s4a`（`:55`）・`s4b`（`:73`）の先頭行を `NULL_COL: ""` から `{}` に変えた（全値 `""` の行が残るようになったため、「先頭に空行を置く」意図を空エントリで書き直した） |
 | `YamlTableDataBuilderTest/tableData.yaml`・`completedTable.yaml` | 2-4 | 全値 `""` の行が残る前提へコメントと構成を合わせた |
 | `YamlTableDataBuilderTest/nativeTypes.yaml` | 2-5・2-6 | `LITERAL_CR_COL: "\\r"` を `interpreterTest` から外し単独エントリへ／`charTypeUnknownTest` を削除 |
 
@@ -550,7 +691,7 @@ JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o jacoco:report -Djacoco.dataFi
 **本タスクで同じ手順で測り直した**（`.rn/ntf-yaml/checks/task-33.md` の記録を写していない）。
 worktree は測定後 `git worktree remove --force` 済み。集計は `target/site/jacoco/jacoco.csv` の列を合計したもの。
 
-| | 第1回 `8eacaa7` | 第2回 `00fc164` |
+| | 第1回 `8eacaa7` | 第2回 `00fc164`（`src/` の最終コミット） |
 |---|---|---|
 | テスト | `Tests run: 267, Failures: 0, Errors: 0, Skipped: 1` | `Tests run: 318, Failures: 0, Errors: 0, Skipped: 0` |
 | C0（命令） | 1663 / 1676 = **99.22%**（`INSTRUCTION_MISSED` 13） | 1809 / 1822 = **99.29%**（`INSTRUCTION_MISSED` 13） |
@@ -618,7 +759,7 @@ worktree も `git worktree remove --force` 済み（`git worktree list` は本�
 |---|---|---|---|
 | 1 | `yaml.YamlFormatReaderInvalidInputTest#fillsMissingRecordFragmentValuesWithEmptyStringInsteadOfNull:763`（FAILURE） | **2-1** | フィクスチャ（同ファイル `:745`-`:756`）はフィールド3件の固定長レコードに `rows: - ["a", null]` を書き、`is(Arrays.asList("a", null, ""))` を期待している。是正後は `trimTailCopy` が末尾の `null` を落として `["a"]` にし、`DataFileFragment#addValue` がフィールド数まで `""` で埋めるため `[a, , ]` になる。実測メッセージ: `Expected: is <[a, null, ]> but: was <[a, , ]>` |
 | 2 | `yaml.YamlFormatReaderScalarTest#readsUnquotedNullAsJavaNullInRecordFragmentPath:650`（FAILURE） | **2-1** | ヘルパ `readRecordFragmentValue`（同ファイル `:224`-`:239`）がフィールド1件の固定長レコードに `rows: - [null]` を書き、`is(nullValue())` を期待している。是正後は末尾の `null` が落ちて `""` で埋められる。実測メッセージ: `Expected: is null but: was ""` |
-| 3 | `yaml.YamlFormatReaderScalarTest#skipsRowWhoseValuesAreAllEmpty:596`（FAILURE） | **2-4** | フィクスチャ（同ファイル `:582`-`:590`）は `setup_tables` に `- {}` と `- K: "" / V: ""` の2行を置き、**両方が読み飛ばされる**ことを期待している。javadoc（`:569`-`:572`）が引く出典は `testdata_notation.rst:1500`（`5783b35` 時点）の旧文「空マッピング（`{}`）**または**すべての値が空文字の場合にスキップされる」であり、`afa4f9e` の `:1502` で「`""` は値であり読み飛ばされない」に改訂された箇所そのものである。実測メッセージ: `Expected: is <[[x, 1]]> but: was <[[x, 1], [, ]]>` |
+| 3 | `yaml.YamlFormatReaderScalarTest#skipsRowWhoseValuesAreAllEmpty:596`（FAILURE） | **2-4** | フィクスチャ（同ファイル `:583`-`:591`。`YamlFixture.read` に渡す YAML 文字列）は `setup_tables` に `- {}` と `- K: "" / V: ""` の2行を置き、**両方が読み飛ばされる**ことを期待している。javadoc（`:569`-`:572`）が引く出典は `testdata_notation.rst:1500`（`5783b35` 時点）の旧文「空マッピング（`{}`）**または**すべての値が空文字の場合にスキップされる」であり、`afa4f9e` の `:1502` で「`""` は値であり読み飛ばされない」に改訂された箇所そのものである。実測メッセージ: `Expected: is <[[x, 1]]> but: was <[[x, 1], [, ]]>` |
 | 4 | `yaml.YamlFormatReaderRealFileTest#keepsFwHeaderNamedRecordInSendSyncFromRealYaml:640`（ERROR） | **2-2** | フィクスチャ（同ファイル `:640`-`:653`）は `response_body_messages` の1エントリに `records` を2件（`record_type: "FW_HEADER"` の1件と本文1件）書き、**2件とも残る**ことを期待している。是正後はスキーマ検証で弾かれる。実測メッセージ: `YamlSchemaValidationException: $.response_body_messages[0].records: アイテムは最大でも 1 個必要ですが、2 が見つかりました` |
 
 **2-3・2-5 で落ちなかった理由（実測）**
@@ -628,23 +769,161 @@ worktree も `git worktree remove --force` 済み（`git worktree list` は本�
   本モジュールの `YamlMessageBuilder.convertFwHeader` を通らない。実 YAML を読む経路（`YamlFormatReaderRealFileTest.java:817`-`:818`、
   `YamlTestCoreAdapterTest/messages.yaml:4`-`:5`、`YamlFormatWriterTest.java:235`-`:236`、`YamlTestDataValidatorTest.java:438`）は
   すべて既定4つの範囲内である
-- 2-5: converter の `src/test` に Java 文字列として `\\r`（2文字）を書いた箇所は 12 件あるが、
-  YAML の値として本モジュールの `interpret` に渡るものは無い。`SpecialNotationRoundTripTest.java:385` の
-  `BODY: "1行目\r2行目"` や `YamlFormatReaderInvalidInputTest.java:979` の `record-separator: "\r\n"` は
-  **YAML のダブルクォート内エスケープ**であり、パーサが実 CR／LF に展開する（2文字のままにはならない）。
-  残りは Excel 経路（`XlsNotationSymmetryTest`・`XlsFormatWriterCellTypeTest`）と assert の説明文である
+- 2-5: converter の `src/test` に Java 文字列として `\\r`（2文字）を書いた行は **12 行・14 箇所**ある
+  （`git grep -nF '\\r' d611bec -- src/test`。`SpecialNotationRoundTripTest.java:312` と
+  `XlsFormatWriterCellTypeTest.java:544` は1行に2箇所）。**YAML の値として本モジュールの `interpret` に
+  2文字のまま渡るものは無い。** 14箇所の全件は次の3つに分かれる:
+  - **YAML のダブルクォート内に書かれ、パーサが実 CR に展開するもの（4箇所）**:
+    `xls/SpecialNotationRoundTripTest.java:312` の第2引数（YAML 記法 `"a\rb"`）と同 `:385`（`BODY: "1行目\r2行目"`）、
+    `yaml/YamlFormatReaderInvalidInputTest.java:979`（`record-separator: "\r\n"`）、
+    `yaml/YamlFormatWriterTest.java:337`（`- V: "a\"b\\c\n\r\t\x01"`）
+  - **Excel のセル値・Excel 記法の文字列（YAML を通らない。7箇所）**:
+    `xls/SpecialNotationRoundTripTest.java:312` の第1引数・同 `:376`、
+    `xls/XlsFormatWriterCellTypeTest.java:544` の期待値・同 `:547`、
+    `xls/XlsNotationSymmetryTest.java:200`・`:239`・`:293`
+  - **assert の説明文（値ではない。3箇所）**:
+    `xls/XlsFormatWriterCellTypeTest.java:544` の第1引数・同 `:546`、`xls/XlsNotationSymmetryTest.java:206`
 
 **指示書 完了条件10 の見込みとの対応**: 指示書は「少なくとも `YamlFormatReaderScalarTest#skipsRowWhoseValuesAreAllEmpty` は 2-4 で落ちる」と書いており、
 実測でもそのとおり落ちた（上表の #3）。加えて 2-1 起因が2件・2-2 起因が1件あった。
 
+第1回の報告書（`.rn/ntf-yaml/report-step4.md:11`）は converter の結果を「新たに落ちた／解消した／無関係に落ち続けている」の
+3分類で報告したが、今回は1つ目しか無い。**着手前が `Failures: 0, Errors: 0` だったため、残る2分類は該当0件だからである。**
+
+**是正の主体（事実と推奨）**
+
+- **事実**: `nablarch-testing-converter` の共有ブランチ `ntf-test-data-converter`（HEAD `d611bec`、未変更）は、
+  本モジュールの是正後の jar を `.m2` へ install した状態で `mvn -o clean test` が
+  `Tests run: 656, Failures: 3, Errors: 1, Skipped: 0` / **`BUILD FAILURE`** になる。
+  指示書 §5 が「`nablarch-testing-converter` を直さない。落ちるテストは報告するだけ」と定めているため本タスクでは直しておらず、
+  **共有ブランチはこの状態のまま残っている。**
+- **推奨**: **4件とも converter 側で直す。本モジュール側で直すものは無い。** 直し方は2種類に分かれる。
+  - **期待値の書き換えで済むもの（3件）**: 上表 #1（`is(Arrays.asList("a", null, ""))` → `("a", "", "")`）、
+    #2（`is(nullValue())` → `is("")`。または末尾に値のあるフィールドを足して「末尾の null」でなくする）、
+    #3（読み飛ばされる行を `- {}` の1行だけにし、javadoc が引く出典を `afa4f9e` の `:1502` に差し替える）
+  - **テストの前提そのものを組み替えるもの（1件）**: 上表 #4。電文の1エントリに `records` を2つ書くこと自体が 2-2 で
+    書けなくなったため、`FW_HEADER` を名乗るレコードが落とされないことは `records` 1件の形で確かめ直す必要がある
+- **理由**: 4件はいずれも解説書 `afa4f9e` が定める挙動（2-1・2-2・2-4）に converter 側のテストが追随していないだけであり、
+  本モジュールの実装を戻すと解説書に反する。#3 に至っては、converter の javadoc が引く出典が
+  `testdata_notation.rst:1500`（`5783b35` 時点）の**改訂前**の文であることを、そのテスト自身が明記している
+
 ---
+## 8. 決めていただきたいこと・記録
 
-## 8. 申し送り
+§8.1〜§8.5 は判断を仰ぐ項目である。各項を〈事実 / 選択肢 / 推奨 / 理由〉で書いた。
+§8.6 は指示書の外で行ったことの記録である。
 
-### 8.1 スコープ拡張（#42 で実施。指示書には無い）
+### 8.1 本体と恒久的に食い違う仕様差（§4.2 の T5・L5）を、この差のまま確定してよいか
 
-**指示書 §2 の 2-7 は「スキーマ `description` を解説書に合わせる」だけを求めているが、#42 では `src/` 配下の解説書出典の行番号も訂正した。**
-本タスクで `cb82f3b`（#42 直前）と HEAD の全出典を機械抽出して突き合わせ、**変わったのは 18 箇所**であることを確認した。
+- **事実**: マーカーカラム（`[NO]`）だけに値を持ち、他のカラムをキーごと省略した行は、
+  **行が残る点とカラム名は本体（Excel）と一致するが、省略したカラムの値が本体 `""` に対し YAML では Java null になる。**
+  これは 2-4 の決定（空とみなすのは `{}` だけ）と、#24 で確立した「省略したカラムは `null` を書いたのと同じ」という
+  仕様の帰結で、意図して固定してある（`YamlBlankEntryOracleTest.java:329`-`:334`・`:443`-`:448` が
+  本体の値と YAML の値の両方を assert して差を明示している）。
+  本体を oracle にして突き合わせた18ケース（§4 の F1〜F6・M1・S2・T1〜T5・L1〜L5）のうち、
+  **値が食い違うのはこの T5・L5 だけ**である
+- **選択肢**:
+  1. この差のまま確定する（現状）。値までそろえたい利用者は §4.2 の T4・L4 のように `""` を明示して書く
+  2. 省略したカラムを `""` で埋めて本体に合わせる（`YamlTableDataBuilder` の行展開を変える）
+  3. 他のカラムを省略した行をエラーにする
+- **推奨**: **1（この差のまま確定する）**
+- **理由**: 「カラム名決定行にはあるが個々の行で省略したカラムは、その行でそのカラムに `null` を書いたのと同じ扱いになる」は
+  スキーマ `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json:108`
+  （`$defs.table_data.properties.rows.description`）が定めた本モジュールの仕様である。
+  2 を採ると「省略＝null」と「省略＝`""`」がマーカーカラムの有無で分岐し、利用者が覚える規則が1つ増える。
+  また `#39` の変異 M-E（行展開で省略カラムを `null` でなく `""` にする）は 16 件のテストを落とすことが実測されており
+  （`.rn/ntf-yaml/checks/task-39.md:106`）、2 の影響範囲はそこに出ている。
+  3 は既存の書き方（`YamlColumnOmissionTest` が担保しているカラムの省略）を壊す
+
+### 8.2 converter で新たに落ちる4件を、誰がいつ直すか
+
+- **事実**: `nablarch-testing-converter` の共有ブランチ `ntf-test-data-converter`（HEAD `d611bec`、未変更）は、
+  本モジュールの是正後の jar を `.m2` へ install した状態で `mvn -o clean test` が
+  `Tests run: 656, Failures: 3, Errors: 1, Skipped: 0` / **`BUILD FAILURE`** になり、**現在その状態のまま残っている**。
+  4件の内訳・原因・失敗メッセージは §7.2 の表にある
+- **選択肢**: 1. converter 側で4件を直す ／ 2. 本モジュールの是正を戻す ／ 3. 落ちたまま置く
+- **推奨**: **1（converter 側で直す）。** 3件は期待値の書き換えで済み、1件（§7.2 の #4）はテストの前提の組み替えが要る（§7.2 の「是正の主体」）
+- **理由**: 4件はいずれも解説書 `afa4f9e` が定める挙動に converter 側のテストが追随していないだけで、本モジュールの実装に誤りは無い。
+  2 は解説書に反する。3 は下流のビルドが赤のまま固定され、次に converter を触る人が原因の切り分けからやり直すことになる
+
+### 8.3 解説書 `testdata_notation.rst:889` の曖昧さを起票するか
+
+- **事実**: `afa4f9e` の `ja/development_tools/testing_framework/implementation/testdata_notation.rst:889` は
+  「末尾のフィールドに ``null``\ と記述した場合は、形式によらず\ ``""``\ になる。後ろに値のあるフィールドがあれば\ null\ のまま保持される」
+  と書くが、`""` を「値」と数えるかが曖昧である。実装（本体 `nablarch-testing` の
+  `../nablarch-testing/src/main/java/nablarch/test/NablarchTestUtils.java:251`-`:263` `trimTail`）は
+  末尾から `StringUtil.hasValue` が偽の要素を連続して取り除き、`hasValue` は **null と `""` の両方**で偽になる。
+  依存クラスパスで `NablarchTestUtils.trimTailCopy` を直接呼んで実測した結果は次のとおり:
+
+  | 入力 | `trimTailCopy` の結果 |
+  |---|---|
+  | `["x", null, ""]` | `["x"]` ← **`null` が保持されない** |
+  | `["x", "", null]` | `["x"]` |
+  | `["x", null, "y"]` | `["x", null, "y"]` |
+  | `["x", null, null]` | `["x"]` |
+  | `["x", "", "y"]` | `["x", "", "y"]` |
+
+  `["x", null, ""]` では `null` の後ろに `""` というフィールドが**書かれている**。
+  2-4（`afa4f9e` の `:1502`「`""` と書いた空文字は値であり」）に従えば `""` は値なので、`:889` の文からは
+  「`null` のまま保持される」と読めるが、実際は保持されない。
+  **本モジュールは本体の `trimTailCopy` をそのまま呼んでいるので実装は本体と一致しており、是正は不要である。**
+  問題は解説書の文言だけである
+- **選択肢**: 1. `.rn/ntf-yaml/report-nablarch-document-discrepancies.md` に追記して起票する ／
+  2. 起票せず、`:889` の「値のあるフィールド」は「`""` でない値」の意だと了解して閉じる
+- **推奨**: **1（起票する）**
+- **理由**: この一文は 2-1 の是正の根拠そのものであり、`""` を値と数えるかは 2-4 の決定と正面から関わる。
+  読み手が `:889` と `:1502` を並べると矛盾して読める状態が残る。
+  起票の書式は同ファイルの既存項目に合わせられる。**同ファイルは本タスクでは書き換えていない**
+
+### 8.4 2-5 の規則をスキーマ `description` に追随させるか
+
+- **事実**: 2-5 の規則（バックスラッシュと `r` の2文字はエラー）について、
+  解説書（`afa4f9e` の `testdata_notation.rst:1445`）・実装（`YamlSection.rejectLiteralCr`）・
+  テスト（§3.2 の 2-5 の15件）の三者は揃っている。
+  一方、スキーマ `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で
+  **2-5 の規則に触れているのは `:293`（`record-separator`）の1箇所だけ**である。
+  `grep -n 'バックスラッシュ' src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` は2件返すが、
+  もう1件の `:333`（`field-separator`）は「YAML の `"\t"` は実際のタブ文字に展開されるためバックスラッシュをエスケープする」という
+  **別件**の注意で、2-5 の規則ではない。`:293` は `#42` で「ディレクティブ値に実害がある1箇所」として追記したものである。
+  規則は**値全般**（データ行・ディレクティブ・制御ヘッダ）に掛かるため、少なくとも
+  `:108`（`table_data.rows`）・`:136`（`list_map_data.rows`）・`:380`（`record_fragment.rows`）・
+  `:216`／`:433`（`fw_header`）にも同じ注意が要る。**5箇所以上が未追随である**
+- **選択肢**: 1. いま5箇所以上に追記する ／ 2. 次の指示書に回す ／ 3. 追記しない（`:293` だけで足りるとする）
+- **推奨**: **2（次の指示書に回す）**
+- **理由**: 指示書 2-7 の表は 2-1〜2-4 の4件を挙げており 2-5 の追随を求めていない。
+  `#42` はこれを「指示書 2-7 の対象（指示書 `:226`-`:229` の表が `3ee39c9` の行番号で挙げる
+  `:108`／`:136`／`:213`-`:215`／`:424`-`:430`／`:208`・`:241`・`:272`／`:377`）の外」として
+  スコープ外にした。いま足すと指示書の範囲を再び越える。
+  一方 3 は採れない。規則は値全般に掛かるのに `record-separator` にしか書かれていない状態は、
+  スキーマの `description` を読んで書く利用者に対して不完全である
+
+### 8.5 行番号出典の方式を変えるか
+
+- **事実**: 行番号出典は解説書の改版のたびに壊れる。今回それが 18 箇所で起きた（§8.6）。
+  本タスクの実測では、`src/` 配下に解説書の**リビジョンのピンは1つも書かれていない**
+  （`grep -rl "afa4f9e\|nablarch-document@" src/` が **0件**）。
+  一方、行番号を含む出典は **60 箇所・16 ファイル**にある
+  （`grep -rEo '[a-z_/]+\.rst:[0-9]+' src/ | wc -l` が 60、`grep -rEl '\.rst:[0-9]+' src/ | wc -l` が 16）。
+  したがって**壊れたことに気づく仕組みが無い**。今回も `#41` のレビューが拾って初めて分かった
+- **選択肢**:
+  1. ピン付きの解説書チェックアウトを前提に `src/` 配下の全出典を解決し、
+     「指し先が範囲内・非空・記録した引用文を含む」ことを突き合わせる機械検証を1本入れる
+  2. 出典を「節見出し＋逐語引用」にし、行番号は補助として必ずピン付きで書く（例: `testdata_notation.rst@afa4f9e:1328`）
+  3. 現状のまま（行番号のみ・ピンなし）
+- **推奨**: **1 を先に、2 を次に。** 1 は `#42` と本タスクで使ったスクリプトと同じ発想で作れ、差分が小さい。
+  2 は本モジュールに既に先例がある:
+  `src/main/java/nablarch/test/core/reader/yaml/YamlMessageBuilder.java:56`-`:66`、
+  `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:176`-`:179`、
+  `src/test/java/nablarch/test/core/reader/YamlBlankEntryOracleTest.java`（行番号出典 0件）、
+  `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml:1`-`:13`（フィクスチャのコメント）
+- **理由**: 3 は採れない。18 箇所が壊れた事実がすでにあり、うち5箇所は着手前から誤っていて誰も気づいていなかった（§8.6 の (2)）。
+  1 を先に置くのは、2 の方式へ移す作業自体が 60 箇所の書き換えになり、その正しさを確かめる手段が先に要るからである。
+  **本タスクではどちらも実施していない**（指示書の範囲外）
+
+### 8.6 スコープ拡張（`#42` で実施。指示書には無い）
+
+**指示書 §2 の 2-7 は「スキーマ `description` を解説書に合わせる」だけを求めているが、`#42` では `src/` 配下の解説書出典の行番号も訂正した。**
+本タスクで `cb82f3b`（`#42` 直前）と `00fc164` の全出典を機械抽出して突き合わせ、**変わったのは 18 箇所**であることを確認した。
 これは**原因の異なる2種**に分かれる。
 
 **(1) 解説書の改版で `+2` ずれた出典 — 13箇所**（コミット `94f7e16`）
@@ -677,87 +956,35 @@ worktree も `git worktree remove --force` 済み（`git worktree list` は本�
 | `YamlTestDataParserTest.java:1855` | `:1149` → `:1151` | `:1149` は電文の節の導入文。引用対象（`setUpMessages`／`expectedMessages`／`sendSyncTestData`）は `:1151` |
 | `…/YamlTestDataParserTest/sendSyncTestData/RM21AA0101/message.yaml:4` | `:1149` → `:1151` | 同上 |
 
-**コーディネータへの申し送りとの差**: 引き継ぎでは「別種の誤りは3件」とされていたが、**実測では5件**である。
+引き継ぎ資料は「別種の誤りは3件」としていたが、**実測では5件**である。
 `7daae89` で直した `:1149` → `:1151` の2件が数えられていなかった。この2件は `:1299` 未満を指すため `+2` ずれの13箇所にも含まれない。
-なお第1回の報告書（`.rn/ntf-yaml/report-step4.md`）は「指示書の `testdata_notation.rst:1149` → 現物は `:1151`」を既に記録しており、
-`src/` 側の出典が直っていなかったことが今回の全件検証で分かった、という経緯である。
+第1回の報告書（`.rn/ntf-yaml/report-step4.md`）が記録しているのは「**指示書**の `testdata_notation.rst:1149` が現物では `:1151` である」ことであり、
+`src/` 側の出典が同じ誤りを持っていたことは記録されていない。両者は別の箇所を指している。
 
-### 8.2 解説書側への起票候補（判断はコーディネータ）
+---
 
-**`testdata_notation.rst:889`（ピン `afa4f9e`）の「後ろに値のあるフィールドがあれば `null` のまま保持される」は、`""` を「値」と数えるかが曖昧である。**
+## 付録: コーディネータへの申し送り
 
-- 解説書の逐語（`afa4f9e` の `ja/development_tools/testing_framework/implementation/testdata_notation.rst:889`）:
-  「末尾のフィールドに ``null``\ と記述した場合は、形式によらず\ ``""``\ になる。後ろに値のあるフィールドがあれば\ null\ のまま保持される」
-- 実装の逐語（`../nablarch-testing/src/main/java/nablarch/test/NablarchTestUtils.java:251`-`:263` `trimTail`）:
-  末尾から `StringUtil.hasValue` が偽の要素を連続して取り除く。`hasValue` は **null と `""` の両方**で偽になる
-- **実測**（依存クラスパスで `NablarchTestUtils.trimTailCopy` を直接呼んだ）:
+この付録は宛先がコーディネータであり、承認/差し戻しの判断材料ではない。
 
-  | 入力 | `trimTailCopy` の結果 |
-  |---|---|
-  | `["x", null, ""]` | `["x"]` ← **`null` が保持されない** |
-  | `["x", "", null]` | `["x"]` |
-  | `["x", null, "y"]` | `["x", null, "y"]` |
-  | `["x", null, null]` | `["x"]` |
-  | `["x", "", "y"]` | `["x", "", "y"]` |
-
-- 食い違いの中身: `["x", null, ""]` では `null` の後ろに `""` というフィールドが**書かれている**。
-  2-4（`afa4f9e` の `:1502`「`""` と書いた空文字は値であり」）に従えば `""` は値なので、`:889` の文からは
-  「`null` のまま保持される」と読めるが、実際は保持されない。**`:889` の「値のあるフィールド」は「`""` でない値」を指す**、
-  と読めるように書き分ける必要がある
-- 本モジュールの扱い: **本体の `trimTailCopy` をそのまま呼んでいるので実装は本体と一致しており、是正は不要**である。
-  問題は解説書の文言だけである
-- 書式は `.rn/ntf-yaml/report-nablarch-document-discrepancies.md` に合わせて起票できる。
-  **同ファイルは本タスクでは書き換えていない**（コーディネータの判断事項）
-
-### 8.3 未是正として残る食い違い
-
-**2-5 の規則（バックスラッシュと `r` の2文字はエラー）が、スキーマの `description` にほぼ書かれていない。**
-
-- 解説書（`afa4f9e` の `testdata_notation.rst:1445`）・実装（`YamlSection.rejectLiteralCr`）・テスト（§3.2 の 2-5 の15件）の三者は揃っている
-- スキーマ `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` で規則に触れているのは
-  **`:293`（`record-separator`）の1箇所だけ**（`grep -n 'バックスラッシュ'` の結果は `:293` の1件のみ）。
-  #42 で「ディレクティブ値に実害がある1箇所」として追記したものである
-- 規則は**値全般**（データ行・ディレクティブ・制御ヘッダ）に掛かるため、少なくとも
-  `:108`（`table_data.rows`）・`:136`（`list_map_data.rows`）・`:380`（`record_fragment.rows`）・
-  `:216`／`:433`（`fw_header`）にも同じ注意が要る。**5箇所以上が未追随である**
-- #42 は「全体への追記は指示書 2-7 の対象（`:108`／`:136`／`:213`-`:215`／`:424`-`:430`／3つの `records`／`:377`）の外」として
-  スコープ外にした。指示書 2-7 の表は 2-1〜2-4 の4件を挙げており、2-5 の追随を求めていない。**判断は未了である**
-
-### 8.4 構造的な問題としての推奨
-
-**行番号出典は解説書の改版のたびに壊れる。今回それが 18 箇所で起きた（§8.1）。**
-
-- 現状（本タスクで実測）: `src/` 配下に解説書の**リビジョンのピンは1つも書かれていない**
-  （`grep -rl "afa4f9e\|nablarch-document@" src/` が **0件**）。一方、行番号を含む出典は **60 箇所・16 ファイル**にある
-  （`grep -rEo '[a-z_/]+\.rst:[0-9]+' src/ | wc -l` が 60、`grep -rEl '\.rst:[0-9]+' src/ | wc -l` が 16）
-- したがって**壊れたことに気づく仕組みが無い**。今回も `#41` のレビューが偶然拾っただけである
-- 推奨（優先順）:
-  1. **機械検証を1本入れる。** ピン付きの解説書チェックアウトを前提に `src/` 配下の全出典を解決し、
-     「指し先が範囲内・非空・記録した引用文を含む」ことを突き合わせる。#42 と本タスクで使ったスクリプトと同じ発想で、
-     CI か手動チェックリストに載せれば `:887` が空行を指すような誤りは着手前に出る
-  2. **出典を「節見出し＋逐語引用」にし、行番号は補助として必ずピン付きで書く**（例: `testdata_notation.rst@afa4f9e:1328`）。
-     本モジュールには既に先例がある: `src/main/java/nablarch/test/core/reader/yaml/YamlMessageBuilder.java:56`-`:66`、
-     `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:176`-`:179`、
-     `src/test/java/nablarch/test/core/reader/YamlBlankEntryOracleTest.java`（行番号出典 0件）、
-     `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml:1`-`:13`（フィクスチャのコメント）
-- **本タスクではどちらも実施していない。** 方式の切り替えは差分が大きく、コーディネータ／ユーザーの判断事項である
-
-### 8.5 第1回の記録のうち第2回で失効したもの
-
-**#41 で `@Ignore` 付きテスト1件を削除した結果、#31 の記録2箇所が前提を失った。**
+### A. `#41` で `@Ignore` 付きテスト1件を削除した結果、`#31` の記録2箇所が前提を失った
 
 削除したのは `YamlTableDataBuilderTest#buildListMapRows_unknownCharacterTypeIsNotConverted`（`3ee39c9` の `:753`）。
 現在の `src/` に該当テストは無い（`grep -rn "buildListMapRows_unknownCharacterTypeIsNotConverted" src/` が **0件**）。
 
 | 失効した記録 | 逐語 | 現状 |
 |---|---|---|
-| `.rn/ntf-yaml/steering.md:1140`（#31 Step 3-2） | 「**列挙外の文字種名は変換されないという負のテストも必ず書く**」 | 該当テストは存在しない。前半（14文字種）は `YamlTableDataBuilderTest#buildListMapRows_allFourteenCharacterTypesAreGenerated` が引き続き担保 |
-| `.rn/ntf-yaml/steering.md:1154`（#31 Completion criteria） | 「3-2 の負のテスト（列挙外の文字種名は変換されない）が書かれている」 | 同上 |
+| `.rn/ntf-yaml/steering.md:1140`（`#31` Step 3-2） | 「**列挙外の文字種名は変換されないという負のテストも必ず書く**」 | 該当テストは存在しない。前半（14文字種）は `YamlTableDataBuilderTest#buildListMapRows_allFourteenCharacterTypesAreGenerated` が引き続き担保 |
+| `.rn/ntf-yaml/steering.md:1154`（`#31` Completion criteria） | 「3-2 の負のテスト（列挙外の文字種名は変換されない）が書かれている」 | 同上 |
 
-`steering.md` の上記2箇所には、コーディネータが「#41 で失効」の注記を追記済みであることを本タスクで確認した
-（`:1141`・`:1155`）。**`.rn/ntf-yaml` 以下の他の記録（`checks/task-31.md`）への注記は未了**である。
+`steering.md` の上記2箇所には、コーディネータが「`#41` で失効」の注記を追記済みであることを本タスクで確認した（`:1141`・`:1155`）。
+**`.rn/ntf-yaml` 以下の他の記録（`checks/task-31.md`）への注記は未了**である。
 `checks/task-31.md` の3箇所（`:8`・`:9`・`:23`）が「負のテストが `@Ignore` 付きで存在する」という当時の状態を記録しており、
-現在の `src/` とは一致しない（当時の実測記録としては真）。注記を入れるかどうかはコーディネータの判断事項である。
+現在の `src/` とは一致しない（当時の実測記録としては真）。注記を入れるかどうかは未決である。
 
-なお #41 の完了条件「`@Ignore` が `src/test` 全体で0件」と #31 の完了条件「落ちたものは `@Ignore` で記録されている」は字面上両立しない。
-#31 の時点では1件在り、#41 でその1件ごと削除した、という経緯である。
+`#41` の完了条件「`@Ignore` が `src/test` 全体で0件」と `#31` の完了条件「落ちたものは `@Ignore` で記録されている」は字面上両立しないが、
+**`#31` が記録した `@Ignore` 1件を `#41` がテストごと削除したため、両者は同じ状態（`@Ignore` 0件・負のテスト無し）を指している。**
+
+### B. §8.3 の起票先
+
+`.rn/ntf-yaml/report-nablarch-document-discrepancies.md` は本タスクでは書き換えていない。
