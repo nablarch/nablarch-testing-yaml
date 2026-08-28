@@ -1,5 +1,8 @@
 # プロジェクト独自キーを含む fw_header マップテスト用（T2 手順6）
-# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである（出典: implementation/testdata_notation.rst:1295）。
+# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである
+# （出典: nablarch-document の implementation/testdata_notation.rst
+#  「メッセージングのデータを記述する」節の「YAML形式の場合」項
+#  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）。
 # reader.fwHeaderfields に customField を設定すれば通り、設定しなければエラーになることを検証する
 
 messages:

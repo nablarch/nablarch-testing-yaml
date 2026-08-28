@@ -3,7 +3,10 @@
 
 messages:
   # 既定キー（requestId/userId/resendFlag/resultCode）のみ
-  # 既定キー以外は reader.fwHeaderfields に設定しない限り書けない（出典: implementation/testdata_notation.rst:1295）
+  # 既定キー以外は reader.fwHeaderfields に設定しない限り書けない
+  # （出典: nablarch-document の implementation/testdata_notation.rst
+  #  「メッセージングのデータを記述する」節の「YAML形式の場合」項
+  #  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）
   - id: req001
     directives:
       text-encoding: Windows-31J

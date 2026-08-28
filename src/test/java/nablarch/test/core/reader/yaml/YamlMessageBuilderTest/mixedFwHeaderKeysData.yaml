@@ -2,8 +2,11 @@
 # fw_header: のキー検査が、実際に読み出すエントリに対してのみ遅延実行されること
 # （誤記エントリが他エントリの読み出しを巻き添えにしないこと）を検証する。
 # fw_header に記載できるキーは reader.fwHeaderfields の名前だけである
-# （出典: nablarch-document の implementation/testdata_notation.rst「YAML形式の場合」節
+# （出典: nablarch-document の implementation/testdata_notation.rst
+#  「メッセージングのデータを記述する」節の「YAML形式の場合」項
 #  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）。
+#
+# 不正キーの境界値（大文字小文字違い・~・数値・真偽値）も、実 YAML から到達できるものはこのファイルで押さえる。
 #
 # 【前提】このフィクスチャが「巻き添えにしない」ことを示せるのは、スキーマ $defs.fw_header が
 # additionalProperties: {"type":"string"} で値の型だけを縛りキー名を制限していないからである。
@@ -50,3 +53,55 @@ messages:
             length: 5
         rows:
           - ["WORLD"]
+
+  # 既定キー requestId と大文字小文字だけが違うキー（キーの照合が大文字小文字を区別することの実例）
+  - id: lowerCaseKey001
+    fw_header:
+      requestid: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+  - id: upperCaseKey001
+    fw_header:
+      REQUESTID: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+  # クォートなしの数値・真偽値をキーに書いたエントリ。Jackson の valueToTree が JSON 化の際に
+  # キーを文字列にするためスキーマ（$defs.fw_header）は通り、convertFwHeader には
+  # java.lang.Integer / java.lang.Boolean のまま届く（＝文字列でないキーも実 YAML から到達可能）。
+  - id: numericKey001
+    fw_header:
+      1234: "VALUE"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+  - id: booleanKey001
+    fw_header:
+      true: "VALUE"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]

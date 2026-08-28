@@ -53,12 +53,15 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * 出典は解説書（{@code nablarch-document} リポジトリの
  * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）である。
- * 行番号は改版で腐るため、節見出しと引用文で示す。
+ * 行番号は改版で腐るため、節見出しと引用文で示す。「Excel形式の場合」「YAML形式の場合」という見出しは
+ * この解説書に 8 回ずつ現れるため、親節「メッセージングのデータを記述する」を添えて一意にする。
  * </p>
  * <ul>
- * <li>「Excel形式の場合」節: 「名前・値の行のうち、ディレクティブ名でなく {@code reader.fwHeaderfields} にも
- *     無い名前の行は、フレームワーク制御ヘッダではなくフィールド名称行として読み込まれる。」（本体の挙動）</li>
- * <li>「YAML形式の場合」節: 「{@code fw_header:} に記載できるキーは、{@code reader.fwHeaderfields} の名前
+ * <li>「メッセージングのデータを記述する」節の「Excel形式の場合」項: 「名前・値の行のうち、ディレクティブ名でなく
+ *     {@code reader.fwHeaderfields} にも無い名前の行は、フレームワーク制御ヘッダではなくフィールド名称行として
+ *     読み込まれる。」（本体の挙動）</li>
+ * <li>「メッセージングのデータを記述する」節の「YAML形式の場合」項: 「{@code fw_header:} に記載できるキーは、
+ *     {@code reader.fwHeaderfields} の名前
  *     （省略時は {@code requestId}・{@code userId}・{@code resendFlag}・{@code resultCode}）だけである。
  *     それ以外のキーがあるとエラーになる。」（本クラスの挙動）</li>
  * </ul>
@@ -299,11 +302,12 @@ public final class YamlMessageBuilder {
      * 例外メッセージ用に、許可される FW 制御ヘッダの項目名を辞書順・クォート付きで整形する。
      *
      * <p>
-     * {@link Set#toString()} をそのまま埋めると、名前に含まれる空白が見えない。
      * {@code reader.fwHeaderfields} はカンマで分割されるだけで前後の空白は取り除かれないため
      * （{@link #fwHeaderFields()} 参照）、{@code "customField, requestId"} のようにカンマの後へ空白を書いた
-     * 設定では項目名が {@code " requestId"} になる。この設定ミスをした利用者が原因に気づけるよう、
-     * 各名前を {@code '} で囲んで空白を可視化する。辞書順（{@link TreeSet}）にするのはメッセージを
+     * 設定では項目名が {@code " requestId"} になる。この設定を {@link Set#toString()} でそのまま埋めると
+     * {@code [ requestId, customField]} となり、名前の先頭の空白が {@code [} や区切りの {@code ", "} の空白と
+     * 地続きで見分けにくい。この設定ミスをした利用者が原因に気づけるよう、各名前を {@code '} で囲んで
+     * {@code [' requestId', 'customField']} と出す。辞書順（{@link TreeSet}）にするのはメッセージを
      * 決定的にするためである。
      * </p>
      *
@@ -335,8 +339,10 @@ public final class YamlMessageBuilder {
      * 設定の変更を取りこぼさないよう呼び出しのたびに引く。
      * </p>
      * <p>
-     * 戻り値は両分岐とも不変（{@link Collections#unmodifiableSet}）である。呼び出し側が誤って書き換えると
-     * 未設定時は共有している {@link #DEFAULT_FW_HEADER_FIELDS} を壊すため、分岐で契約が変わらないようにしている。
+     * 戻り値は両分岐とも不変（{@link Collections#unmodifiableSet}）である。未設定分岐が返すのは
+     * {@code static final} の {@link #DEFAULT_FW_HEADER_FIELDS} そのものであり、包まなければ呼び出し側の
+     * 書き換えが以後すべての電文の許可集合を壊し得た。設定あり分岐は毎回新しい集合を作るためその危険は無いが、
+     * 分岐で契約が変わらないよう揃えて包んでいる。
      * </p>
      *
      * @return FW 制御ヘッダの項目名の集合（不変。設定あり・なしのどちらの分岐でも書き換えられない）
