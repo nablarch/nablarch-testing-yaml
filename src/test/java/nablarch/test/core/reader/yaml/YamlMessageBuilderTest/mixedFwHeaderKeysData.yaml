@@ -1,7 +1,13 @@
 # 同一ファイルに「不正キーのエントリ」と「正常エントリ」を同居させたフィクスチャ。
 # fw_header: のキー検査が、実際に読み出すエントリに対してのみ遅延実行されること
 # （誤記エントリが他エントリの読み出しを巻き添えにしないこと）を検証する。
-# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである（出典: implementation/testdata_notation.rst:1295）。
+# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである
+# （出典: nablarch-document の implementation/testdata_notation.rst「YAML形式の場合」節
+#  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）。
+#
+# 【前提】このフィクスチャが「巻き添えにしない」ことを示せるのは、スキーマ $defs.fw_header が
+# additionalProperties: {"type":"string"} で値の型だけを縛りキー名を制限していないからである。
+# キー名を制限すると badKey001 を含むこのファイルはロード時に全体が落ち、遅延実行の性質を示せなくなる。
 
 messages:
   # 不正キー（既定 4 つにも無い customField）を持つエントリ
@@ -16,6 +22,20 @@ messages:
             length: 5
         rows:
           - ["HELLO"]
+
+  # YAML の ~ を素で書いたエントリ。~ は null キーではなく文字列 "~" として読み込まれる
+  # （実 YAML から到達可能な不正キーの実例）。
+  - id: tildeKey001
+    fw_header:
+      ~: "TILDE_VALUE"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["TILDE"]
 
   # 既定キーだけを持つ正常エントリ
   - id: goodKey001

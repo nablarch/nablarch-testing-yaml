@@ -46,11 +46,22 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * 集合外のキーを例外にする点は本体と意図的に異なる。本体 {@code MessageParser} は
  * {@code processDirectives} が集合外の名前に対して {@code false} を返すため、エラーにせず黙って本文側
- * （フィールド名称行）として扱う（解説書 {@code implementation/testdata_notation.rst:1264}）。
- * これに対し YAML 形式では {@code fw_header:} が本文（{@code records:}）と分離した専用ブロックであり
- * 未知キーが他の意味を持ち得ないため、解説書 {@code implementation/testdata_notation.rst:1295}
- * 「それ以外のキーがあるとエラーになる」のとおり例外とする。
+ * （フィールド名称行）として扱う。これに対し YAML 形式では {@code fw_header:} が本文（{@code records:}）と
+ * 分離した専用ブロックであり未知キーが他の意味を持ち得ないため、例外とする。
  * </p>
+ *
+ * <p>
+ * 出典は解説書（{@code nablarch-document} リポジトリの
+ * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）である。
+ * 行番号は改版で腐るため、節見出しと引用文で示す。
+ * </p>
+ * <ul>
+ * <li>「Excel形式の場合」節: 「名前・値の行のうち、ディレクティブ名でなく {@code reader.fwHeaderfields} にも
+ *     無い名前の行は、フレームワーク制御ヘッダではなくフィールド名称行として読み込まれる。」（本体の挙動）</li>
+ * <li>「YAML形式の場合」節: 「{@code fw_header:} に記載できるキーは、{@code reader.fwHeaderfields} の名前
+ *     （省略時は {@code requestId}・{@code userId}・{@code resendFlag}・{@code resultCode}）だけである。
+ *     それ以外のキーがあるとエラーになる。」（本クラスの挙動）</li>
+ * </ul>
  *
  * @author kiyotis
  */
@@ -277,11 +288,37 @@ public final class YamlMessageBuilder {
             if (!allowedFields.contains(key)) {
                 throw new IllegalStateException(
                         "fw_header in message entry id='" + id + "' has unknown key '" + key + "'. "
-                                + "allowed keys (" + FW_HEADER_KEY + "): " + new TreeSet<String>(allowedFields));
+                                + "allowed keys (" + FW_HEADER_KEY + "): " + formatAllowedFields(allowedFields));
             }
             fwHeader.put(key, objectToString(kv.getValue()));
         }
         return fwHeader;
+    }
+
+    /**
+     * 例外メッセージ用に、許可される FW 制御ヘッダの項目名を辞書順・クォート付きで整形する。
+     *
+     * <p>
+     * {@link Set#toString()} をそのまま埋めると、名前に含まれる空白が見えない。
+     * {@code reader.fwHeaderfields} はカンマで分割されるだけで前後の空白は取り除かれないため
+     * （{@link #fwHeaderFields()} 参照）、{@code "customField, requestId"} のようにカンマの後へ空白を書いた
+     * 設定では項目名が {@code " requestId"} になる。この設定ミスをした利用者が原因に気づけるよう、
+     * 各名前を {@code '} で囲んで空白を可視化する。辞書順（{@link TreeSet}）にするのはメッセージを
+     * 決定的にするためである。
+     * </p>
+     *
+     * @param allowedFields 許可される項目名の集合
+     * @return {@code ['a', 'b']} 形式の文字列
+     */
+    private static String formatAllowedFields(Set<String> allowedFields) {
+        StringBuilder sb = new StringBuilder("[");
+        for (String field : new TreeSet<String>(allowedFields)) {
+            if (sb.length() > 1) {
+                sb.append(", ");
+            }
+            sb.append('\'').append(field).append('\'');
+        }
+        return sb.append(']').toString();
     }
 
     /**
@@ -297,13 +334,18 @@ public final class YamlMessageBuilder {
      * 本クラスは {@code SystemRepository} に登録される {@code YamlTestDataParser} が保持し続けるため、
      * 設定の変更を取りこぼさないよう呼び出しのたびに引く。
      * </p>
+     * <p>
+     * 戻り値は両分岐とも不変（{@link Collections#unmodifiableSet}）である。呼び出し側が誤って書き換えると
+     * 未設定時は共有している {@link #DEFAULT_FW_HEADER_FIELDS} を壊すため、分岐で契約が変わらないようにしている。
+     * </p>
      *
-     * @return FW 制御ヘッダの項目名の集合
+     * @return FW 制御ヘッダの項目名の集合（不変。設定あり・なしのどちらの分岐でも書き換えられない）
      */
     private static Set<String> fwHeaderFields() {
         String configured = SystemRepository.getString(FW_HEADER_KEY);
         return StringUtil.isNullOrEmpty(configured)
                 ? DEFAULT_FW_HEADER_FIELDS
-                : NablarchTestUtils.asSet(NablarchTestUtils.makeArray(configured));
+                : Collections.unmodifiableSet(
+                        NablarchTestUtils.asSet(NablarchTestUtils.makeArray(configured)));
     }
 }
