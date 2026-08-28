@@ -73,6 +73,30 @@ messages:
         rows:
           - ["TESTDATA1"]
 
+  # 2-5: 電文の本文データ行に書いた場合（fw_header ではなく records.rows 側）。
+  - id: literalCrInMessageBody001
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["\\r"]
+
+  # 2-5: 電文のディレクティブの値に書いた場合。
+  - id: literalCrInMessageDirective001
+    directives:
+      record-separator: "\\r"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
   # fw_header なし（BODY のみ）
   - id: bodyOnly001
     records:
@@ -155,6 +179,32 @@ response_body_messages:
             length: 10
         rows:
           - ["NO_ID_DATA"]
+
+  # 2-5: 送信同期セクションのデータ行に書いた場合。
+  #      buildSendSyncList（整形済みグループ ID で照合）用のエントリ。
+  - group_id: literalCrSendSync
+    id: s1
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["\\r"]
+
+  # 2-5: 同上。buildSendSyncBodies（角括弧なしの生グループ ID で照合）用のエントリ。
+  #      2 メソッドは別々に出所文字列を組み立てるため、エントリを分けて両方を固定する。
+  - group_id: literalCrSendSyncBodies
+    id: s2
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["\\r"]
 
   # 全フィールド length なし（NPE 再現用）
   - group_id: noLengthGrp

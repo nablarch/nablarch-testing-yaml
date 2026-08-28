@@ -99,7 +99,7 @@ public final class YamlTableDataBuilder {
             // ここで空テーブルを脱落させると、メッセージ受信テスト等のショット間でクリアが行われず
             // 前ショットのデータが残存して検証がずれる。空でも生成して本体（Excel）の挙動に合わせる。
             result.add(buildTableData(tableName, columnNames, rawRows, fillDefaults, interps,
-                    sectionKey + " entry table='" + tableName + "'"));
+                    YamlSection.entrySource(sectionKey, FIELD_TABLE, tableName)));
         }
         return result;
     }
@@ -185,7 +185,7 @@ public final class YamlTableDataBuilder {
                 List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
                 List<String> columnNames = resolveColumns(rows);
                 return buildListMapRows(columnNames, extractRows(rows, columnNames), interps,
-                        KEY_LIST_MAPS + " entry id='" + id + "'");
+                        YamlSection.entrySource(KEY_LIST_MAPS, FIELD_ID, id));
             }
         }
         return Collections.emptyList();

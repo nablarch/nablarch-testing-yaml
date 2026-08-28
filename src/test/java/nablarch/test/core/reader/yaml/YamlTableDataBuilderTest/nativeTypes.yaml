@@ -19,10 +19,37 @@ list_maps:
   #      解説書 implementation/testdata_notation.rst の
   #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
   #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
-  #      読み込むとエラーになるため、他のテストを巻き添えにしないよう単独のエントリにしてある。
+  #      ロード（YamlLoader.load）は成功する。エラーになるのはこのエントリを組み立てたとき
+  #      （buildListMapRows(yaml, "literalCrTest", ...)）である。他のエントリの組み立てを
+  #      巻き添えにしないよう単独のエントリにしてある。
   - id: literalCrTest
     rows:
       - LITERAL_CR_COL: "\\r"
+
+  # 2-5: 2文字が長い値の途中にある場合（部分一致で拒否されること）。
+  - id: literalCrInsideTest
+    rows:
+      - LONG_COL: "AB\\rCD"
+
+  # 2-5（境界）: バックスラッシュ2つと r の3文字。YAML では "\\\\r" と書く。
+  #      値としては \ \ r の3文字になり、後ろ2文字が一致するため拒否される
+  #      （バックスラッシュ自体をエスケープしたつもりの記述も書けない）。
+  - id: escapedBackslashCrTest
+    rows:
+      - ESCAPED_COL: "\\\\r"
+
+  # 2-5（境界）: 大文字の R は対象外。本体 LineSeparatorInterpreter の DEFAULT_PATTERN が
+  #      小文字の r だけを対象にしており、Excel 形式でも CR にならず2文字のまま残るため。
+  - id: upperCaseRTest
+    rows:
+      - UPPER_R_COL: "\\R"
+
+  # 2-5（対象外）: マーカーカラム（[COL]）の値は interpret を通らないため検査されない。
+  #      マーカーカラムの値は捨てられるので対象外でよい、という設計判断を固定する。
+  - id: markerLiteralCrTest
+    rows:
+      - "[MARKER_COL]": "\\r"
+        DATA_COL: "ok"
 
   # 2-5: バックスラッシュと n の2文字（"\\n"）は Excel 形式と同じく2文字のまま残る（エラーにならない）。
   - id: literalLfTest

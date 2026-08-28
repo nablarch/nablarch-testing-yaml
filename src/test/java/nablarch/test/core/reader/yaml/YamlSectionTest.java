@@ -9,10 +9,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * {@link YamlSection} の静的ユーティリティメソッドに対する単体テスト。
@@ -243,6 +245,98 @@ public class YamlSectionTest {
 
         // Then
         assertThat("value が null のとき null が返ること", result, nullValue());
+    }
+
+    // ========================================================================
+    // interpret: インタープリタが 1 つも渡されなくても検査は行われること（2-5）
+    // ========================================================================
+
+    /**
+     * [YamlSection] interpret: interpreters リストが空でもバックスラッシュと r の 2 文字は拒否されること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: {@code interpret} が検査（{@code rejectLiteralCr}）を、インタープリタチェーンが
+     * 空かどうかを見る早期 return より<b>前</b>に呼ぶこと。空チェーンは実在する経路であり、
+     * {@link InterpreterResolver#raw()} は常に空チェーンを返す。これを使うのが下流の変換ツール
+     * {@code nablarch-testing-converter} の {@code YamlTestCoreAdapter}
+     * （{@code ../nablarch-testing-converter/src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java:73}
+     * の {@code InterpreterResolver.raw()}）である。順序が入れ替わると、変換ツールの YAML 読み取りだけが
+     * 黙ってこの 2 文字を受け入れてしまう<br>
+     * Given: value に 2 文字（{@code "\\r"}）、interps に空リスト<br>
+     * When:  {@code YamlSection.interpret(value, emptyList, source)} を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所が含まれること
+     * </p>
+     */
+    @Test
+    public void interpret_emptyInterpretersStillRejectsLiteralCr() {
+        // Given
+        List<nablarch.test.core.util.interpreter.TestDataInterpreter> emptyList = Collections.emptyList();
+
+        // When
+        try {
+            YamlSection.interpret("\\r", emptyList, "list_maps entry id='dummy'");
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所がメッセージに含まれること", e.getMessage(),
+                    containsString("source=list_maps entry id='dummy'"));
+        }
+    }
+
+    /**
+     * [YamlSection] interpret: interpreters リストが null でもバックスラッシュと r の 2 文字は
+     * 拒否されること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: 空チェーンと同じく、null チェーンでも検査が早期 return より前に行われること。
+     * 空と null は {@code interpret} の同じ条件式（{@code interps == null || interps.isEmpty()}）で
+     * 早期 return するが、片方だけ通るテストにしないため両方を固定する<br>
+     * Given: value に 2 文字（{@code "\\r"}）、interps に null<br>
+     * When:  {@code YamlSection.interpret(value, null, source)} を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所が含まれること
+     * </p>
+     */
+    @Test
+    public void interpret_nullInterpretersStillRejectsLiteralCr() {
+        // When
+        try {
+            YamlSection.interpret("\\r", null, "list_maps entry id='dummy'");
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所がメッセージに含まれること", e.getMessage(),
+                    containsString("source=list_maps entry id='dummy'"));
+        }
+    }
+
+    // ========================================================================
+    // entrySource: 出所文字列の書式
+    // ========================================================================
+
+    /**
+     * [YamlSection] entrySource: 出所文字列が {@code "<セクション> entry <フィールド>='<値>'"} 形式になること。
+     *
+     * <p>
+     * 何を担保するか: 6 箇所の生成側を集めたヘルパが、{@code rejectLiteralCr} の {@code @param source} が
+     * 定める書式どおりに組み立てること。ビルダ側の各テストはこの書式を逐語で assert している<br>
+     * Given: セクションキー・フィールド名・値<br>
+     * When:  {@code YamlSection.entrySource(...)} を呼ぶ<br>
+     * Then:  {@code "setup_tables entry table='USER'"} 等になること
+     * </p>
+     */
+    @Test
+    public void entrySource_formatsSectionFieldAndValue() {
+        assertThat("table 形式", YamlSection.entrySource(
+                YamlSection.KEY_SETUP_TABLES, YamlSection.FIELD_TABLE, "USER"),
+                is("setup_tables entry table='USER'"));
+        assertThat("id 形式", YamlSection.entrySource(
+                YamlSection.KEY_LIST_MAPS, YamlSection.FIELD_ID, "row1"),
+                is("list_maps entry id='row1'"));
+        assertThat("path 形式", YamlSection.entrySource(
+                YamlSection.KEY_EXPECTED_FILES, YamlSection.FIELD_PATH, "dir/a.csv"),
+                is("expected_files entry path='dir/a.csv'"));
     }
 
     // ========================================================================

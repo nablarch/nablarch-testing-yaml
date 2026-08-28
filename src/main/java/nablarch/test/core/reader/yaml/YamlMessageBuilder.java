@@ -130,7 +130,7 @@ public final class YamlMessageBuilder {
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
-                String source = sectionKey + " entry id='" + id + "'";
+                String source = YamlSection.entrySource(sectionKey, FIELD_ID, id);
                 FixedLengthFile file = buildMessageBodyFile(
                         new FixedLengthFile(id), map, YamlSection.isSendSyncMessageSectionKey(sectionKey),
                         interps, source);
@@ -164,7 +164,7 @@ public final class YamlMessageBuilder {
             String id = toStr(map.get(FIELD_ID));
             MockMessages file = buildSendSyncFile(
                     id, map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps,
-                    sectionKey + " entry id='" + id + "'");
+                    YamlSection.entrySource(sectionKey, FIELD_ID, id));
             RequestTestingMessagePool pool =
                     new RequestTestingMessagePool(file, Collections.<String, String>emptyMap());
             if (id != null) {
@@ -205,7 +205,7 @@ public final class YamlMessageBuilder {
                 String id = toStr(map.get(FIELD_ID));
                 result.add(buildSendSyncFile(id, map,
                         YamlSection.isSendSyncMessageSectionKey(sectionKey), interps,
-                        sectionKey + " entry id='" + id + "'"));
+                        YamlSection.entrySource(sectionKey, FIELD_ID, id)));
             }
         }
         return result;
@@ -288,8 +288,16 @@ public final class YamlMessageBuilder {
      *
      * <p>
      * 解釈を通さないため {@link YamlSection#interpret(String, List, String)} の検査に載らない。
-     * キー・値ともに {@link YamlSection#rejectLiteralCr(String, String)} を直接呼んで、
+     * キー・値ともに {@code YamlSection#rejectLiteralCr} を直接呼んで、
      * バックスラッシュと {@code r} の 2 文字を含む値を他の経路と同じく拒否する。
+     * </p>
+     *
+     * <p>
+     * キーを検査するのは本メソッドだけである（データ行のカラム名・ディレクティブのキーは検査しない）。
+     * この非対称の理由は {@code YamlSection#rejectLiteralCr} の javadoc に記す。要点は、
+     * {@code fw_header:} のキーだけがスキーマでも許可キー集合でも止められない位置にあることである
+     * （スキーマ {@code $defs.fw_header} は任意キーを許し、許可キー集合は {@code reader.fwHeaderfields} で
+     * 差し替えられる）。
      * </p>
      *
      * @param fwHeaderObj 生の fw_header 値（マップ／その他／null）
@@ -309,9 +317,12 @@ public final class YamlMessageBuilder {
         Map<String, String> fwHeader = new LinkedHashMap<String, String>();
         for (Map.Entry<?, ?> kv : ((Map<?, ?>) fwHeaderObj).entrySet()) {
             String key = objectToString(kv.getKey());
-            // キーの検査は許可キー判定より前に置く。バックスラッシュと r の 2 文字を含むキーは
-            // 許可キー（既定は requestId・userId・resendFlag・resultCode）に一致しえないため、
-            // 後ろに置くと到達しない。
+            // キーの検査は許可キー判定より前に置く。この 2 文字を含むキーは既定の許可キー
+            // （requestId・userId・resendFlag・resultCode）に一致しえないため、後ろに置くと
+            // 既定設定では到達せず「has unknown key」になってしまう。
+            // reader.fwHeaderfields は空白トリムなしで分割されるため（fwHeaderFields() 参照）、
+            // 設定次第ではこの 2 文字を含む名前も許可キーになりうる。その設定では後ろに置くと
+            // 検査を素通りするので、いずれにせよ前に置く必要がある。
             YamlSection.rejectLiteralCr(key, source);
             if (!allowedFields.contains(key)) {
                 throw new IllegalStateException(

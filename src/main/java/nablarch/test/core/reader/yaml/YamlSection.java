@@ -271,8 +271,20 @@ public final class YamlSection {
      * インタープリタチェーンを適用して値を変換する。
      *
      * <p>
-     * 変換の前に {@link #rejectLiteralCr(String, String)} で値を検査する。インタープリタが 1 つも
-     * 渡されない場合も検査は行う。
+     * 変換の前に {@code rejectLiteralCr} で値を検査し、バックスラッシュと {@code r} の 2 文字を含む値を
+     * 拒否する。出典は解説書（{@code nablarch-document} リポジトリの
+     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項にある表の「改行文字」の行であり、
+     * 引用文と設計判断はこのクラスの {@code rejectLiteralCr} の javadoc に記す
+     * （{@code rejectLiteralCr} は package private のため既定スコープの生成 javadoc には出力されない。
+     * ソースを開いて読むこと）。
+     * </p>
+     *
+     * <p>
+     * インタープリタが 1 つも渡されない場合も検査は行う。空チェーンは実在する経路であり、
+     * {@link InterpreterResolver#raw()} が常に空チェーンを返す。この順序は
+     * {@code YamlSectionTest#interpret_emptyInterpretersStillRejectsLiteralCr} と
+     * {@code interpret_nullInterpretersStillRejectsLiteralCr} が固定している。
      * </p>
      *
      * @param value   変換する値（null 可。null の場合は検査も変換もせず null を返す）
@@ -291,6 +303,32 @@ public final class YamlSection {
         }
         InterpretationContext ctx = new InterpretationContext(value, interps);
         return ctx.invokeNext();
+    }
+
+    /**
+     * 例外メッセージへ出す出所文字列を組み立てる。
+     *
+     * <p>
+     * {@code rejectLiteralCr} の {@code @param source} が定める書式
+     * （{@code "<セクションキー> entry <フィールド名>='<値>'"}）の作り手をここ 1 箇所に集める。
+     * 書式の契約が 1 箇所にあるのに生成側が各ビルダへ散っていると、片方だけ直したときに
+     * テストの逐語 assert が黙って食い違う。
+     * </p>
+     * <p>
+     * 呼び出し元は次の 6 箇所である（いずれも {@code source} 引数としてビルダの奥へ渡る）。
+     * {@link YamlTableDataBuilder} の {@code buildTableDataList}（{@code table}）と
+     * {@code buildListMapRows}（{@code id}）、{@link YamlFileBuilder} の {@code buildDataFileList}（{@code path}）、
+     * {@link YamlMessageBuilder} の {@code buildMessageContent}・{@code buildSendSyncList}・
+     * {@code buildSendSyncBodies}（いずれも {@code id}）。
+     * </p>
+     *
+     * @param sectionKey セクションキー（例: {@link #KEY_SETUP_TABLES}）
+     * @param field      エントリを特定するフィールド名（{@link #FIELD_TABLE}／{@link #FIELD_PATH}／{@link #FIELD_ID}）
+     * @param value      そのフィールドの値（null 可。{@code null} の場合はそのまま {@code 'null'} と出る）
+     * @return {@code "setup_tables entry table='USER'"} 形式の文字列
+     */
+    public static String entrySource(String sectionKey, String field, String value) {
+        return sectionKey + " entry " + field + "='" + value + "'";
     }
 
     /**
@@ -335,13 +373,54 @@ public final class YamlSection {
      * </p>
      *
      * <p>
+     * 判定は 2 文字ちょうどの一致ではなく<b>部分一致</b>（{@link String#contains(CharSequence)}）である。
+     * 解説書が言うのは「2 文字を含む値」だからで、{@code "AB\\rCD"} のように途中に現れる場合も拒否する
+     * （{@code YamlTableDataBuilderTest#buildListMapRows_literalBackslashRInsideLongerValueThrows} と
+     * {@code YamlFileBuilderTest#buildFileList_literalBackslashRInsideLongerValueInRowThrows} が固定する）。
+     * また大文字小文字を区別し、{@code r} だけを見る。バックスラッシュと {@code R} の 2 文字は通す
+     * （{@code YamlTableDataBuilderTest#buildListMapRows_backslashUpperCaseRIsKeptAsIs} が固定する）。
+     * 依存先 nablarch-testing の {@link nablarch.test.core.util.interpreter.LineSeparatorInterpreter} が
+     * CR へ置換するパターン（{@code DEFAULT_PATTERN}。
+     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31}）が
+     * 小文字の {@code r} だけを対象にしており、大文字は Excel 形式でも CR にならず 2 文字のまま残るためである。
+     * バックスラッシュ 2 つと {@code r} の 3 文字（YAML に {@code "\\\\r"} と書いた値）は、後ろ 2 文字が
+     * 一致するため拒否する
+     * （{@code YamlTableDataBuilderTest#buildListMapRows_escapedBackslashFollowedByRThrows} が固定する）。
+     * バックスラッシュ自体をエスケープしたつもりの記述も書けないということである。
+     * </p>
+     *
+     * <p>
      * マーカーカラム（{@link #isMarker(String)}）の値はこの検査を通らない。
      * {@link YamlTableDataBuilder} が {@code interpret} を呼ぶ前にマーカーカラムを除外するためである。
-     * マーカーカラムの値は DB 操作にも突合にも使われず捨てられるので、検査の対象外でよい。
+     * マーカーカラムの値は DB 操作にも突合にも使われず捨てられるので、検査の対象外でよい
+     * （{@code YamlTableDataBuilderTest#buildListMapRows_literalBackslashRInMarkerColumnIsNotChecked} が固定する）。
      * {@code type:} ・ {@code record_type:} ・ {@code path:} ・ {@code table:} ・ {@code id:} などの
      * スキーマ構造値も、値ではなく設定値であるため対象外である（{@link #toStr(Object)} を通り
      * {@code interpret} を通らない）。
      * </p>
+     *
+     * <p>
+     * キーについては {@code fw_header:} のキーだけを検査する。理由は次のとおりで、根拠はすべて実物にある。
+     * </p>
+     * <ul>
+     * <li>キーも検査してよい根拠: Excel 形式ではキーも値も同じセルであり、本体
+     *     {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:183}
+     *     が読み込んだ行の全セルをまとめて {@code interpret} に通す。名前を書いたセルもここを通るため、
+     *     Excel 形式ではキーに書いたこの 2 文字も必ず CR になる。値と同じ理由でキーにも書けない。</li>
+     * <li>{@code fw_header:} のキーを検査する理由: スキーマ {@code $defs.fw_header} は
+     *     {@code additionalProperties: {"type":"string"}} で任意のキーを許すため、スキーマ検証は止めない。
+     *     さらに許可キー集合は {@code reader.fwHeaderfields} で差し替えられる（空白トリムなしのカンマ分割。
+     *     {@link YamlMessageBuilder} の {@code fwHeaderFields()} 参照）ため、この 2 文字を含む名前を
+     *     許可キーに設定できてしまう。止められるのはこの検査だけである。</li>
+     * <li>ディレクティブのキーを検査しない理由: スキーマ {@code $defs.directives} が
+     *     {@code additionalProperties: false} でキー名を閉じている（{@code directives:} が現れる 4 箇所は
+     *     すべてこの {@code $ref} を使う）。この 2 文字を含むキーは {@code YamlLoader.load} の
+     *     スキーマ検証で落ちるため、Java 側に検査を置いても到達しない。</li>
+     * <li>カラム名を検査しない理由: 検査していないことを明示する。テーブル系・{@code list_maps} の
+     *     {@code rows} のキーはスキーマが任意キーを許し（{@code additionalProperties} が型のみ指定）、
+     *     本メソッドも通らないため素通りする。これは意図した対象外である。解説書がこの 2 文字について
+     *     定めているのは「値」であり、本メソッドの契約もそれに合わせている。</li>
+     * </ul>
      *
      * @param value  検査する値（null 可。null の場合は何もしない）
      * @param source 例外メッセージへ出す出所。セクションキーと、エントリを特定する
@@ -356,7 +435,8 @@ public final class YamlSection {
                 "A value containing a backslash followed by 'r' cannot be written in YAML format. "
                         + "In Excel format this 2-character sequence is always converted to CR, "
                         + "so such a value does not exist in the testing framework. "
-                        + "Write an actual CR with the YAML escape \"\\r\" instead. "
+                        + "To write an actual CR, write it in the YAML source as \"\\r\" "
+                        + "(one backslash inside double quotes), not as \"\\\\r\" (two backslashes). "
                         + "value=[" + value + "], source=" + source);
     }
 

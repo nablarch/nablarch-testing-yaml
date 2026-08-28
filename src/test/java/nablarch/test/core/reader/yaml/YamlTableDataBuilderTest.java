@@ -583,18 +583,24 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 改行文字は YAML のパーサだけが解釈すること。
+     * [YamlTableDataBuilder] buildListMapRows: YAML のエスケープ {@code "\r"} が CR 1 文字になること。
      *
      * <p>
-     * yamlInterpreters は LineSeparatorInterpreter を含まないため、値を CR にするのは
-     * YAML のダブルクォート文字列のエスケープ {@code "\r"} だけである<br>
+     * 何を担保するか: YAML のダブルクォート文字列のエスケープ {@code "\r"} が、パーサによって
+     * CR（0x0D）1 文字へ展開されたまま値として取り出されること。<br>
+     * <b>「CR にするのは YAML のパーサ<i>だけ</i>である」という主張はこのテストでは担保していない。</b>
+     * インタープリタ側で CR への変換を足しても（{@code unit-test.xml} の {@code yamlInterpreters} 先頭へ
+     * {@code LineSeparatorInterpreter} を追加しても）このテストは通る。実測で確認済み。
+     * 「だけ」を担保しているのは {@code nablarch.test.core.reader.YamlTestDataParserTest#yamlInterpretersAreOnlyDocumentedTwo}
+     * （{@code yamlInterpreters} が {@code DateTimeInterpreter} と {@code CompositeInterpreter} の 2 件だけで
+     * あることを固定する）である<br>
      * Given: list_maps に YAML_CR_COL: "\r"（YAML のエスケープ）<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
      * Then:  YAML_CR_COL が CR 文字 1 文字であること
      * </p>
      */
     @Test
-    public void buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser() {
+    public void buildListMapRows_yamlEscapeBecomesCr() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
@@ -618,7 +624,13 @@ public class YamlTableDataBuilderTest {
      * YAML 形式ではエラーになる。」<br>
      * Given: list_maps の literalCrTest エントリに LITERAL_CR_COL: "\\r"（2 文字）<br>
      * When:  buildListMapRows(yaml, "literalCrTest", path) を呼ぶ<br>
-     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれ、
+     *        推奨形と拒否された値が YAML ソースでの書き方として区別できること
+     * </p>
+     * <p>
+     * 最後の 1 件は、実行時の文字列では推奨形も拒否値もどちらも「バックスラッシュ＋{@code r}」に見えて
+     * しまう（違いは YAML ソース側の書き方にある）ため、メッセージが YAML ソース表記で
+     * 言い分けていることを固定する。
      * </p>
      */
     @Test
@@ -635,6 +647,10 @@ public class YamlTableDataBuilderTest {
             assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
             assertThat("出所（セクションと id）がメッセージに含まれること",
                     e.getMessage(), containsString("source=list_maps entry id='literalCrTest'"));
+            assertThat("推奨形と拒否値を YAML ソース表記で言い分けていること", e.getMessage(),
+                    containsString("write it in the YAML source as \"\\r\" "
+                            + "(one backslash inside double quotes), "
+                            + "not as \"\\\\r\" (two backslashes)."));
         }
     }
 
@@ -663,6 +679,123 @@ public class YamlTableDataBuilderTest {
         assertThat(result.size(), is(1));
         assertThat("バックスラッシュと n の 2 文字はそのまま残ること",
                 result.get(0).get("LITERAL_LF_COL"), is("\\n"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: 2 文字が長い値の途中にあってもエラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: 検査が部分一致（{@code String#contains}）であること。解説書が言うのは
+     * 「2 文字を<b>含む</b>値」であり、値がちょうど 2 文字の場合しか固定していないと
+     * 完全一致・前方一致・後方一致に退化させても気づけない<br>
+     * Given: list_maps の literalCrInsideTest エントリに LONG_COL: "AB\\rCD"（2 文字が途中にある）<br>
+     * When:  buildListMapRows(yaml, "literalCrInsideTest", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値 {@code AB\r CD} 全体と出所が含まれること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_literalBackslashRInsideLongerValueThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        try {
+            buildListMapRows(yaml, "literalCrInsideTest", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値全体がメッセージに含まれること", e.getMessage(),
+                    containsString("value=[AB\\rCD]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=list_maps entry id='literalCrInsideTest'"));
+        }
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: バックスラッシュ 2 つと r の 3 文字もエラーになること（2-5 境界）。
+     *
+     * <p>
+     * 何を担保するか: 現在の実挙動を意図として固定する。YAML に {@code "\\\\r"} と書くと値は
+     * バックスラッシュ 2 つ＋{@code r} の 3 文字になり、後ろ 2 文字が検査に一致するため拒否される。
+     * 「バックスラッシュ自体をエスケープしたつもり」の記述も書けない、ということである<br>
+     * Given: list_maps の escapedBackslashCrTest エントリに ESCAPED_COL: "\\\\r"（値は 3 文字）<br>
+     * When:  buildListMapRows(yaml, "escapedBackslashCrTest", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージの値が 3 文字であること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_escapedBackslashFollowedByRThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        try {
+            buildListMapRows(yaml, "escapedBackslashCrTest", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値（バックスラッシュ 2 つ＋r の 3 文字）がメッセージに含まれること", e.getMessage(),
+                    containsString("value=[\\\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=list_maps entry id='escapedBackslashCrTest'"));
+        }
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: バックスラッシュと大文字 R の 2 文字は通ること（2-5 境界）。
+     *
+     * <p>
+     * 何を担保するか: 検査が大文字小文字を区別すること。依存先 nablarch-testing の
+     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31}
+     * の {@code DEFAULT_PATTERN}（{@code "\\\\r"}）は小文字の {@code r} だけを対象にしており、
+     * バックスラッシュと大文字 {@code R} は Excel 形式でも CR にならず 2 文字のまま残る。
+     * したがって YAML 形式でも書けてよい<br>
+     * Given: list_maps の upperCaseRTest エントリに UPPER_R_COL: "\\R"（2 文字）<br>
+     * When:  buildListMapRows(yaml, "upperCaseRTest", path) を呼ぶ<br>
+     * Then:  エラーにならず、値が {@code "\\R"} の 2 文字のままであること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_backslashUpperCaseRIsKeptAsIs() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "upperCaseRTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("バックスラッシュと大文字 R の 2 文字はそのまま残ること",
+                result.get(0).get("UPPER_R_COL"), is("\\R"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: マーカーカラムの値は検査されないこと（2-5 対象外）。
+     *
+     * <p>
+     * 何を担保するか: {@code YamlSection#rejectLiteralCr} の javadoc が設計判断として明記している
+     * 「マーカーカラム（{@code [COL]}）の値は検査を通らない（捨てられるので対象外でよい）」を固定する。
+     * {@code buildListMapRows} はマーカーカラムを {@code interpret} より前に読み飛ばすため、
+     * 2 文字を書いてもエラーにならず、結果のマップにも現れない<br>
+     * Given: list_maps の markerLiteralCrTest エントリに "[MARKER_COL]": "\\r" と DATA_COL: "ok"<br>
+     * When:  buildListMapRows(yaml, "markerLiteralCrTest", path) を呼ぶ<br>
+     * Then:  エラーにならず、マーカーカラムはマップに含まれず、DATA_COL だけが残ること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_literalBackslashRInMarkerColumnIsNotChecked() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "markerLiteralCrTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("マーカーカラムの 2 文字は検査されず例外にならないこと",
+                result.get(0).get("DATA_COL"), is("ok"));
+        assertThat("マーカーカラムはマップから除外されること",
+                result.get(0).containsKey("[MARKER_COL]"), is(false));
     }
 
     /**

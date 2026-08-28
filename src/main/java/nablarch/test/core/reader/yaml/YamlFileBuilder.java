@@ -85,7 +85,7 @@ public final class YamlFileBuilder {
             DataFile file = FILE_TYPE_FIXED.equals(toStr(map.get(FIELD_TYPE)))
                     ? new FixedLengthFile(path)
                     : new VariableLengthFile(path);
-            String source = sectionKey + " entry path='" + path + "'";
+            String source = YamlSection.entrySource(sectionKey, FIELD_PATH, path);
             applyDirectives(file, mapDirectives(map), interps, source);
             buildFragmentsForFile(file, getList(map, FIELD_RECORDS), interps, source);
             result.add(file);

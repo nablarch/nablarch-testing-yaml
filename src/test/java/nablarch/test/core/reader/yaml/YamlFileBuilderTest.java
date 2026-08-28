@@ -1078,6 +1078,35 @@ public class YamlFileBuilderTest {
     }
 
     /**
+     * [YamlFileBuilder] buildFileList: 2 文字が長い値の途中にあってもエラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: ファイル系のデータ行でも検査が部分一致（{@code String#contains}）であること。
+     * 解説書が言うのは「2 文字を<b>含む</b>値」である<br>
+     * Given: expected_files の literalCrInsideRow グループのデータ行に {@code "AB\\rCD"}<br>
+     * When:  buildFileList(yaml, "expected_files", "[literalCrInsideRow]", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値全体と出所（セクション・path）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildFileList_literalBackslashRInsideLongerValueInRowThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        try {
+            buildFileList(yaml, "expected_files", "[literalCrInsideRow]", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値全体がメッセージに含まれること", e.getMessage(),
+                    containsString("value=[AB\\rCD]"));
+            assertThat("出所（セクションと path）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=expected_files entry path='dummy/literal_cr_inside_row.csv'"));
+        }
+    }
+
+    /**
      * [YamlFileBuilder] buildFileList: ディレクティブの値にバックスラッシュと r の 2 文字を書くと
      * エラーになること（2-5）。
      *

@@ -1942,6 +1942,124 @@ public class YamlMessageBuilderTest {
         }
     }
 
+    /**
+     * [YamlMessageBuilder] buildMessagePool: 電文の本文データ行に 2 文字を書くとエラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: {@code messages} エントリの {@code fw_header} 側だけでなく、本文
+     * （{@code records.rows}）側でも検査が働き、出所に {@code messages} セクションと id が入ること。
+     * 本文は {@code YamlFileBuilder#buildFragmentsForMessage} 経由で {@code YamlSection#interpret} を通る<br>
+     * Given: messages の literalCrInMessageBody001 の rows に {@code "\\r"}<br>
+     * When:  buildMessagePool(yaml, "messages", "literalCrInMessageBody001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_literalBackslashRInMessageBodyRowThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "literalCrInMessageBody001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=messages entry id='literalCrInMessageBody001'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: 電文のディレクティブの値に 2 文字を書くとエラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: 電文のディレクティブもデータ行と同じ {@code YamlSection#interpret} を通ること
+     * （{@code YamlFileBuilder#applyDirectives}）。ファイル系のディレクティブは別テストで固定済みだが、
+     * 電文系は入口（{@code YamlMessageBuilder#buildMessageBodyFile}）が別である<br>
+     * Given: messages の literalCrInMessageDirective001 の record-separator に {@code "\\r"}<br>
+     * When:  buildMessagePool(yaml, "messages", "literalCrInMessageDirective001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_literalBackslashRInMessageDirectiveThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "literalCrInMessageDirective001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=messages entry id='literalCrInMessageDirective001'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncList: 送信同期セクションのデータ行に 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: 送信同期 4 セクションの経路でも検査が働き、出所がセクションキーと
+     * エントリの id で組み立てられること。{@code buildSendSyncList} は
+     * {@code buildMessageContent} とは別に出所文字列を組み立てるため、独立に固定する<br>
+     * Given: response_body_messages の literalCrSendSync グループ（id: s1）の rows に {@code "\\r"}<br>
+     * When:  buildSendSyncList(yaml, "response_body_messages", "[literalCrSendSync]", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncList_literalBackslashRInRowThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        try {
+            buildSendSyncMessageList(yaml, "response_body_messages", "[literalCrSendSync]", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=response_body_messages entry id='s1'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncBodies: 送信同期セクションのデータ行に 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * 何を担保するか: 変換ツール用の {@code buildSendSyncBodies} でも検査が働き、出所が
+     * セクションキーとエントリの id で組み立てられること。{@code buildSendSyncList} とは
+     * 別の箇所で出所文字列を組み立てているため、独立に固定する<br>
+     * Given: response_body_messages の literalCrSendSyncBodies グループ（id: s2）の rows に {@code "\\r"}<br>
+     * When:  buildSendSyncBodies(yaml, "response_body_messages", "literalCrSendSyncBodies", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildSendSyncBodies_literalBackslashRInRowThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        try {
+            builder.buildSendSyncBodies(yaml, "response_body_messages", "literalCrSendSyncBodies", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=response_body_messages entry id='s2'"));
+        }
+    }
+
     // ========================================================================
     // InterpreterResolver.raw(): resolve("any") が空リストを返すこと
     // ========================================================================

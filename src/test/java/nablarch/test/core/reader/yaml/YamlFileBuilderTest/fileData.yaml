@@ -483,6 +483,21 @@ expected_files:
         rows:
           - ["\\r"]
 
+  # 2-5: 2文字が長い値の途中にある場合（部分一致で拒否されること）。
+  - group_id: literalCrInsideRow
+    path: dummy/literal_cr_inside_row.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+        rows:
+          - ["AB\\rCD"]
+
   # 2-5: 同じ2文字をディレクティブの値に書いた場合。
   - group_id: literalCrInDirective
     path: dummy/literal_cr_directive.csv
