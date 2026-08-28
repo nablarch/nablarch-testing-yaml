@@ -130,10 +130,12 @@ public final class YamlMessageBuilder {
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
+                String source = sectionKey + " entry id='" + id + "'";
                 FixedLengthFile file = buildMessageBodyFile(
-                        new FixedLengthFile(id), map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps);
+                        new FixedLengthFile(id), map, YamlSection.isSendSyncMessageSectionKey(sectionKey),
+                        interps, source);
                 Map<String, String> fwHeader = useFwHeader
-                        ? convertFwHeader(map.get(FIELD_FW_HEADER), id)
+                        ? convertFwHeader(map.get(FIELD_FW_HEADER), source)
                         : Collections.<String, String>emptyMap();
                 return new MessageContent(fwHeader, file);
             }
@@ -161,7 +163,8 @@ public final class YamlMessageBuilder {
             }
             String id = toStr(map.get(FIELD_ID));
             MockMessages file = buildSendSyncFile(
-                    id, map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps);
+                    id, map, YamlSection.isSendSyncMessageSectionKey(sectionKey), interps,
+                    sectionKey + " entry id='" + id + "'");
             RequestTestingMessagePool pool =
                     new RequestTestingMessagePool(file, Collections.<String, String>emptyMap());
             if (id != null) {
@@ -199,8 +202,10 @@ public final class YamlMessageBuilder {
             Map<String, Object> map = castMap(entry);
             String rawGroupId = toStr(map.get(FIELD_GROUP_ID));
             if (rawGroupId != null && rawGroupId.equals(groupId)) {
-                result.add(buildSendSyncFile(toStr(map.get(FIELD_ID)), map,
-                        YamlSection.isSendSyncMessageSectionKey(sectionKey), interps));
+                String id = toStr(map.get(FIELD_ID));
+                result.add(buildSendSyncFile(id, map,
+                        YamlSection.isSendSyncMessageSectionKey(sectionKey), interps,
+                        sectionKey + " entry id='" + id + "'"));
             }
         }
         return result;
@@ -213,15 +218,17 @@ public final class YamlMessageBuilder {
      * @param map            エントリ Map
      * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      * @return 本文の器
      */
     private static MockMessages buildSendSyncFile(String id, Map<String, Object> map, boolean keepRecordType,
-                                                  List<TestDataInterpreter> interps) {
+                                                  List<TestDataInterpreter> interps, String source) {
         MockMessages file = new MockMessages(id != null ? id : "");
         // 送信同期メッセージは本体パーサが値行先頭の No 列を FIRST_FIELD_NO に隔離するため、
         // YAML 経路でも同じ形の器になるよう withId=true で連番を補う
         // （連番は照合には使われず、失敗時メッセージの test no=[...] にのみ使われる）。
-        return buildSendSyncBodyFile(file, map, keepRecordType, interps);
+        return buildSendSyncBodyFile(file, map, keepRecordType, interps, source);
     }
 
     /**
@@ -231,14 +238,18 @@ public final class YamlMessageBuilder {
      * @param map            エントリ Map
      * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      * @param <T>            本文ファイルの具体型
      * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
      */
     private static <T extends FixedLengthFile> T buildMessageBodyFile(T file, Map<String, Object> map,
                                                                        boolean keepRecordType,
-                                                                       List<TestDataInterpreter> interps) {
-        YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
-        YamlFileBuilder.buildFragmentsForMessage(file, getList(map, FIELD_RECORDS), keepRecordType, interps);
+                                                                       List<TestDataInterpreter> interps,
+                                                                       String source) {
+        YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps, source);
+        YamlFileBuilder.buildFragmentsForMessage(file, getList(map, FIELD_RECORDS), keepRecordType,
+                interps, source);
         return file;
     }
 
@@ -251,14 +262,18 @@ public final class YamlMessageBuilder {
      * @param map            エントリ Map
      * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      * @param <T>            本文ファイルの具体型
      * @return 組み立て済みの本文ファイル（引数と同一インスタンス）
      */
     private static <T extends FixedLengthFile> T buildSendSyncBodyFile(T file, Map<String, Object> map,
                                                                         boolean keepRecordType,
-                                                                        List<TestDataInterpreter> interps) {
-        YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps);
-        YamlFileBuilder.buildFragmentsForSendSync(file, getList(map, FIELD_RECORDS), keepRecordType, interps);
+                                                                        List<TestDataInterpreter> interps,
+                                                                        String source) {
+        YamlFileBuilder.applyDirectives(file, YamlFileBuilder.mapDirectives(map), interps, source);
+        YamlFileBuilder.buildFragmentsForSendSync(file, getList(map, FIELD_RECORDS), keepRecordType,
+                interps, source);
         return file;
     }
 
@@ -267,33 +282,45 @@ public final class YamlMessageBuilder {
      *
      * <p>
      * 値は文字列化のみで解釈（interpret）はしない。マップ以外が指定された場合、および
-     * {@code fwHeaderFields()} に無いキーが記載された場合は ID 付きで
+     * {@code fwHeaderFields()} に無いキーが記載された場合は出所付きで
      * {@link IllegalStateException} を投げる。
      * </p>
      *
+     * <p>
+     * 解釈を通さないため {@link YamlSection#interpret(String, List, String)} の検査に載らない。
+     * キー・値ともに {@link YamlSection#rejectLiteralCr(String, String)} を直接呼んで、
+     * バックスラッシュと {@code r} の 2 文字を含む値を他の経路と同じく拒否する。
+     * </p>
+     *
      * @param fwHeaderObj 生の fw_header 値（マップ／その他／null）
-     * @param id          メッセージ ID（例外メッセージ用）
+     * @param source      出所（例外メッセージ用。{@code "messages entry id='req001'"} の形）
      * @return FW 制御ヘッダ Map（省略時・null 時は空 Map）
      */
-    private Map<String, String> convertFwHeader(Object fwHeaderObj, String id) {
+    private Map<String, String> convertFwHeader(Object fwHeaderObj, String source) {
         if (fwHeaderObj == null) {
             return Collections.emptyMap();
         }
         if (!(fwHeaderObj instanceof Map)) {
             throw new IllegalStateException(
-                    "fw_header in message entry id='" + id + "' must be a map, "
+                    "fw_header in " + source + " must be a map, "
                             + "but was: " + fwHeaderObj.getClass().getSimpleName());
         }
         Set<String> allowedFields = fwHeaderFields();
         Map<String, String> fwHeader = new LinkedHashMap<String, String>();
         for (Map.Entry<?, ?> kv : ((Map<?, ?>) fwHeaderObj).entrySet()) {
             String key = objectToString(kv.getKey());
+            // キーの検査は許可キー判定より前に置く。バックスラッシュと r の 2 文字を含むキーは
+            // 許可キー（既定は requestId・userId・resendFlag・resultCode）に一致しえないため、
+            // 後ろに置くと到達しない。
+            YamlSection.rejectLiteralCr(key, source);
             if (!allowedFields.contains(key)) {
                 throw new IllegalStateException(
-                        "fw_header in message entry id='" + id + "' has unknown key '" + key + "'. "
+                        "fw_header in " + source + " has unknown key '" + key + "'. "
                                 + "allowed keys (" + FW_HEADER_KEY + "): " + formatAllowedFields(allowedFields));
             }
-            fwHeader.put(key, objectToString(kv.getValue()));
+            String value = objectToString(kv.getValue());
+            YamlSection.rejectLiteralCr(value, source);
+            fwHeader.put(key, value);
         }
         return fwHeader;
     }

@@ -98,7 +98,8 @@ public final class YamlTableDataBuilder {
             // これを 0 行の TableData として返して setUpDb の削除→挿入でテーブルを空にする。
             // ここで空テーブルを脱落させると、メッセージ受信テスト等のショット間でクリアが行われず
             // 前ショットのデータが残存して検証がずれる。空でも生成して本体（Excel）の挙動に合わせる。
-            result.add(buildTableData(tableName, columnNames, rawRows, fillDefaults, interps));
+            result.add(buildTableData(tableName, columnNames, rawRows, fillDefaults, interps,
+                    sectionKey + " entry table='" + tableName + "'"));
         }
         return result;
     }
@@ -134,7 +135,7 @@ public final class YamlTableDataBuilder {
      * </p>
      */
     private TableData buildTableData(String tableName, List<String> cols, List<List<String>> rawRows,
-                                     boolean fillDefaults, List<TestDataInterpreter> interps) {
+                                     boolean fillDefaults, List<TestDataInterpreter> interps, String source) {
         List<String> dataColumns = new ArrayList<String>();
         List<Integer> dataColumnIndexes = new ArrayList<Integer>();
         for (int i = 0; i < cols.size(); i++) {
@@ -151,7 +152,7 @@ public final class YamlTableDataBuilder {
         for (List<String> rawRow : rawRows) {
             List<String> values = new ArrayList<String>(dataColumnIndexes.size());
             for (int idx : dataColumnIndexes) {
-                values.add(interpret(rawRow.get(idx), interps));
+                values.add(interpret(rawRow.get(idx), interps, source));
             }
             td.addRow(values);
         }
@@ -183,14 +184,15 @@ public final class YamlTableDataBuilder {
             if (id.equals(toStr(map.get(FIELD_ID)))) {
                 List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
                 List<String> columnNames = resolveColumns(rows);
-                return buildListMapRows(columnNames, extractRows(rows, columnNames), interps);
+                return buildListMapRows(columnNames, extractRows(rows, columnNames), interps,
+                        KEY_LIST_MAPS + " entry id='" + id + "'");
             }
         }
         return Collections.emptyList();
     }
 
     private List<Map<String, String>> buildListMapRows(List<String> cols, List<List<String>> rawRows,
-                                                       List<TestDataInterpreter> interps) {
+                                                       List<TestDataInterpreter> interps, String source) {
         List<Map<String, String>> result = new ArrayList<Map<String, String>>();
         for (List<String> rawRow : rawRows) {
             Map<String, String> row = new TreeMap<String, String>();
@@ -199,7 +201,7 @@ public final class YamlTableDataBuilder {
                 if (isMarker(col)) {
                     continue;
                 }
-                row.put(col, interpret(rawRow.get(i), interps));
+                row.put(col, interpret(rawRow.get(i), interps, source));
             }
             result.add(row);
         }

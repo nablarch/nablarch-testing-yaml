@@ -50,6 +50,35 @@ messages:
         rows:
           - ["HELLO"]
 
+  # 2-5: fw_header の値にバックスラッシュと r の2文字（"\\r"）を書いた場合。
+  #      解説書 implementation/testdata_notation.rst の
+  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  - id: literalCrInFwHeaderValue001
+    fw_header:
+      requestId: "\\r"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+  # 2-5: 同じ2文字を fw_header のキーに書いた場合。
+  - id: literalCrInFwHeaderKey001
+    fw_header:
+      "req\\rId": "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
 expected_request_body_messages:
   - id: req001
     records:

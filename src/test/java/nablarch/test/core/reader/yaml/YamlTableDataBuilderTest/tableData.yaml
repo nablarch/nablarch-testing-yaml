@@ -185,6 +185,19 @@ setup_tables:
         NUMBER_COL: "71"
         NUMBER_COL2: "71.0"
 
+  # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
+  #      解説書 implementation/testdata_notation.rst の
+  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  - group_id: literalCrInTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000080"
+        PK_COL2: "LR"
+        VARCHAR2_COL: "\\r"
+        NUMBER_COL: "80"
+        NUMBER_COL2: "80.0"
+
 
 list_maps:
   - id: testListMap

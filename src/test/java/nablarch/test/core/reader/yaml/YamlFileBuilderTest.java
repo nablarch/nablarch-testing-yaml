@@ -855,7 +855,7 @@ public class YamlFileBuilderTest {
         // When
         // keepRecordType=false: messages（MESSAGE）経路は記載値を使わず "default" になる
         YamlFileBuilder.buildFragmentsForMessage(file, records, false,
-                Collections.<TestDataInterpreter>emptyList());
+                Collections.<TestDataInterpreter>emptyList(), "messages entry id='msg'");
 
         // Then: レコード定義はフラグメント 1 件につき 1 件生成される
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
@@ -900,7 +900,7 @@ public class YamlFileBuilderTest {
 
         // When
         YamlFileBuilder.buildFragmentsForMessage(file, Arrays.<Object>asList(record), false,
-                Collections.<TestDataInterpreter>emptyList());
+                Collections.<TestDataInterpreter>emptyList(), "messages entry id='msg'");
 
         // Then
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
@@ -945,7 +945,7 @@ public class YamlFileBuilderTest {
         // When
         // keepRecordType=true: 送信同期4セクションは record_type の記載値がそのままレコード種別になる
         YamlFileBuilder.buildFragmentsForSendSync(file, records, true,
-                Collections.<TestDataInterpreter>emptyList());
+                Collections.<TestDataInterpreter>emptyList(), "messages entry id='msg'");
 
         // Then
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
@@ -989,7 +989,7 @@ public class YamlFileBuilderTest {
 
         // When
         YamlFileBuilder.buildFragmentsForSendSync(file, records, false,
-                Collections.<TestDataInterpreter>emptyList());
+                Collections.<TestDataInterpreter>emptyList(), "messages entry id='msg'");
 
         // Then
         List<RecordDefinition> layoutRecords = file.createLayout().getRecords();
@@ -1023,7 +1023,7 @@ public class YamlFileBuilderTest {
         // When
         // keepRecordType=true: 送信同期4セクションは record_type の記載値がそのままレコード種別になる
         YamlFileBuilder.buildFragmentsForSendSync(file, records, true,
-                Collections.<TestDataInterpreter>emptyList());
+                Collections.<TestDataInterpreter>emptyList(), "messages entry id='msg'");
 
         // Then
         List<DataRecord> dataRecords = file.toDataRecords();
@@ -1039,6 +1039,100 @@ public class YamlFileBuilderTest {
         assertThat(dataRecords.get(0).getString("PAYLOAD"), is("PAYLOAD_01"));
         assertThat(dataRecords.get(1).getString("PAYLOAD"), is("PAYLOAD_02"));
         assertThat(dataRecords.get(2).getString("PAYLOAD"), is("PAYLOAD_03"));
+    }
+
+    // ========================================================================
+    // バックスラッシュと r の 2 文字を含む値がエラーになること（2-5）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: データ行にバックスラッシュと r の 2 文字を書くとエラーになること（2-5）。
+     *
+     * <p>
+     * 解説書 {@code implementation/testdata_notation.rst} の
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
+     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
+     * YAML 形式ではエラーになる。」<br>
+     * Given: expected_files の literalCrInRow グループのデータ行に {@code "\\r"}（2 文字）<br>
+     * When:  buildFileList(yaml, "expected_files", "[literalCrInRow]", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・path）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildFileList_literalBackslashRInRowThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        try {
+            buildFileList(yaml, "expected_files", "[literalCrInRow]", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと path）がメッセージに含まれること",
+                    e.getMessage(),
+                    containsString("source=expected_files entry path='dummy/literal_cr_row.csv'"));
+        }
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: ディレクティブの値にバックスラッシュと r の 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * ディレクティブの値もデータ行と同じ {@code YamlSection#interpret} を通るため、同じ検査に載る<br>
+     * Given: expected_files の literalCrInDirective グループの field-separator に {@code "\\r"}（2 文字）<br>
+     * When:  buildFileList(yaml, "expected_files", "[literalCrInDirective]", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・path）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildFileList_literalBackslashRInDirectiveThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        try {
+            buildFileList(yaml, "expected_files", "[literalCrInDirective]", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと path）がメッセージに含まれること",
+                    e.getMessage(),
+                    containsString("source=expected_files entry path='dummy/literal_cr_directive.csv'"));
+        }
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: データ行のバックスラッシュと n の 2 文字はそのまま値になること（2-5）。
+     *
+     * <p>
+     * 解説書 {@code implementation/testdata_notation.rst} の
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+     * 「{@code "\\n"} は Excel 形式と同じく2文字のまま残る」。
+     * 拒否するのはバックスラッシュと {@code r} の 2 文字だけであることを固定する<br>
+     * Given: expected_files の literalLfInRow グループのデータ行に {@code "\\n"}（2 文字）<br>
+     * When:  buildFileList(yaml, "expected_files", "[literalLfInRow]", path) を呼ぶ<br>
+     * Then:  エラーにならず、値が {@code "\\n"} の 2 文字のままであること
+     * </p>
+     */
+    @Test
+    public void buildFileList_literalBackslashNInRowIsKeptAsIs() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = buildFileList(yaml, "expected_files", "[literalLfInRow]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        List<DataRecord> dataRecords = result.get(0).toDataRecords();
+        assertThat(dataRecords.size(), is(1));
+        assertThat("バックスラッシュと n の 2 文字はそのまま残ること",
+                dataRecords.get(0).getString("FIELD1"), is("\\n"));
     }
 
     // ========================================================================

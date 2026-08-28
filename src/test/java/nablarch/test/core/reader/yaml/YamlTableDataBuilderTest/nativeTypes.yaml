@@ -13,8 +13,21 @@ list_maps:
       - QUOTED_NULL: "null"
         BARE_NULL: null
         SPACE_COL: " "
-        LITERAL_CR_COL: "\\r"
         YAML_CR_COL: "\r"
+
+  # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
+  #      解説書 implementation/testdata_notation.rst の
+  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  #      読み込むとエラーになるため、他のテストを巻き添えにしないよう単独のエントリにしてある。
+  - id: literalCrTest
+    rows:
+      - LITERAL_CR_COL: "\\r"
+
+  # 2-5: バックスラッシュと n の2文字（"\\n"）は Excel 形式と同じく2文字のまま残る（エラーにならない）。
+  - id: literalLfTest
+    rows:
+      - LITERAL_LF_COL: "\\n"
 
   - id: dateTimeTest
     rows:

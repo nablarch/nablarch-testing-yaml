@@ -463,3 +463,52 @@ expected_files:
           - name: FIELD2
             type: 半角
         rows: []
+
+  # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
+  #      解説書 implementation/testdata_notation.rst の
+  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  #      データ行に書いた場合。
+  - group_id: literalCrInRow
+    path: dummy/literal_cr_row.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+        rows:
+          - ["\\r"]
+
+  # 2-5: 同じ2文字をディレクティブの値に書いた場合。
+  - group_id: literalCrInDirective
+    path: dummy/literal_cr_directive.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: "\\r"
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+        rows:
+          - ["AAAAA"]
+
+  # 2-5: バックスラッシュと n の2文字（"\\n"）は2文字のまま残る（エラーにならない）。
+  - group_id: literalLfInRow
+    path: dummy/literal_lf_row.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: 半角
+        rows:
+          - ["\\n"]

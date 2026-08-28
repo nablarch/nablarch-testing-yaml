@@ -586,11 +586,11 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: 改行文字は YAML のパーサだけが解釈すること。
      *
      * <p>
-     * yamlInterpreters は LineSeparatorInterpreter を含まないため、YAML のエスケープ "\r" だけが
-     * CR（0x0D）になり、バックスラッシュと r の 2 文字を書いた "\\r" は文字どおり残る<br>
-     * Given: list_maps に YAML_CR_COL: "\r"（YAML のエスケープ）と LITERAL_CR_COL: "\\r"（2 文字）<br>
+     * yamlInterpreters は LineSeparatorInterpreter を含まないため、値を CR にするのは
+     * YAML のダブルクォート文字列のエスケープ {@code "\r"} だけである<br>
+     * Given: list_maps に YAML_CR_COL: "\r"（YAML のエスケープ）<br>
      * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
-     * Then:  YAML_CR_COL は CR 文字、LITERAL_CR_COL は "\\r" の 2 文字のままであること
+     * Then:  YAML_CR_COL が CR 文字 1 文字であること
      * </p>
      */
     @Test
@@ -605,8 +605,92 @@ public class YamlTableDataBuilderTest {
         assertThat(result.size(), is(1));
         assertThat("YAML のエスケープ \"\\r\" は CR 文字になること",
                 result.get(0).get("YAML_CR_COL"), is("\r"));
-        assertThat("バックスラッシュと r の 2 文字は変換されず そのまま残ること",
-                result.get(0).get("LITERAL_CR_COL"), is("\\r"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: データ行にバックスラッシュと r の 2 文字を書くとエラーになること（2-5）。
+     *
+     * <p>
+     * 解説書 {@code implementation/testdata_notation.rst} の
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
+     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
+     * YAML 形式ではエラーになる。」<br>
+     * Given: list_maps の literalCrTest エントリに LITERAL_CR_COL: "\\r"（2 文字）<br>
+     * When:  buildListMapRows(yaml, "literalCrTest", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_literalBackslashRThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        try {
+            buildListMapRows(yaml, "literalCrTest", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること",
+                    e.getMessage(), containsString("source=list_maps entry id='literalCrTest'"));
+        }
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: バックスラッシュと n の 2 文字はそのまま値になること（2-5）。
+     *
+     * <p>
+     * 解説書 {@code implementation/testdata_notation.rst} の
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+     * 「{@code "\\n"} は Excel 形式と同じく2文字のまま残る」。
+     * 拒否するのはバックスラッシュと {@code r} の 2 文字だけであることを固定する<br>
+     * Given: list_maps の literalLfTest エントリに LITERAL_LF_COL: "\\n"（2 文字）<br>
+     * When:  buildListMapRows(yaml, "literalLfTest", path) を呼ぶ<br>
+     * Then:  エラーにならず、値が "\\n" の 2 文字のままであること
+     * </p>
+     */
+    @Test
+    public void buildListMapRows_literalBackslashNIsKeptAsIs() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = buildListMapRows(yaml, "literalLfTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("バックスラッシュと n の 2 文字はそのまま残ること",
+                result.get(0).get("LITERAL_LF_COL"), is("\\n"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: テーブルのデータ行にバックスラッシュと r の 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * list_maps とテーブル系セクションは別々の {@code interpret} 呼び出しを通るため、両方を固定する<br>
+     * Given: setup_tables の literalCrInTable グループの行に VARCHAR2_COL: "\\r"（2 文字）<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[literalCrInTable]", false, path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・table）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildTableDataList_literalBackslashRThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        try {
+            buildTableDataList(yaml, "setup_tables", "[literalCrInTable]", false, DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと table）がメッセージに含まれること",
+                    e.getMessage(), containsString("source=setup_tables entry table='TEST_TABLE'"));
+        }
     }
 
     /**

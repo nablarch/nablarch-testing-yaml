@@ -191,14 +191,14 @@ public class YamlSectionTest {
      *
      * <p>
      * Given: value="test", interps=null<br>
-     * When:  YamlSection.interpret("test", null) を呼ぶ<br>
+     * When:  YamlSection.interpret("test", null, source) を呼ぶ<br>
      * Then:  "test" がそのまま返ること
      * </p>
      */
     @Test
     public void interpret_nullInterpretersReturnsValueAsIs() {
         // When
-        String result = YamlSection.interpret("test", null);
+        String result = YamlSection.interpret("test", null, "list_maps entry id='dummy'");
 
         // Then
         assertThat("interpreters が null のとき value がそのまま返ること", result, is("test"));
@@ -209,7 +209,7 @@ public class YamlSectionTest {
      *
      * <p>
      * Given: value="hello", interps=空リスト<br>
-     * When:  YamlSection.interpret("hello", emptyList) を呼ぶ<br>
+     * When:  YamlSection.interpret("hello", emptyList, source) を呼ぶ<br>
      * Then:  "hello" がそのまま返ること
      * </p>
      */
@@ -219,7 +219,7 @@ public class YamlSectionTest {
         List<nablarch.test.core.util.interpreter.TestDataInterpreter> emptyList = Collections.emptyList();
 
         // When
-        String result = YamlSection.interpret("hello", emptyList);
+        String result = YamlSection.interpret("hello", emptyList, "list_maps entry id='dummy'");
 
         // Then
         assertThat("interpreters が空のとき value がそのまま返ること", result, is("hello"));
@@ -230,14 +230,16 @@ public class YamlSectionTest {
      *
      * <p>
      * Given: value=null, interps=何らかのリスト<br>
-     * When:  YamlSection.interpret(null, emptyList) を呼ぶ<br>
+     * When:  YamlSection.interpret(null, emptyList, source) を呼ぶ<br>
      * Then:  null が返ること
      * </p>
      */
     @Test
     public void interpret_nullValueReturnsNull() {
         // When
-        String result = YamlSection.interpret(null, Collections.<nablarch.test.core.util.interpreter.TestDataInterpreter>emptyList());
+        String result = YamlSection.interpret(
+                null, Collections.<nablarch.test.core.util.interpreter.TestDataInterpreter>emptyList(),
+                "list_maps entry id='dummy'");
 
         // Then
         assertThat("value が null のとき null が返ること", result, nullValue());

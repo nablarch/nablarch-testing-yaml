@@ -85,8 +85,9 @@ public final class YamlFileBuilder {
             DataFile file = FILE_TYPE_FIXED.equals(toStr(map.get(FIELD_TYPE)))
                     ? new FixedLengthFile(path)
                     : new VariableLengthFile(path);
-            applyDirectives(file, mapDirectives(map), interps);
-            buildFragmentsForFile(file, getList(map, FIELD_RECORDS), interps);
+            String source = sectionKey + " entry path='" + path + "'";
+            applyDirectives(file, mapDirectives(map), interps, source);
+            buildFragmentsForFile(file, getList(map, FIELD_RECORDS), interps, source);
             result.add(file);
         }
         return result;
@@ -116,10 +117,12 @@ public final class YamlFileBuilder {
      * @param file    ファイル
      * @param records 生のレコードレイアウト Map 群（YAML 順）
      * @param interps 使用するインタープリタリスト
+     * @param source  値の検査に失敗したときに例外メッセージへ出す出所
+     *                （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      */
     static void buildFragmentsForFile(DataFile file, List<Object> records,
-                                      List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, false, true, false, interps);
+                                      List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, false, true, false, interps, source);
     }
 
     /**
@@ -139,10 +142,12 @@ public final class YamlFileBuilder {
      * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
      *                       （{@code false} の場合は記載値によらず {@code "default"}）
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      */
     static void buildFragmentsForMessage(DataFile file, List<Object> records, boolean keepRecordType,
-                                         List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, true, keepRecordType, false, interps);
+                                         List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, true, keepRecordType, false, interps, source);
     }
 
     /**
@@ -165,10 +170,12 @@ public final class YamlFileBuilder {
      * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
      *                       （{@code false} の場合は記載値によらず {@code "default"}）
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      */
     static void buildFragmentsForSendSync(DataFile file, List<Object> records, boolean keepRecordType,
-                                          List<TestDataInterpreter> interps) {
-        buildFragmentsInternal(file, records, true, keepRecordType, true, interps);
+                                          List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, true, keepRecordType, true, interps, source);
     }
 
     /**
@@ -185,10 +192,12 @@ public final class YamlFileBuilder {
      *                       {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
      *                       {@code withId=true} は {@code messaging=true} のときのみ有効。
      * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      */
     private static void buildFragmentsInternal(DataFile file, List<Object> records,
                                                boolean messaging, boolean keepRecordType, boolean withId,
-                                               List<TestDataInterpreter> interps) {
+                                               List<TestDataInterpreter> interps, String source) {
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
             String recordType = toStr(record.get(FIELD_RECORD_TYPE));
@@ -241,7 +250,7 @@ public final class YamlFileBuilder {
                 List<Object> rowList = (List<Object>) rowObj;
                 List<String> rowValues = new ArrayList<String>(rowList.size());
                 for (Object cell : rowList) {
-                    rowValues.add(interpret(objectToString(cell), interps));
+                    rowValues.add(interpret(objectToString(cell), interps, source));
                 }
                 // 本体（DataFileParser#onReadLine）と同じく、解釈後・値の追加前に末尾の空要素
                 // （null または空文字）を取り除く。順序は interpret → trimTail → addValue である。
@@ -264,14 +273,21 @@ public final class YamlFileBuilder {
 
     /**
      * ディレクティブ Map を {@link DataFile} に適用する。
+     *
+     * @param file       ファイル
+     * @param directives ディレクティブ Map（YAML 記述順）
+     * @param interps    使用するインタープリタリスト
+     * @param source     値の検査に失敗したときに例外メッセージへ出す出所
+     *                   （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
      */
-    static void applyDirectives(DataFile file, Map<String, String> directives, List<TestDataInterpreter> interps) {
+    static void applyDirectives(DataFile file, Map<String, String> directives,
+                                List<TestDataInterpreter> interps, String source) {
         for (Map.Entry<String, String> e : directives.entrySet()) {
             // ディレクティブ値にも渡されたインタープリタを適用する。
             // YAML 経路では yamlInterpreters（QuotationTrimmer なし）が渡されるため
             // YAML パーサが処理済みのクォートを二重処理することはない。
             // Excel 経路では interpreters（QuotationTrimmer 含む）が渡される。
-            file.setDirective(e.getKey(), interpret(e.getValue(), interps));
+            file.setDirective(e.getKey(), interpret(e.getValue(), interps, source));
         }
     }
 

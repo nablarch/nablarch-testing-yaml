@@ -29,6 +29,7 @@ import java.util.Set;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -1869,6 +1870,76 @@ public class YamlMessageBuilderTest {
         // Then
         assertNotNull(result);
         assertThat("null groupId のとき空リストが返ること", result.isEmpty(), is(true));
+    }
+
+    // ========================================================================
+    // バックスラッシュと r の 2 文字を含む値がエラーになること（2-5）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW 制御ヘッダの値にバックスラッシュと r の 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * 解説書 {@code implementation/testdata_notation.rst} の
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
+     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
+     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
+     * YAML 形式ではエラーになる。」
+     * {@code fw_header:} の値は解釈（interpret）を通らないため、{@code convertFwHeader} が検査を直接呼ぶ<br>
+     * Given: messages の literalCrInFwHeaderValue001 の fw_header に requestId: "\\r"（2 文字）<br>
+     * When:  buildMessagePool(yaml, "messages", "literalCrInFwHeaderValue001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_literalBackslashRInFwHeaderValueThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "literalCrInFwHeaderValue001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("値がメッセージに含まれること", e.getMessage(), containsString("value=[\\r]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=messages entry id='literalCrInFwHeaderValue001'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW 制御ヘッダのキーにバックスラッシュと r の 2 文字を書くと
+     * エラーになること（2-5）。
+     *
+     * <p>
+     * キーの検査は許可キー判定より前に置いてある。この 2 文字を含むキーは許可キーに一致しえないため、
+     * 後ろに置くと到達せず「{@code has unknown key}」になってしまう<br>
+     * Given: messages の literalCrInFwHeaderKey001 の fw_header に "req\\rId" というキー（2 文字を含む）<br>
+     * When:  buildMessagePool(yaml, "messages", "literalCrInFwHeaderKey001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージにキーの値と出所（セクション・id）が含まれ、
+     *        {@code has unknown key} ではないこと
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_literalBackslashRInFwHeaderKeyThrows() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "literalCrInFwHeaderKey001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("キーの値がメッセージに含まれること", e.getMessage(),
+                    containsString("value=[req\\rId]"));
+            assertThat("出所（セクションと id）がメッセージに含まれること", e.getMessage(),
+                    containsString("source=messages entry id='literalCrInFwHeaderKey001'"));
+            assertThat("許可キー判定より前に検査されること", e.getMessage(),
+                    not(containsString("has unknown key")));
+        }
     }
 
     // ========================================================================

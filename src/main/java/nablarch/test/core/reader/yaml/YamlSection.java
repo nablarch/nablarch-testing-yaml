@@ -28,7 +28,7 @@ import java.util.Map;
  *   <li>どのカラム名を DB 操作対象外のマーカーカラムとみなすか — {@link #isMarker(String)}</li>
  * </ul>
  * <p>
- * {@code dropBlankRows} は値加工（{@link #interpret(String, List)}）より前に適用する。
+ * {@code dropBlankRows} は値加工（{@link #interpret(String, List, String)}）より前に適用する。
  * {@code resolveColumns} との前後は、どちらも同じ判定で行を読み飛ばすため結果を変えない
  * （いずれも根拠は {@link #dropBlankRows(List)} の javadoc に記す）。
  * {@code isMarker} は列名が決まった後に適用する。
@@ -89,6 +89,13 @@ public final class YamlSection {
 
     /** レコードタイプ名。record_type が未指定の場合のフォールバック、および {@code messages} で記載値の代わりに使用する。 */
     public static final String DEFAULT_RECORD_TYPE = "default";
+
+    // ========================================================================
+    // 値の検査
+    // ========================================================================
+
+    /** 値に書けないバックスラッシュと {@code r} の 2 文字（Java 文字列としては {@code "\\r"}） */
+    private static final String LITERAL_CR = "\\r";
 
     // ========================================================================
     // ユーティリティメソッド
@@ -184,7 +191,7 @@ public final class YamlSection {
      * </p>
      *
      * <p>
-     * 値加工（{@link #interpret(String, List)}）より前に適用すること。依存先 nablarch-testing では、
+     * 値加工（{@link #interpret(String, List, String)}）より前に適用すること。依存先 nablarch-testing では、
      * {@code PoiXlsReader#readLine} が読み込み段階で空行（{@code PoiXlsReader#isBlankLine}）を
      * そのまま読み飛ばす。値加工（{@code interpret}）を持つのは
      * {@code TestDataParsingTemplate#readTestData} の方で、こちらも {@code isBlankLine} による
@@ -262,16 +269,95 @@ public final class YamlSection {
 
     /**
      * インタープリタチェーンを適用して値を変換する。
+     *
+     * <p>
+     * 変換の前に {@link #rejectLiteralCr(String, String)} で値を検査する。インタープリタが 1 つも
+     * 渡されない場合も検査は行う。
+     * </p>
+     *
+     * @param value   変換する値（null 可。null の場合は検査も変換もせず null を返す）
+     * @param interps 適用するインタープリタチェーン（null・空可）
+     * @param source  検査に失敗したときに例外メッセージへ出す出所
+     *                （{@link #rejectLiteralCr(String, String)} の {@code source} 引数）
+     * @return 変換後の値
      */
-    public static String interpret(String value, List<TestDataInterpreter> interps) {
+    public static String interpret(String value, List<TestDataInterpreter> interps, String source) {
         if (value == null) {
             return null;
         }
+        rejectLiteralCr(value, source);
         if (interps == null || interps.isEmpty()) {
             return value;
         }
         InterpretationContext ctx = new InterpretationContext(value, interps);
         return ctx.invokeNext();
+    }
+
+    /**
+     * バックスラッシュと {@code r} の 2 文字を含む値を拒否する。
+     *
+     * <p>
+     * 値のどこかにこの 2 文字が現れたら {@link IllegalStateException} を投げる。
+     * YAML のダブルクォート文字列に {@code "\r"} と書いてパーサが展開した実際の CR（0x0D）と、
+     * バックスラッシュと {@code n} の 2 文字は通す。
+     * </p>
+     *
+     * <p>
+     * 出典は解説書（{@code nablarch-document} リポジトリの
+     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
+     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項にある表の「改行文字」の行である
+     * （「YAML形式の場合」という見出しはこの解説書に 8 回現れるため、親節を添えて一意にする）。
+     * 行番号は改版で腐るため引用文で示す。
+     * 「YAML のパーサが制御文字に変換する。バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は
+     * 書けない。Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティング
+     * フレームワークの仕様上存在せず、YAML 形式ではエラーになる。{@code "\\n"} は Excel 形式と同じく
+     * 2文字のまま残る」
+     * </p>
+     *
+     * <p>
+     * Excel 形式でこの2文字が必ず CR になるのは、依存先 nablarch-testing の
+     * {@link nablarch.test.core.util.interpreter.LineSeparatorInterpreter} が既定の置換パターン
+     * （{@code DEFAULT_PATTERN}。Java 文字列 {@code "\\\\r"}、正規表現としてはリテラルのバックスラッシュ＋{@code r}）を
+     * 既定の改行コード（{@code DEFAULT_LINE_SEP}。{@code LineSeparator.CR}）へ置換するためである。
+     * YAML 形式ではこのインタープリタを使わない。出典は解説書
+     * {@code ja/development_tools/testing_framework/setup/common.rst} の
+     * 「テストデータの形式をYAMLに変更する」節である。
+     * 「{@code yamlInterpreters} に指定するのは、この2つだけでよい。null ・空文字・ダブルクォート・改行文字は
+     * YAML のパーサが構文として解釈するため、Excel 形式で必要な {@code NullInterpreter} ・
+     * {@code QuotationTrimmer} ・ {@code LineSeparatorInterpreter} は指定しない。」
+     * </p>
+     *
+     * <p>
+     * 検査はこのメソッド 1 箇所に置き、値が通る 2 つの経路から呼ぶ。
+     * データ行とディレクティブは {@link #interpret(String, List, String)} を通り、
+     * FW 制御ヘッダ（{@code fw_header:}）は解釈を行わないため
+     * {@code YamlMessageBuilder#convertFwHeader} から直接呼ぶ。
+     * </p>
+     *
+     * <p>
+     * マーカーカラム（{@link #isMarker(String)}）の値はこの検査を通らない。
+     * {@link YamlTableDataBuilder} が {@code interpret} を呼ぶ前にマーカーカラムを除外するためである。
+     * マーカーカラムの値は DB 操作にも突合にも使われず捨てられるので、検査の対象外でよい。
+     * {@code type:} ・ {@code record_type:} ・ {@code path:} ・ {@code table:} ・ {@code id:} などの
+     * スキーマ構造値も、値ではなく設定値であるため対象外である（{@link #toStr(Object)} を通り
+     * {@code interpret} を通らない）。
+     * </p>
+     *
+     * @param value  検査する値（null 可。null の場合は何もしない）
+     * @param source 例外メッセージへ出す出所。セクションキーと、エントリを特定する
+     *               {@code table}／{@code path}／{@code id} を含む文字列
+     *               （例: {@code "setup_tables entry table='USER'"}）
+     */
+    static void rejectLiteralCr(String value, String source) {
+        if (value == null || !value.contains(LITERAL_CR)) {
+            return;
+        }
+        throw new IllegalStateException(
+                "A value containing a backslash followed by 'r' cannot be written in YAML format. "
+                        + "In Excel format this 2-character sequence is always converted to CR, "
+                        + "so such a value does not exist in the testing framework. "
+                        + "Write an actual CR with the YAML escape \"\\r\" instead. "
+                        + "value=[" + value + "], source=" + source);
     }
 
     /**
