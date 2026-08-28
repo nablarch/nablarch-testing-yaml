@@ -1286,7 +1286,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #37: 2-2 — 電文の `records:` に2つ以上のレコードレイアウトを書ける
+### ~~#37: 2-2 — 電文の `records:` に2つ以上のレコードレイアウトを書ける~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:1153`・`:1299`（ピン `afa4f9e`）は、電文のレコードレイアウトは1つであり2つ以上記述するとエラーになると定める。本体 `MessageParser.java:70`-`:76` は名前行への切り替えを持たず複数レイアウトを表す記法が無い。現行スキーマは3箇所の `records` に上限が無い。静的に決まるためスキーマ検証で弾く。
 
@@ -1294,14 +1294,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `message_data.records`（`:205`-`:208`）・`expected_request_message_data.records`（`:238`-`:240`）・`group_message_data.records`（`:269`-`:271`）に `maxItems: 1` を加える
-- [ ] B. スキーマ検証（`YamlLoader`）で落ちることを押さえるテストを足す。例外の型と、メッセージに出所（セクション・`id`／パス）が入ることを assert する
-- [ ] C. 既存フィクスチャの是正 — 着手前調査で該当は**3エントリ**（`YamlTestDataParserTest/messageData.yaml` の `messages/fwHeaderRecordType001`（`:31`）・`messages/legacyFwHeaderRecord001`（`:53`）・`response_body_messages/sync001`（`:163`））。同ファイルは `YamlTestDataParserTest` の16箇所から読まれるためロード自体が失敗する。各エントリが押さえていた意味（`record_type: FW_HEADER` が特別扱いされないこと）を保ったまま、レコード1つの記法へ書き換える
-- [ ] D. 既存テストの期待値見直し — `getMessage_fwHeaderRecordTypeIsNotSkipped`（`YamlTestDataParserTest.java:940`）・`getMessage_legacyFwHeaderRecordCausesRecordLengthMismatch`（同 `:1112`）・`fwHeaderSync` を使うテスト（同 `:990`）を全件数え直し、どれを変えどれを変えなかったかを記録する
-- [ ] E. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
-- [ ] F. `mvn -o clean test` 緑を確認
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-37.md)
+- [x] A. `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の `message_data.records`（`:205`-`:208`）・`expected_request_message_data.records`（`:238`-`:240`）・`group_message_data.records`（`:269`-`:271`）に `maxItems: 1` を加える
+- [x] B. スキーマ検証（`YamlLoader`）で落ちることを押さえるテストを足す。例外の型と、メッセージに出所（セクション・`id`／パス）が入ることを assert する
+- [x] C. 既存フィクスチャの是正 — 着手前調査で該当は**3エントリ**（`YamlTestDataParserTest/messageData.yaml` の `messages/fwHeaderRecordType001`（`:31`）・`messages/legacyFwHeaderRecord001`（`:53`）・`response_body_messages/sync001`（`:163`））。同ファイルは `YamlTestDataParserTest` の16箇所から読まれるためロード自体が失敗する。各エントリが押さえていた意味（`record_type: FW_HEADER` が特別扱いされないこと）を保ったまま、レコード1つの記法へ書き換える
+- [x] D. 既存テストの期待値見直し — `getMessage_fwHeaderRecordTypeIsNotSkipped`（`YamlTestDataParserTest.java:940`）・`getMessage_legacyFwHeaderRecordCausesRecordLengthMismatch`（同 `:1112`）・`fwHeaderSync` を使うテスト（同 `:990`）を全件数え直し、どれを変えどれを変えなかったかを記録する
+- [x] E. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
+- [x] F. `mvn -o clean test` 緑を確認
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-37.md)
 
 **Completion criteria**:
 
@@ -1498,6 +1498,6 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: not suspended
 - **Date**: 2026-08-28
-- **Last completed**: #36 2-1 — 末尾の `null` を本体の `trimTailCopy` で `""` に畳む（`ce81530`）
-- **Next**: #37 2-2 — 電文の `records:` に `maxItems: 1` を入れる
+- **Last completed**: #37 2-2 — 電文の `records` に `maxItems: 1` を課す（`389fe6d`）
+- **Next**: #38 2-3 — `fw_header:` のキーを `reader.fwHeaderfields` の名前に限る
 - **Notes**: ブランチ `feature/ntf-yaml`（`3ee39c9`）。Step 4 第2回の指示書（`nablarch-document@origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`）に基づき #36〜#44 を追加。着手前の実測ベースラインは `Tests run: 268, Failures: 0, Errors: 0, Skipped: 1`（`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test`）
