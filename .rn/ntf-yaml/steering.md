@@ -1341,7 +1341,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #39: 2-4 — 空エントリの判定が「すべての値が空文字」を含む（第1回 2-1 の上書き）
+### ~~#39: 2-4 — 空エントリの判定が「すべての値が空文字」を含む（第1回 2-1 の上書き）~~
 
 **Purpose**: 解説書 `implementation/testdata_notation.rst:1502`（ピン `afa4f9e`。`6bfc058` で改訂済み）は、読み飛ばされるのは `rows:` 内の要素が空マッピング（`{}`）の場合だけであり、`""` と書いた空文字は値であって、すべての値が `""` のエントリは全カラムが空文字のエントリとして読み込まれると定める。Excel では `""` と書いたセルは空セルではない（本体 `PoiXlsReader` の `isBlankLine` は生セルの `isEmpty()` だけを見る。`""` は2文字のため非空で、`QuotationTrimmer` が後段で空文字にする）。**第1回 #26 の決定（空文字だけを空と見なす）を上書きする。**
 
@@ -1349,14 +1349,14 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. 本体を oracle にしたテストを**先に**書き、是正前に落ちることを実測する。入力は指示書 §3 の必須4種（`{}` の行／全値 `""` の行／`null` だけの行／マーカーカラムだけに値がある行）を**テーブルと `LIST_MAP` の両方**で。oracle は POI で組んだ `.xlsx` を本体 `BasicTestDataParser` で読んだ行の値
-- [ ] B. `YamlSection.isBlankRow`（`:202`-`:209`）を「値を1つも持たない行（空マッピング `{}`）」だけ真にする。Java null・`""` はどちらも非空。`YamlSection` の javadoc（`:169`-`:181`・`:193`-`:201`・`:219`-`:221`）と `YamlTableDataBuilder.java:169`-`:171` のコメントも合わせる
-- [ ] C. A のテストが是正後に通ることを実測する
-- [ ] D. 既存テストの期待値見直し — 着手前調査で挙動が変わる既存テストは**14件**（`YamlSectionTest`: `dropBlankRows_removesEmptyMappingAndAllBlankValueRows`（`:473`）・`dropBlankRows_keepsRowHavingOnlyWhitespaceValue`（`:522`）の2件／`YamlTableDataBuilderTest`: `buildTableDataList_blankValueRowLeadingExcluded`（`:1292`）・`buildTableDataList_blankValueRowMiddleExcluded`（`:1319`）・`buildTableDataList_partiallyBlankValueRowKept`（`:1345`）・`buildTableDataList_blankValueRowLeadingInExpectedTableExcluded`（`:1372`）・`buildTableDataList_blankValueRowMiddleInExpectedTableExcluded`（`:1399`）・`buildTableDataList_blankValueRowInExpectedCompleteTableExcluded`（`:1453`）・`buildListMapRows_blankValueRowLeadingExcluded`（`:1486`）・`buildListMapRows_blankValueRowMiddleExcluded`（`:1511`）・`buildListMapRows_partiallyBlankValueRowKept`（`:1534`）・`buildListMapRows_allBlankRowsReturnsEmptyList`（`:1687`）の10件／`YamlColumnOmissionTest`: `columnNamesDependOnRowOrderAfterBlankRowRemoval`（`:174`）ほか `omission.yaml` の `s4a`（`:55`）・`s4b`（`:73`）を使うテスト）。**変わらないと見込むもの**（`dropBlankRows_keepsRowHavingAnyNonBlankValue`・`dropBlankRows_keepsRowHavingOnlyMarkerColumnValue`・`dropBlankRows_removesNonMappingRows`・`dropBlankRows_keepsRowHavingOnlyNullValues`・`{}` だけを使うテスト群）も**実測で確かめて**件数つきで記録する。テスト名が挙動と食い違うものは名前も直す
-- [ ] E. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
-- [ ] F. `mvn -o clean test` 緑を確認
-- [ ] G. commit・push
-- [ ] H. self-check (OK/NG per completion criterion, record in checks/task-39.md)
+- [x] A. 本体を oracle にしたテストを**先に**書き、是正前に落ちることを実測する。入力は指示書 §3 の必須4種（`{}` の行／全値 `""` の行／`null` だけの行／マーカーカラムだけに値がある行）を**テーブルと `LIST_MAP` の両方**で。oracle は POI で組んだ `.xlsx` を本体 `BasicTestDataParser` で読んだ行の値
+- [x] B. `YamlSection.isBlankRow`（`:202`-`:209`）を「値を1つも持たない行（空マッピング `{}`）」だけ真にする。Java null・`""` はどちらも非空。`YamlSection` の javadoc（`:169`-`:181`・`:193`-`:201`・`:219`-`:221`）と `YamlTableDataBuilder.java:169`-`:171` のコメントも合わせる
+- [x] C. A のテストが是正後に通ることを実測する
+- [x] D. 既存テストの期待値見直し — 着手前調査で挙動が変わる既存テストは**14件**（`YamlSectionTest`: `dropBlankRows_removesEmptyMappingAndAllBlankValueRows`（`:473`）・`dropBlankRows_keepsRowHavingOnlyWhitespaceValue`（`:522`）の2件／`YamlTableDataBuilderTest`: `buildTableDataList_blankValueRowLeadingExcluded`（`:1292`）・`buildTableDataList_blankValueRowMiddleExcluded`（`:1319`）・`buildTableDataList_partiallyBlankValueRowKept`（`:1345`）・`buildTableDataList_blankValueRowLeadingInExpectedTableExcluded`（`:1372`）・`buildTableDataList_blankValueRowMiddleInExpectedTableExcluded`（`:1399`）・`buildTableDataList_blankValueRowInExpectedCompleteTableExcluded`（`:1453`）・`buildListMapRows_blankValueRowLeadingExcluded`（`:1486`）・`buildListMapRows_blankValueRowMiddleExcluded`（`:1511`）・`buildListMapRows_partiallyBlankValueRowKept`（`:1534`）・`buildListMapRows_allBlankRowsReturnsEmptyList`（`:1687`）の10件／`YamlColumnOmissionTest`: `columnNamesDependOnRowOrderAfterBlankRowRemoval`（`:174`）ほか `omission.yaml` の `s4a`（`:55`）・`s4b`（`:73`）を使うテスト）。**変わらないと見込むもの**（`dropBlankRows_keepsRowHavingAnyNonBlankValue`・`dropBlankRows_keepsRowHavingOnlyMarkerColumnValue`・`dropBlankRows_removesNonMappingRows`・`dropBlankRows_keepsRowHavingOnlyNullValues`・`{}` だけを使うテスト群）も**実測で確かめて**件数つきで記録する。テスト名が挙動と食い違うものは名前も直す
+- [x] E. **変異確認**: 追加/変更した各テストについて期待値を崩すと落ちることを確認する
+- [x] F. `mvn -o clean test` 緑を確認
+- [x] G. commit・push
+- [x] H. self-check (OK/NG per completion criterion, record in checks/task-39.md)
 
 **Completion criteria**:
 
