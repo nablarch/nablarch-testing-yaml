@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
@@ -242,11 +243,19 @@ public final class YamlFileBuilder {
                 for (Object cell : rowList) {
                     rowValues.add(interpret(objectToString(cell), interps));
                 }
+                // 本体（DataFileParser#onReadLine）と同じく、解釈後・値の追加前に末尾の空要素
+                // （null または空文字）を取り除く。順序は interpret → trimTail → addValue である。
+                // 末尾のフィールドに null と記述した場合に "" になり、後ろに値のあるフィールドがあれば
+                // null のまま保持されるのは、この trim と DataFileFragment#addValue
+                // （フィールド名称の数だけ "" で埋める）の組み合わせによる。規則を手写しせず
+                // 本体の実装（NablarchTestUtils#trimTailCopy）をそのまま使う。
+                // 出典: implementation/testdata_notation.rst:889（ファイル）・:1155（電文）
+                List<String> trimmedValues = NablarchTestUtils.trimTailCopy(rowValues);
                 if (withId) {
                     // 送信同期メッセージ：値行先頭の連番（本体は値行先頭セル）を 1 始まりの行インデックスで補う。
-                    fragment.addValueWithId(rowValues, String.valueOf(rowNo));
+                    fragment.addValueWithId(trimmedValues, String.valueOf(rowNo));
                 } else {
-                    fragment.addValue(rowValues);
+                    fragment.addValue(trimmedValues);
                 }
                 rowNo++;
             }
