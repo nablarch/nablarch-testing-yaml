@@ -6,6 +6,7 @@ import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.reader.MessageParser;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
@@ -16,11 +17,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -99,6 +102,59 @@ public class YamlMessageBuilderTest {
         Field f = MessagePool.class.getDeclaredField("fwHeader");
         f.setAccessible(true);
         return (Map<String, String>) f.get(pool);
+    }
+
+    /**
+     * 本体 {@code MessageParser} が持つ FW 制御ヘッダ項目名の集合（private フィールド {@code fwHeaderFields}）を
+     * 取り出すヘルパー。
+     *
+     * <p>
+     * 本体 {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107}-{@code :110}
+     * のフィールド初期化は {@code MessageParser} の生成時に走るため、生成のたびに現在の
+     * {@code reader.fwHeaderfields} が反映される。解析は行わないので reader・interpreters は null でよい。
+     * </p>
+     */
+    @SuppressWarnings("unchecked")
+    private static Set<String> mainFwHeaderFields() throws Exception {
+        MessageParser parser = new MessageParser(null, null, DataType.MESSAGE);
+        Field f = MessageParser.class.getDeclaredField("fwHeaderFields");
+        f.setAccessible(true);
+        return (Set<String>) f.get(parser);
+    }
+
+    /** {@link YamlMessageBuilder} が許可する FW 制御ヘッダ項目名の集合（private static {@code fwHeaderFields()}）を取り出すヘルパー。 */
+    @SuppressWarnings("unchecked")
+    private static Set<String> yamlFwHeaderFields() throws Exception {
+        Method m = YamlMessageBuilder.class.getDeclaredMethod("fwHeaderFields");
+        m.setAccessible(true);
+        return (Set<String>) m.invoke(null);
+    }
+
+    /**
+     * {@code fw_header} の値だけを差し替えた messages 1 エントリの YAML Map を組み立てるヘルパー。
+     *
+     * <p>スキーマ検証を通さずに {@link YamlMessageBuilder} の検証だけを試すために使う。</p>
+     *
+     * @param id            エントリの id
+     * @param fwHeaderValue {@code fw_header} に置く生値
+     * @return YAML トップレベル Map
+     */
+    private static Map<String, Object> yamlWithFwHeader(String id, Object fwHeaderValue) {
+        Map<String, Object> fieldDef = new LinkedHashMap<>();
+        fieldDef.put("name", "DATA");
+        fieldDef.put("type", "半角");
+        fieldDef.put("length", 5);
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("record_type", "BODY");
+        record.put("fields", Arrays.<Object>asList(fieldDef));
+        record.put("rows", Arrays.<Object>asList(Arrays.asList("HELLO")));
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("id", id);
+        entry.put("fw_header", fwHeaderValue);
+        entry.put("records", Arrays.<Object>asList(record));
+        Map<String, Object> yaml = new LinkedHashMap<>();
+        yaml.put("messages", Arrays.<Object>asList(entry));
+        return yaml;
     }
 
     // ========================================================================
@@ -680,7 +736,7 @@ public class YamlMessageBuilderTest {
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             // Then
-            assertThat("id がメッセージに含まれること", e.getMessage(), containsString("malformed001"));
+            assertThat("id がメッセージに含まれること", e.getMessage(), containsString("id='malformed001'"));
         }
     }
 
@@ -846,8 +902,9 @@ public class YamlMessageBuilderTest {
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             // Then
-            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("req001"));
-            assertThat("不正なキー名がメッセージに含まれること", e.getMessage(), containsString("'customField'"));
+            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("id='req001'"));
+            assertThat("不正なキー名がメッセージに含まれること", e.getMessage(),
+                    containsString("has unknown key 'customField'"));
         }
     }
 
@@ -876,8 +933,9 @@ public class YamlMessageBuilderTest {
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             // Then
-            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("req001"));
-            assertThat("設定に無いキー名がメッセージに含まれること", e.getMessage(), containsString("'requestId'"));
+            assertThat("電文の id がメッセージに含まれること", e.getMessage(), containsString("id='req001'"));
+            assertThat("設定に無いキー名がメッセージに含まれること", e.getMessage(),
+                    containsString("has unknown key 'requestId'"));
         }
     }
 
@@ -907,6 +965,299 @@ public class YamlMessageBuilderTest {
             // Then
             assertThat("空白が取り除かれないため requestId が不正キーになること",
                     e.getMessage(), containsString("has unknown key 'requestId'"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} を設定していない場合、
+     * 例外メッセージが「何が許されるのか」＝既定 4 キーを {@code allowed keys} として辞書順で列挙すること。
+     *
+     * <p>
+     * 例外メッセージの後半（許可されるキー名の一覧）を丸ごと固定する。既定 4 キーを
+     * {@code HashSet} のまま出すと反復順は {@code [requestId, resultCode, userId, resendFlag]} であり
+     * 期待値と一致しないため、{@code TreeSet} による辞書順（＝メッセージの決定性）もこの assert が守る。
+     * </p>
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} 未設定、messages の id=req001 の fw_header に独自キー customField<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  {@code allowed keys (reader.fwHeaderfields): [requestId, resendFlag, resultCode, userId]}
+     *        が例外メッセージに含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderErrorMessageListsDefaultAllowedKeysInSortedOrder() {
+        // Given: reader.fwHeaderfields は設定しない（既定 4 キーが許可される）
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "req001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("許可されるキーが設定キー名つきで辞書順に列挙されること", e.getMessage(),
+                    containsString(
+                            "allowed keys (reader.fwHeaderfields): [requestId, resendFlag, resultCode, userId]"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} を設定した場合、
+     * 例外メッセージの {@code allowed keys} が設定した名前を辞書順で列挙すること。
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} に {@code "userId,customField"}（記述順は辞書順と逆）を設定、
+     *        messages の id=req001 の fw_header に customField と requestId<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  設定に無い requestId が不正キーとなり、
+     *        {@code allowed keys (reader.fwHeaderfields): [customField, userId]} が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderErrorMessageListsConfiguredAllowedKeysInSortedOrder() {
+        // Given: 記述順を辞書順と逆にした設定
+        setFwHeaderFields("userId,customField");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "req001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("設定に無い requestId が不正キーになること",
+                    e.getMessage(), containsString("has unknown key 'requestId'"));
+            assertThat("設定した名前が辞書順に列挙されること",
+                    e.getMessage(), containsString("allowed keys (reader.fwHeaderfields): [customField, userId]"));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] {@code fw_header:} に記載できる項目名の集合が、
+     * {@code reader.fwHeaderfields} をどう設定しても本体 {@code MessageParser} と一致すること。
+     *
+     * <p>
+     * 完了条件「集合の作り方が本体と同じ（同じキー・同じ既定 4 つ・同じ {@code makeArray}）」を
+     * javadoc やレビューではなくテストで守る。本体の集合は
+     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107}-{@code :110}
+     * の private フィールド {@code fwHeaderFields} をリフレクションで読む。
+     * </p>
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} に 7 通り（未設定／{@code ""}／空白のみ／カンマのみ／
+     *        {@code "a,b"}／カンマの後に空白／末尾カンマ）を順に設定する<br>
+     * When:  本体 {@code MessageParser} と {@link YamlMessageBuilder} の集合をそれぞれ取り出す<br>
+     * Then:  7 通りすべてで両者が等しいこと
+     * </p>
+     */
+    @Test
+    public void fwHeaderFields_isIdenticalToMessageParserForEveryConfiguration() throws Exception {
+        // Given: null は「未設定」（SystemRepository.getString が null を返す状態）を表す
+        String[] configurations = {null, "", " ", ",", "a,b", "a, b", "requestId,"};
+
+        for (String configuration : configurations) {
+            setFwHeaderFields(configuration);
+
+            // When
+            Set<String> expected = mainFwHeaderFields();
+            Set<String> actual = yamlFwHeaderFields();
+
+            // Then
+            assertThat("reader.fwHeaderfields=[" + configuration + "] のとき本体と同じ集合であること",
+                    actual, is(expected));
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code reader.fwHeaderfields} が空文字の場合、
+     * 未設定と同じく既定 4 キーが通ること（本体 {@code MessageParser.java:107} の {@code isNullOrEmpty} ガード）。
+     *
+     * <p>
+     * Given: {@code reader.fwHeaderfields} に {@code ""} を設定、
+     *        messages の id=req001 の fw_header に既定 4 キー<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  例外なく既定 4 キーが FW ヘッダに保持されること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_emptyFwHeaderFieldsBehavesAsUnset() throws Exception {
+        // Given
+        setFwHeaderFields("");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Map<String, String> fwHeader = getFwHeader(result);
+        assertThat("requestId が通ること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("userId が通ること", fwHeader.get("userId"), is("testUser01"));
+        assertThat("resendFlag が通ること", fwHeader.get("resendFlag"), is("0"));
+        assertThat("resultCode が通ること", fwHeader.get("resultCode"), is("0000"));
+        assertThat("既定 4 キーだけが設定されていること", fwHeader.size(), is(4));
+    }
+
+    // ========================================================================
+    // 同一ファイル内の誤記エントリが他エントリの読み出しを巻き添えにしないこと（キーの検査は遅延実行）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: 同一ファイル内に不正キーのエントリがあっても、
+     * 正常エントリは読み出せること（キーの検査は読み出すエントリに対してのみ遅延実行される）。
+     *
+     * <p>
+     * Given: mixedFwHeaderKeysData に id=badKey001（不正キー customField）と
+     *        id=goodKey001（既定キーのみ）の 2 エントリ<br>
+     * When:  buildMessagePool(yaml, "messages", "goodKey001", path) を呼ぶ<br>
+     * Then:  例外なく MessagePool が返り、FW ヘッダが取得できること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_validEntryIsReadableThoughSameFileHasEntryWithUnknownKey() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/mixedFwHeaderKeysData");
+
+        // When
+        MessagePool result = buildMessagePool(yaml, "messages", "goodKey001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Map<String, String> fwHeader = getFwHeader(result);
+        assertThat("正常エントリの requestId が取得できること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("正常エントリの userId が取得できること", fwHeader.get("userId"), is("testUser01"));
+        assertThat("正常エントリのキーだけが設定されていること", fwHeader.size(), is(2));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: 同一ファイル内の不正キーのエントリを実際に読み出したときは
+     * {@link IllegalStateException} がスローされること。
+     *
+     * <p>
+     * Given: mixedFwHeaderKeysData に id=badKey001（不正キー customField）と
+     *        id=goodKey001（既定キーのみ）の 2 エントリ<br>
+     * When:  buildMessagePool(yaml, "messages", "badKey001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、不正エントリの id と不正なキー名が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_entryWithUnknownKeyThrowsWhenItIsRead() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/mixedFwHeaderKeysData");
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "badKey001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("不正エントリの id がメッセージに含まれること",
+                    e.getMessage(), containsString("id='badKey001'"));
+            assertThat("不正なキー名がメッセージに含まれること",
+                    e.getMessage(), containsString("has unknown key 'customField'"));
+        }
+    }
+
+    // ========================================================================
+    // fw_header: のキーの境界値（大文字小文字違い・非文字列・null）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code fw_header:} のキーは大文字小文字を区別し、
+     * 既定キーと綴りが同じでも大文字小文字が違えば {@link IllegalStateException} になること。
+     *
+     * <p>
+     * Given: fw_header のキーが {@code requestid}／{@code REQUESTID}（既定キー {@code requestId} と
+     *        大文字小文字だけが違う）<br>
+     * When:  buildMessagePool を呼ぶ<br>
+     * Then:  どちらも IllegalStateException がスローされ、書いたとおりのキー名が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderKeyIsCaseSensitive() {
+        for (String key : new String[]{"requestid", "REQUESTID"}) {
+            // Given
+            Map<String, Object> fwHeader = new LinkedHashMap<>();
+            fwHeader.put(key, "0000000001");
+            Map<String, Object> yaml = yamlWithFwHeader("caseKey001", fwHeader);
+
+            // When
+            try {
+                buildMessagePool(yaml, "messages", "caseKey001", DIR);
+                fail("IllegalStateException が期待される（キー: " + key + "）");
+            } catch (IllegalStateException e) {
+                // Then
+                assertThat("大文字小文字が違うキーは不正キーになること",
+                        e.getMessage(), containsString("has unknown key '" + key + "'"));
+                assertThat("電文の id がメッセージに含まれること",
+                        e.getMessage(), containsString("id='caseKey001'"));
+            }
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code fw_header:} のキーが文字列でない場合
+     * （数値・真偽値）、文字列化したキー名を含む {@link IllegalStateException} になること。
+     *
+     * <p>
+     * Given: fw_header のキーが数値 {@code 1234}／真偽値 {@code true}<br>
+     * When:  buildMessagePool を呼ぶ<br>
+     * Then:  どちらも IllegalStateException がスローされ、文字列化したキー名
+     *        （{@code '1234'}／{@code 'true'}）が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderNonStringKeyThrowsWithStringifiedKeyName() {
+        Object[][] cases = {{Integer.valueOf(1234), "1234"}, {Boolean.TRUE, "true"}};
+        for (Object[] c : cases) {
+            // Given
+            Map<Object, Object> fwHeader = new LinkedHashMap<>();
+            fwHeader.put(c[0], "VALUE");
+            Map<String, Object> yaml = yamlWithFwHeader("nonStringKey001", fwHeader);
+
+            // When
+            try {
+                buildMessagePool(yaml, "messages", "nonStringKey001", DIR);
+                fail("IllegalStateException が期待される（キー: " + c[0] + "）");
+            } catch (IllegalStateException e) {
+                // Then
+                assertThat("文字列化したキー名がメッセージに含まれること",
+                        e.getMessage(), containsString("has unknown key '" + c[1] + "'"));
+                assertThat("電文の id がメッセージに含まれること",
+                        e.getMessage(), containsString("id='nonStringKey001'"));
+            }
+        }
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: {@code fw_header:} のキーが null（YAML の {@code ~}）の場合、
+     * {@link NullPointerException} ではなく {@code unknown key 'null'} を含む
+     * {@link IllegalStateException} になること。
+     *
+     * <p>
+     * Given: fw_header のキーが null<br>
+     * When:  buildMessagePool を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、{@code has unknown key 'null'} が含まれること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_fwHeaderNullKeyThrowsIllegalStateExceptionNotNpe() {
+        // Given
+        Map<Object, Object> fwHeader = new LinkedHashMap<>();
+        fwHeader.put(null, "VALUE");
+        Map<String, Object> yaml = yamlWithFwHeader("nullKey001", fwHeader);
+
+        // When
+        try {
+            buildMessagePool(yaml, "messages", "nullKey001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            // Then
+            assertThat("NPE ではなく unknown key 'null' を含む例外になること",
+                    e.getMessage(), containsString("has unknown key 'null'"));
+            assertThat("電文の id がメッセージに含まれること",
+                    e.getMessage(), containsString("id='nullKey001'"));
         }
     }
 
@@ -1078,17 +1429,27 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [MS-04] fw_header: の値がクォートなしの数値・真偽値の場合、文字列に変換されること。
+     * [MS-04] {@code reader.fwHeaderfields} に既定キーと独自キーを混ぜて設定した場合、
+     * 数値・真偽値に見える値がその文字列のまま FW ヘッダに保持されること。
+     *
+     * <p>
+     * フィクスチャ {@code fwHeaderMapData.yaml:38}-{@code :40} の値は
+     * {@code "0"}・{@code "1234"}・{@code "true"} と<b>クォート済み</b>である
+     * （スキーマ {@code $defs.fw_header} の {@code additionalProperties.type: "string"} が
+     * クォートなしの数値・真偽値をロード時に弾くため、クォートなしでは書けない）。
+     * したがって本テストが押さえるのは、YAML が数値・真偽値として解釈しかねない見た目の値でも
+     * 文字列のまま素通しされること、および設定した項目名（既定キー 2 つ＋独自キー 1 つ）が通ることである。
+     * </p>
      *
      * <p>
      * Given: {@code reader.fwHeaderfields} に resendFlag,resultCode,boolFlag を設定、
-     *        messages に id=numericValues001 の fw_header にクォートなし数値 (0, 1234) と真偽値 (true) を記述<br>
+     *        messages に id=numericValues001 の fw_header にクォート済みの "0"・"1234"・"true" を記述<br>
      * When:  buildMessagePool(yaml, "messages", "numericValues001", path) を呼ぶ<br>
-     * Then:  fwHeader の各値が文字列に変換されていること（"0", "1234", "true"）
+     * Then:  fwHeader の各値が記述どおりの文字列であること（"0", "1234", "true"）
      * </p>
      */
     @Test
-    public void buildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
+    public void buildMessagePool_fwHeaderMapKeepsQuotedNumericAndBooleanLikeValuesAsStrings() throws Exception {
         // Given: 独自キー boolFlag を項目名に含める
         setFwHeaderFields("resendFlag,resultCode,boolFlag");
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
@@ -1102,9 +1463,9 @@ public class YamlMessageBuilderTest {
         fwHeaderField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-        assertThat("整数値が文字列に変換されること", fwHeader.get("resendFlag"), is("0"));
-        assertThat("4桁整数が文字列に変換されること", fwHeader.get("resultCode"), is("1234"));
-        assertThat("真偽値が文字列に変換されること", fwHeader.get("boolFlag"), is("true"));
+        assertThat("整数に見える値が文字列のまま保持されること", fwHeader.get("resendFlag"), is("0"));
+        assertThat("4桁整数に見える値が文字列のまま保持されること", fwHeader.get("resultCode"), is("1234"));
+        assertThat("真偽値に見える値が文字列のまま保持されること", fwHeader.get("boolFlag"), is("true"));
     }
 
     // ========================================================================

@@ -1,0 +1,32 @@
+# 同一ファイルに「不正キーのエントリ」と「正常エントリ」を同居させたフィクスチャ。
+# fw_header: のキー検査が、実際に読み出すエントリに対してのみ遅延実行されること
+# （誤記エントリが他エントリの読み出しを巻き添えにしないこと）を検証する。
+# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである（出典: implementation/testdata_notation.rst:1295）。
+
+messages:
+  # 不正キー（既定 4 つにも無い customField）を持つエントリ
+  - id: badKey001
+    fw_header:
+      customField: "CUSTOM_VALUE"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+  # 既定キーだけを持つ正常エントリ
+  - id: goodKey001
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["WORLD"]

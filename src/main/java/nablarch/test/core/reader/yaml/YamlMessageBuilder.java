@@ -37,6 +37,19 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * {@code reader.fwHeaderfields} の名前であること」の検証・文字列化を、
  * <b>実際に読み出すメッセージに対してのみ遅延実行</b>する（同一ファイル内の誤記エントリが他エントリの
  * 読み出しを巻き添えにしない挙動）。値の解釈（interpret）は行わず文字列化のみを行う。
+ * ただしこの「巻き添えにしない」範囲は本クラスが行うキーの検査に限られる。値の型は
+ * スキーマ（{@code $defs.fw_header} の {@code additionalProperties: {"type":"string"}}）が検査するため、
+ * どれか 1 エントリの {@code fw_header:} の値がクォートなしの数値・真偽値であれば
+ * {@code YamlLoader.load} がファイル全体をロード時に落とす。
+ * </p>
+ *
+ * <p>
+ * 集合外のキーを例外にする点は本体と意図的に異なる。本体 {@code MessageParser} は
+ * {@code processDirectives} が集合外の名前に対して {@code false} を返すため、エラーにせず黙って本文側
+ * （フィールド名称行）として扱う（解説書 {@code implementation/testdata_notation.rst:1264}）。
+ * これに対し YAML 形式では {@code fw_header:} が本文（{@code records:}）と分離した専用ブロックであり
+ * 未知キーが他の意味を持ち得ないため、解説書 {@code implementation/testdata_notation.rst:1295}
+ * 「それ以外のキーがあるとエラーになる」のとおり例外とする。
  * </p>
  *
  * @author kiyotis
@@ -46,8 +59,13 @@ public final class YamlMessageBuilder {
     /** FW 制御ヘッダの項目名を設定する {@link SystemRepository} のキー（本体 {@code MessageParser} と同じ） */
     private static final String FW_HEADER_KEY = "reader.fwHeaderfields";
 
-    /** {@code reader.fwHeaderfields} 省略時の FW 制御ヘッダの項目名（本体 {@code MessageParser} と同じ） */
-    private static final String[] DEFAULT_FW_HEADER_FIELDS = {"requestId", "userId", "resendFlag", "resultCode"};
+    /**
+     * {@code reader.fwHeaderfields} 省略時の FW 制御ヘッダの項目名（本体 {@code MessageParser} と同じ）。
+     *
+     * <p>書き換えられないよう不変の {@link Set} で保持する。</p>
+     */
+    private static final Set<String> DEFAULT_FW_HEADER_FIELDS = Collections.unmodifiableSet(
+            NablarchTestUtils.asSet("requestId", "userId", "resendFlag", "resultCode"));
 
     private final InterpreterResolver interpreterResolver;
 
@@ -235,7 +253,7 @@ public final class YamlMessageBuilder {
      *
      * <p>
      * 値は文字列化のみで解釈（interpret）はしない。マップ以外が指定された場合、および
-     * {@link #fwHeaderFields()} に無いキーが記載された場合は ID 付きで
+     * {@code fwHeaderFields()} に無いキーが記載された場合は ID 付きで
      * {@link IllegalStateException} を投げる。
      * </p>
      *
@@ -285,7 +303,7 @@ public final class YamlMessageBuilder {
     private static Set<String> fwHeaderFields() {
         String configured = SystemRepository.getString(FW_HEADER_KEY);
         return StringUtil.isNullOrEmpty(configured)
-                ? NablarchTestUtils.asSet(DEFAULT_FW_HEADER_FIELDS)
+                ? DEFAULT_FW_HEADER_FIELDS
                 : NablarchTestUtils.asSet(NablarchTestUtils.makeArray(configured));
     }
 }
