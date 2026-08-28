@@ -171,17 +171,27 @@ public final class YamlSection {
      *
      * <p>
      * テーブル系セクション（{@code setup_tables}／{@code expected_tables}／
-     * {@code expected_complete_tables}）と {@code list_maps} の行に適用する。ファイルデータには
-     * 適用しない（全フィールドが空文字のレコードは 1 件のレコードとして保持する仕様のため）。
+     * {@code expected_complete_tables}）と {@code list_maps} の行に適用する。ファイルデータ
+     * （{@code record_fragment}）の {@code rows} には適用しない。ファイルデータの行はカラム名を
+     * キーに持つマッピングではなく値だけを並べた配列（{@link java.util.List}）であり
+     * （{@link YamlFileBuilder#buildDataFileList} は各行を {@code List} としてのみ扱い、
+     * {@code List} でない行は読み飛ばす）、
+     * {@link #castMap(Object)} が Map でない値に対して空 Map を返すため、本メソッドを通すと
+     * 値の有無にかかわらず全ての行が取り除かれてしまう。
      * </p>
      *
      * <p>
-     * 列名解決（{@link #resolveColumns(List)}）と値加工（{@link #interpret(String, List)}）より前に
-     * 適用すること。列名は残った先頭行のキーで決まる（{@link #resolveColumns(List)}）ため、
-     * この順序が列名の決定を左右する。依存先 nablarch-testing では、{@code PoiXlsReader#readLine} が
-     * 読み込み段階で空行（{@code isBlankLine}）をそのまま読み飛ばす。値加工（{@code interpret}）を持つのは
+     * 値加工（{@link #interpret(String, List)}）より前に適用すること。依存先 nablarch-testing では、
+     * {@code PoiXlsReader#readLine} が読み込み段階で空行（{@code PoiXlsReader#isBlankLine}）を
+     * そのまま読み飛ばす。値加工（{@code interpret}）を持つのは
      * {@code TestDataParsingTemplate#readTestData} の方で、こちらも {@code isBlankLine} による
      * 読み飛ばしを {@code interpret} より前に行う。本メソッドはこの順序に揃える。
+     * </p>
+     *
+     * <p>
+     * 列名解決（{@link #resolveColumns(List)}）との前後関係は結果を変えない。
+     * {@code resolveColumns} は本メソッドと同じ {@code isBlankRow} で行を読み飛ばすため、
+     * 本メソッドを通す前と後のどちらで呼んでも決まる列名は同じである。
      * </p>
      *
      * @param rows データ行のリスト（null 不可）。呼び出し側は {@link #getList(Map, String)} の戻り値を
@@ -220,8 +230,8 @@ public final class YamlSection {
      * キーを持つ行が 1 つも無い場合は空リストを返す。
      *
      * <p>
-     * 空マッピング（{@code {}}）行とマッピングでない行（スカラ等）はキーを持たないため読み飛ばす。
-     * {@link #castMap(Object)} が Map でない値に対して空 Map を返すので、両者は同じ判定で扱える。
+     * 読み飛ばす行の判定は {@link #dropBlankRows(List)} と同じ {@code isBlankRow} に委ねる。
+     * 判定を 1 箇所に閉じることで、両者の条件が食い違わないようにする。
      * 本パッケージのビルダは {@link #dropBlankRows(List)} で除去済みの行を渡すためこの読み飛ばしには
      * 到達しないが、除去を行わない呼び出しでも列名が 0 件に倒れないようにこの判定を残す。
      * </p>
@@ -233,9 +243,8 @@ public final class YamlSection {
      */
     public static List<String> resolveColumns(List<Object> rows) {
         for (Object row : rows) {
-            Map<String, Object> rowMap = castMap(row);
-            if (!rowMap.isEmpty()) {
-                return new ArrayList<String>(rowMap.keySet());
+            if (!isBlankRow(row)) {
+                return new ArrayList<String>(castMap(row).keySet());
             }
         }
         return new ArrayList<String>();

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -59,11 +60,20 @@ import static org.junit.Assert.assertThat;
  * </p>
  * <p>
  * 4 種（{@code {}} の行／全値 {@code ""} の行／{@code null} だけの行／マーカーカラムだけに値がある行）を
- * テーブルデータ（{@code setup_tables}、ケース T1〜T4）と {@code LIST_MAP}（{@code list_maps}、
- * ケース L1〜L4）の双方で確かめる。是正の前後で結果が変わるのは T2・L2 である
- * （是正前は「全ての値が空文字」の行も読み飛ばしていたため）。T1・T3・T4・L1・L3・L4 は結果が
+ * テーブルデータ（{@code setup_tables}、ケース T1〜T5）と {@code LIST_MAP}（{@code list_maps}、
+ * ケース L1〜L5）の双方で確かめる。是正の前後で結果が変わるのは T2・L2 である
+ * （是正前は「全ての値が空文字」の行も読み飛ばしていたため）。他は結果が
  * 変わらない対照ケースで、是正が {@code {}}・Java null・マーカーカラムの扱いを壊していないことを
  * 固定する（マーカーカラムだけに値がある行は、是正前の判定でもマーカーの値を非空と見て残していた）。
+ * </p>
+ * <p>
+ * 「マーカーカラムだけに値がある行」は 2 通りの書き方で置く。T4・L4 は他のカラムに {@code ""} を
+ * 明示した行で、Excel の空セル（{@code ""} として読み込まれる）と値までそろう対照である。
+ * T5・L5 は他のカラムをキーごと省略した行で、YAML における素直な書き方である。T5・L5 では
+ * 行が読み飛ばされない点（件数・カラム名）は本体と一致するが、省略したカラムの値は
+ * 本体が {@code ""}・YAML が Java {@code null} になる。この仕様差は
+ * {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と
+ * {@link #getListMap_markerOnlyRowWithOmittedKeysIsKept()} が明示的に固定する。
  * </p>
  *
  * @author kiyotis
@@ -114,9 +124,9 @@ public class YamlBlankEntryOracleTest {
         if (oracle == null) {
             oracle = buildOracleBook(
                     repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
+            // TableData はカラム型の解決に DbInfo を使うため、本体パーサにも設定する。
+            oracle.parser().setDbInfo(dbInfo);
         }
-        // TableData はカラム型の解決に DbInfo を使うため、本体パーサにも設定する。
-        oracle.parser().setDbInfo(dbInfo);
         sut = new YamlTestDataParser();
         sut.setDbInfo(dbInfo);
         sut.setDefaultValues(new BasicDefaultValues());
@@ -151,6 +161,10 @@ public class YamlBlankEntryOracleTest {
                 row("00001", "v1", "n1"), row("null", "null", "null"));
         dataSheet(book, "SETUP_TABLE[T4]=TEST_TABLE", "T4", MARKED_COLUMNS,
                 row("1", "00001", "v1", "n1"), row("2", "", "", ""));
+        // T5 の Excel は T4 と同じ内容。YAML 側だけがカラムごと省略した書き方であり、
+        // その仕様差を getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept が固定する。
+        dataSheet(book, "SETUP_TABLE[T5]=TEST_TABLE", "T5", MARKED_COLUMNS,
+                row("1", "00001", "v1", "n1"), row("2", "", "", ""));
         // LIST_MAP。
         dataSheet(book, "LIST_MAP=L1", "L1", KEYS,
                 row("v1", "v2", "v3"), row("", "", ""));
@@ -159,6 +173,9 @@ public class YamlBlankEntryOracleTest {
         dataSheet(book, "LIST_MAP=L3", "L3", KEYS,
                 row("v1", "v2", "v3"), row("null", "null", "null"));
         dataSheet(book, "LIST_MAP=L4", "L4", MARKED_KEYS,
+                row("1", "v1", "v2", "v3"), row("2", "", "", ""));
+        // L5 の Excel は L4 と同じ内容（T5 と同じ趣旨）。
+        dataSheet(book, "LIST_MAP=L5", "L5", MARKED_KEYS,
                 row("1", "v1", "v2", "v3"), row("2", "", "", ""));
         return book.write();
     }
@@ -266,6 +283,57 @@ public class YamlBlankEntryOracleTest {
         assertTableCase("T4", COLUMNS, new String[][]{{"00001", "v1", "n1"}, {"", "", ""}});
     }
 
+    /**
+     * [YamlTestDataParser] getSetupTableData: マーカーカラム以外をキーごと省略した行も読み飛ばされず、
+     * 省略したカラムの値だけが本体（{@code ""}）と YAML（Java {@code null}）で食い違うこと（T5）。
+     *
+     * <p>
+     * 「マーカーカラムだけに値があるエントリ」の YAML における素直な書き方は、他のカラムをキーごと
+     * 省略した {@code - "[NO]": "2"} である。読み飛ばされない点（件数・カラム名）は本体と一致するが、
+     * 省略したカラムの値は本体の空セル（{@code ""}）に対して YAML では Java {@code null} になる。
+     * これは {@code #24} で確立した YAML の仕様であり、隠さずここで固定する。
+     * </p>
+     * <p>
+     * 根拠: スキーマ {@code ntf-testdata-yaml-schema.json} の
+     * {@code $defs.table_data.properties.rows.description}
+     * 「(2) カラム名決定行にはあるが個々の行で省略したカラムは、その行でそのカラムに {@code null} を
+     * 書いたのと同じ扱いになる（キーが無い状態ではなく値が null の状態で保持される）」。
+     * </p>
+     * <p>
+     * 値までそろえたい場合は T4 のように {@code ""} を明示する
+     * （{@link #getSetupTableData_markerOnlyRowIsKept()}）。<br>
+     * Given: マーカーカラム {@code [NO]} を持つカラム名の行と、通常行 1 件・{@code [NO]} だけを
+     *        キーに持つ行 1 件（Excel は {@code [NO]} だけに値がある行）<br>
+     * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
+     * Then:  行数とカラム名は本体と一致し、本体の 2 行目は全カラム {@code ""}、
+     *        YAML の 2 行目は全カラム {@code null} になること
+     * </p>
+     */
+    @Test
+    public void getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept() {
+        TableData expected = single(
+                oracle.parser().getSetupTableData(oracle.dir(), oracle.resource("T5"), "T5"), "T5");
+        TableData actual = single(sut.getSetupTableData(YAML_DIR, YAML_RESOURCE, "T5"), "T5");
+
+        assertTableValues("T5 本体（Excel）", expected, COLUMNS,
+                new String[][]{{"00001", "v1", "n1"}, {"", "", ""}});
+
+        // 行が読み飛ばされないこと・カラム名が本体と一致すること。
+        assertThat("T5: 行数が本体と一致すること", actual.size(), is(expected.size()));
+        assertThat("T5: カラム名が本体と一致すること",
+                Arrays.asList(actual.getColumnNames()), is(Arrays.asList(expected.getColumnNames())));
+        assertThat("T5: 1 行目は本体と同じであること",
+                rowValuesOf(actual, 0), is(rowValuesOf(expected, 0)));
+
+        // 省略したカラムの値だけが食い違う（仕様差）。
+        for (String column : COLUMNS) {
+            assertThat("T5: 本体（Excel）の 2 行目の " + column + " は空文字であること",
+                    expected.getValue(1, column), is((Object) ""));
+            assertNull("T5: YAML の 2 行目の " + column + " は省略により null になること",
+                    actual.getValue(1, column));
+        }
+    }
+
     // ========================================================================
     // LIST_MAP（list_maps）
     // ========================================================================
@@ -333,6 +401,48 @@ public class YamlBlankEntryOracleTest {
         assertListMapCase("L4", KEYS, new String[][]{{"v1", "v2", "v3"}, {"", "", ""}});
     }
 
+    /**
+     * [YamlTestDataParser] getListMap: マーカーカラム以外をキーごと省略した行も読み飛ばされず、
+     * 省略したキーの値だけが本体（{@code ""}）と YAML（Java {@code null}）で食い違うこと（L5）。
+     *
+     * <p>
+     * 趣旨・根拠は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と同じ。
+     * スキーマ {@code $defs.list_map_data.properties.rows.description} は
+     * カラム省略の扱いを {@code $defs.table_data.properties.rows.description} と共通の規則として参照する。<br>
+     * Given: マーカーカラム {@code [NO]} を持つキー名の行と、通常行 1 件・{@code [NO]} だけを
+     *        キーに持つ行 1 件<br>
+     * When:  YAML と本体（Excel）の双方を {@code getListMap} で読む<br>
+     * Then:  件数とキー集合は本体と一致し、本体の 2 件目は全キーが {@code ""}、
+     *        YAML の 2 件目は全キーが {@code null} になること
+     * </p>
+     */
+    @Test
+    public void getListMap_markerOnlyRowWithOmittedKeysIsKept() {
+        List<Map<String, String>> expected =
+                oracle.parser().getListMap(oracle.dir(), oracle.resource("L5"), "L5");
+        List<Map<String, String>> actual = sut.getListMap(YAML_DIR, YAML_RESOURCE, "L5");
+
+        assertListMapValues("L5 本体（Excel）", expected, KEYS,
+                new String[][]{{"v1", "v2", "v3"}, {"", "", ""}});
+
+        // 行が読み飛ばされないこと・キー集合が本体と一致すること。
+        assertThat("L5: 件数が本体と一致すること", actual.size(), is(expected.size()));
+        for (int i = 0; i < expected.size(); i++) {
+            assertThat("L5: " + i + " 件目のキー集合が本体と一致すること",
+                    new ArrayList<String>(actual.get(i).keySet()),
+                    is(new ArrayList<String>(expected.get(i).keySet())));
+        }
+        assertThat("L5: 1 件目は本体と同じであること", actual.get(0), is(expected.get(0)));
+
+        // 省略したキーの値だけが食い違う（仕様差）。
+        for (String key : KEYS) {
+            assertThat("L5: 本体（Excel）の 2 件目の " + key + " は空文字であること",
+                    expected.get(1).get(key), is(""));
+            assertNull("L5: YAML の 2 件目の " + key + " は省略により null になること",
+                    actual.get(1).get(key));
+        }
+    }
+
     // ========================================================================
     // ヘルパー
     // ========================================================================
@@ -350,7 +460,6 @@ public class YamlBlankEntryOracleTest {
         TableData actual = single(
                 sut.getSetupTableData(YAML_DIR, YAML_RESOURCE, caseName), caseName);
 
-        // 本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。
         assertTableValues(caseName + " 本体（Excel）", expected, expectedColumns, expectedRows);
         assertThat(caseName + ": カラム名が本体と一致すること",
                 Arrays.asList(actual.getColumnNames()), is(Arrays.asList(expected.getColumnNames())));
@@ -375,7 +484,6 @@ public class YamlBlankEntryOracleTest {
                 oracle.parser().getListMap(oracle.dir(), oracle.resource(caseName), caseName);
         List<Map<String, String>> actual = sut.getListMap(YAML_DIR, YAML_RESOURCE, caseName);
 
-        // 本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。
         assertListMapValues(caseName + " 本体（Excel）", expected, expectedKeys, expectedRows);
         assertThat(caseName + ": 件数が本体と一致すること", actual.size(), is(expected.size()));
         for (int i = 0; i < expected.size(); i++) {
@@ -389,7 +497,11 @@ public class YamlBlankEntryOracleTest {
         }
     }
 
-    /** 本体が返した {@link TableData} が解説書の定める挙動どおりであることを確かめる。 */
+    /**
+     * 本体が返した {@link TableData} が解説書の定める挙動どおりであることを確かめる。
+     *
+     * <p>本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。</p>
+     */
     private static void assertTableValues(String message, TableData table,
                                           String[] expectedColumns, String[][] expectedRows) {
         assertThat(message + ": カラム名", Arrays.asList(table.getColumnNames()),
@@ -403,7 +515,11 @@ public class YamlBlankEntryOracleTest {
         }
     }
 
-    /** 本体が返した {@code LIST_MAP} の結果が解説書の定める挙動どおりであることを確かめる。 */
+    /**
+     * 本体が返した {@code LIST_MAP} の結果が解説書の定める挙動どおりであることを確かめる。
+     *
+     * <p>本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。</p>
+     */
     private static void assertListMapValues(String message, List<Map<String, String>> rows,
                                             String[] expectedKeys, String[][] expectedRows) {
         assertThat(message + ": 件数", rows.size(), is(expectedRows.length));
@@ -415,6 +531,15 @@ public class YamlBlankEntryOracleTest {
                         rows.get(i).get(expectedKeys[j]), is(expectedRows[i][j]));
             }
         }
+    }
+
+    /** 1 行分の値をカラム名（{@link #COLUMNS}）の順に取り出す。 */
+    private static List<Object> rowValuesOf(TableData table, int rowIndex) {
+        List<Object> values = new ArrayList<Object>(COLUMNS.length);
+        for (String column : COLUMNS) {
+            values.add(table.getValue(rowIndex, column));
+        }
+        return values;
     }
 
     /** テーブルデータが 1 件だけ取得できることを確かめ、その 1 件を返す。 */

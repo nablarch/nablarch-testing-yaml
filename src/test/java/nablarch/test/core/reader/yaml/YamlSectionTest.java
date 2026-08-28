@@ -468,6 +468,10 @@ public class YamlSectionTest {
      * 読み飛ばされる。（中略）YAML 形式では {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。
      * {@code ""} と書いた空文字は値であり、すべての値が {@code ""} のエントリは読み飛ばされず、
      * 全カラムが空文字のエントリとして読み込まれる。」<br>
+     * 本体（Excel 経路）でも同じである。{@code PoiXlsReader#isBlankLine} は生セル
+     * （{@code Cell#toString()}）を {@code String#isEmpty()} だけで判定するため、Excel で {@code ""} と
+     * 書いたセルは 2 文字の文字列として非空になり、その行は読み飛ばされない（セルから引用符を外す
+     * {@code QuotationTrimmer} は空行判定より後の値加工である）。<br>
      * Given: 空マッピング行・全ての値が空文字の行・値を持つ行 からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  空マッピング行だけが取り除かれ、残る 2 件が記述順で返ること
@@ -510,33 +514,6 @@ public class YamlSectionTest {
 
         // Then
         assertThat("値が 1 つでも非空なら残ること", result.size(), is(1));
-    }
-
-    /**
-     * [YamlSection] dropBlankRows: 全ての値が空文字の行が残ること。
-     *
-     * <p>
-     * 空文字 {@code ""} は値であって空セルではない。依存先 nablarch-testing の
-     * {@code PoiXlsReader#isBlankLine} は生セル（{@code Cell#toString()}）を {@code String#isEmpty()} だけで
-     * 判定するため、Excel で {@code ""} と書いたセルは 2 文字の文字列として非空になり、その行は
-     * 読み飛ばされない（セルから引用符を外す {@code QuotationTrimmer} は空行判定より後の値加工である）。<br>
-     * Given: 全ての値が空文字の行 1 件からなる rows<br>
-     * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
-     * Then:  その行が残ること
-     * </p>
-     */
-    @Test
-    public void dropBlankRows_keepsRowHavingOnlyEmptyStringValues() {
-        // Given
-        List<Object> rows = Arrays.<Object>asList(rowOf("COL_A", "", "COL_B", ""));
-
-        // When
-        List<Object> result = YamlSection.dropBlankRows(rows);
-
-        // Then
-        assertThat("空文字は値であるため行が残ること", result.size(), is(1));
-        assertThat("残った行が全ての値が空文字の行であること",
-                result.get(0), is((Object) rowOf("COL_A", "", "COL_B", "")));
     }
 
     /**

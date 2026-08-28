@@ -139,7 +139,8 @@ setup_tables:
 
   # 空行判定はキーの有無だけを見るため、値加工（interpret）を通して全ての値が空文字になる行も
   # 行として保持される。値を必ず空文字にするインタープリタ（テスト内で組み立てる）を通して確認する。
-  # 判定を値ベース（全ての値が空文字なら行なし）へ戻すとこの行が消えるので、その門番になる。
+  # なお、空行除去は値加工より前に走り、この行の生値（"to_be_blanked"）は非空であるため、
+  # 判定を値ベース（全ての値が空文字なら行なし）へ戻してもこの行は消えない（実測済み）。
   - group_id: interpretedToBlankRow
     table: TEST_TABLE
     rows:
@@ -274,7 +275,7 @@ list_maps:
         KEY3: ""
 
   # 空行判定はキーの有無だけを見るため、値加工（interpret）を通して全ての値が空文字になる行も
-  # 行として保持される（setup_tables 側の interpretedToBlankRow と同じ趣旨で list_maps 経路を固定する）。
+  # 行として保持される（setup_tables 側の interpretedToBlankRow と同じ事実を list_maps 経路で記録する）。
   - id: interpretedToBlankRowListMap
     rows:
       - KEY1: "kept"

@@ -169,14 +169,33 @@ public class YamlColumnOmissionTest {
                 raw("00002", "VARCHAR2_COL"), is((Object) " "));
     }
 
-    /** カラム名は空エントリ（{}）除去のあとに残った先頭行のキーだけで決まる。行の並びだけが違うと (1)/(2) の帰属が変わる。 */
+    /**
+     * カラム名は空エントリ（{@code {}}）除去のあとに残った先頭行のキーだけで決まる。
+     * 行の並びだけが違うと (1)/(2) の帰属が変わる。
+     *
+     * <p>
+     * s4a／s4b はいずれも先頭が空エントリ（{@code {}}）で、続く 2 行の並びだけが違う。
+     * 空エントリが行として残ればデータ行は 3 件になり、カラム名の決定に使われればカラム名は
+     * 0 件になるので、行数とカラム名の並びの両方でその除去を押さえる。
+     * </p>
+     */
     @Test
     public void columnNamesDependOnRowOrderAfterBlankRowRemoval() {
-        List<String> a = Arrays.asList(sut.getSetupTableData(DIR, RES, "s4a").get(0).getColumnNames());
-        List<String> b = Arrays.asList(sut.getSetupTableData(DIR, RES, "s4b").get(0).getColumnNames());
-        assertThat("先頭の空エントリ（{}）は除去されカラム名決定に使われないこと",
-                a.contains("NULL_COL"), is(false));
-        assertThat(b.contains("NULL_COL"), is(false));
+        TableData s4a = sut.getSetupTableData(DIR, RES, "s4a").get(0);
+        TableData s4b = sut.getSetupTableData(DIR, RES, "s4b").get(0);
+        assertThat("s4a: 先頭の空エントリ（{}）は行として取り除かれ、データ行は 2 件になること",
+                s4a.size(), is(2));
+        assertThat("s4b: 先頭の空エントリ（{}）は行として取り除かれ、データ行は 2 件になること",
+                s4b.size(), is(2));
+
+        List<String> a = Arrays.asList(s4a.getColumnNames());
+        List<String> b = Arrays.asList(s4b.getColumnNames());
+        assertThat("s4a: カラム名は空エントリの次にある最初のキーを持つ行のキーで決まること: " + a,
+                a, is(Arrays.asList("PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL",
+                        "NUMBER_COL2", "DATE_COL", "TIMESTAMP_COL")));
+        assertThat("s4b: 同じく最初のキーを持つ行のキーで決まること: " + b,
+                b, is(Arrays.asList("PK_COL1", "PK_COL2", "NUMBER_COL",
+                        "NUMBER_COL2", "DATE_COL", "TIMESTAMP_COL")));
         assertThat("s4a は VARCHAR2_COL を含むこと", a.contains("VARCHAR2_COL"), is(true));
         assertThat("s4b は VARCHAR2_COL を含まないこと", b.contains("VARCHAR2_COL"), is(false));
         assertThat("並びが違えばカラム名集合が変わること", a, is(not(b)));

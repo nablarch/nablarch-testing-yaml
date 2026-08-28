@@ -87,9 +87,9 @@ public final class YamlTableDataBuilder {
                         "Missing required field 'table' in " + sectionKey + " entry. groupId=" + groupId
                                 + ", basePath=" + basePath);
             }
-            // 行として存在しないもの（空マッピング、および全ての値が空文字の行）を
-            // 列名解決・値加工より前に取り除く（依存先 nablarch-testing の空行判定と同じ順序）。
-            // Java null は空文字ではないため非空として扱い、その行は残る。
+            // 行として存在しないもの（値を 1 つも持たない行＝空マッピング {}）を値加工より前に
+            // 取り除く（依存先 nablarch-testing の空行判定と同じ順序）。空文字 "" も Java null も
+            // 値であるため、全ての値が "" の行や COL: null・COL: だけの行は残る。
             List<Object> rows = dropBlankRows(getList(map, FIELD_ROWS));
             List<String> columnNames = resolveColumns(rows);
             List<List<String>> rawRows = extractRows(rows, columnNames);
