@@ -20,7 +20,8 @@ messages:
 
   # record_type に予約値はない。"FW_HEADER" という値も装飾的な名前として扱われ、
   # レコードは読み飛ばされずフラグメントになる（FW 制御ヘッダは fw_header: マップから別途取得される）。
-  # 固定長のためレコード長は 2 レコードとも 10 バイトに揃えている。
+  # 電文のレコードレイアウトは1つなので records は1件だけ書く。
+  # 出典: implementation/testdata_notation.rst:1153, :1299
   - id: fwHeaderRecordType001
     directives:
       text-encoding: Windows-31J
@@ -35,44 +36,7 @@ messages:
             length: 10
         rows:
           - ["HEADKEY001"]
-      - record_type: BODY
-        fields:
-          - name: SEARCH_KEY
-            type: 半角
-            length: 10
-        rows:
-          - ["SEARCHKEY1"]
-
-  # 旧形式（FW 制御ヘッダを record_type: FW_HEADER のレコードで表す書き方）が残ったケース。
-  # ヘッダ（25 バイト）と本文（10 バイト）でレコード長が異なるため、
-  # 読み飛ばしを廃止した現仕様では固定長ファイルのレコード長不一致として弾かれる。
-  - id: legacyFwHeaderRecord001
-    directives:
-      text-encoding: Windows-31J
-    records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-          - name: userId
-            type: 半角
-            length: 10
-          - name: resendFlag
-            type: 半角
-            length: 1
-          - name: resultCode
-            type: 半角
-            length: 4
-        rows:
-          - ["0000000001", "testUser01", "0", "0000"]
-      - record_type: BODY
-        fields:
-          - name: SEARCH_KEY
-            type: 半角
-            length: 10
-        rows:
-          - ["SEARCHKEY1"]
+          - ["HEADKEY002"]
 
   # データタイプ MESSAGE の識別子 setUpMessages（要求電文）・expectedMessages（応答電文）は
   # テスティングフレームワークの予約語であり固定である。
@@ -154,7 +118,8 @@ response_body_messages:
           - ["0000", "RESULT_DAT"]
 
   # 送信同期（getSendSyncMessage）経路でも record_type の値 "FW_HEADER" は特別扱いされない。
-  # レコード長は 2 レコードとも 10 バイトに揃えている。
+  # 電文のレコードレイアウトは1つなので records は1件だけ書く。
+  # 出典: implementation/testdata_notation.rst:1153, :1299
   - group_id: fwHeaderSync
     id: sync001
     directives:
@@ -167,14 +132,7 @@ response_body_messages:
             length: 10
         rows:
           - ["HEADKEY001"]
-      - record_type: BODY
-        fields:
-          - name: BODY_KEY
-            type: 半角
-            length: 10
-        rows:
-          - ["BODYKEY001"]
-          - ["BODYKEY002"]
+          - ["HEADKEY002"]
 
 response_header_messages:
   - group_id: grp1

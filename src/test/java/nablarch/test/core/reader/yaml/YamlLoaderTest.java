@@ -593,4 +593,136 @@ public class YamlLoaderTest {
                     errors.get(0).getType(), is("additionalProperties"));
         }
     }
+
+    // ========================================================================
+    // load: 電文の records は1つだけであること（maxItems: 1）
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: messages の records を2つ記述した YAML をロードした場合は
+     * YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: 電文のレコードレイアウトは1つであり、2つ以上記述するとエラーになること。
+     * ファイルデータと異なり、電文は複数のレコードレイアウトを持たない。<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
+     * Given: messages の1エントリが records を2つ持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
+     *        メッセージにファイルパスと出所（messages セクションの records のパス）が含まれること
+     * </p>
+     */
+    @Test
+    public void load_messagesWithMultipleRecordsIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_messages_multipleRecords");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/schemaViolation_messages_multipleRecords"));
+            assertThat("エラーメッセージに出所（messages セクションの records）が含まれること",
+                    e.getMessage(), containsString("messages[0].records"));
+            List<ValidationMessage> errors = e.getErrors();
+            assertThat("違反が 1 件報告されること", errors.size(), is(1));
+            assertThat("レコードレイアウトの上限超過として弾かれること（maxItems 違反）: " + errors.get(0),
+                    errors.get(0).getType(), is("maxItems"));
+        }
+    }
+
+    /**
+     * [YamlLoader] load: expected_request_body_messages の records を2つ記述した YAML をロードした場合は
+     * YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: 要求電文の期待値（expected_request_message_data）でも
+     * レコードレイアウトは1つに限られること。<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
+     * Given: expected_request_body_messages の1エントリが records を2つ持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
+     *        メッセージにファイルパスと出所（該当セクションの records のパス）が含まれること
+     * </p>
+     */
+    @Test
+    public void load_expectedRequestMessagesWithMultipleRecordsIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_expectedRequest_multipleRecords");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(),
+                    containsString("YamlLoaderTest/schemaViolation_expectedRequest_multipleRecords"));
+            assertThat("エラーメッセージに出所（expected_request_body_messages セクションの records）が含まれること",
+                    e.getMessage(), containsString("expected_request_body_messages[0].records"));
+            List<ValidationMessage> errors = e.getErrors();
+            assertThat("違反が 1 件報告されること", errors.size(), is(1));
+            assertThat("レコードレイアウトの上限超過として弾かれること（maxItems 違反）: " + errors.get(0),
+                    errors.get(0).getType(), is("maxItems"));
+        }
+    }
+
+    /**
+     * [YamlLoader] load: response_body_messages の records を2つ記述した YAML をロードした場合は
+     * YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: 同期応答メッセージ送信の応答電文（group_message_data）でも
+     * レコードレイアウトは1つに限られること。<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
+     * Given: response_body_messages の1エントリが records を2つ持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
+     *        メッセージにファイルパスと出所（該当セクションの records のパス）が含まれること
+     * </p>
+     */
+    @Test
+    public void load_responseMessagesWithMultipleRecordsIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_responseMessages_multipleRecords");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(),
+                    containsString("YamlLoaderTest/schemaViolation_responseMessages_multipleRecords"));
+            assertThat("エラーメッセージに出所（response_body_messages セクションの records）が含まれること",
+                    e.getMessage(), containsString("response_body_messages[0].records"));
+            List<ValidationMessage> errors = e.getErrors();
+            assertThat("違反が 1 件報告されること", errors.size(), is(1));
+            assertThat("レコードレイアウトの上限超過として弾かれること（maxItems 違反）: " + errors.get(0),
+                    errors.get(0).getType(), is("maxItems"));
+        }
+    }
+
+    /**
+     * [YamlLoader] load: ファイルデータ（setup_files）の records は2つ記述してもスキーマ違反にならないこと。
+     *
+     * <p>
+     * 何を担保するか: レコードレイアウト1つの上限は電文だけの制約であり、
+     * ファイルデータには課されないこと（ファイルは複数のレコードレイアウトを持てる）。
+     * 電文3セクションだけに maxItems を入れていることの対照となる。<br>
+     * 根拠: implementation/testdata_notation.rst:1153（「ファイルデータのように複数のレコードレイアウトを持たない」）<br>
+     * Given: setup_files の1エントリが records を2つ持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  例外は発生せず、records が2件のままロードできること
+     * </p>
+     */
+    @Test
+    public void load_fileDataWithMultipleRecordsIsAllowed() {
+        // When
+        Map<String, Object> loaded = YamlLoader.load(DIR, "YamlLoaderTest/fileDataMultipleRecords");
+
+        // Then
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> setupFiles = (List<Map<String, Object>>) loaded.get("setup_files");
+        assertThat("setup_files が1件ロードされること", setupFiles.size(), is(1));
+        @SuppressWarnings("unchecked")
+        List<Object> records = (List<Object>) setupFiles.get(0).get("records");
+        assertThat("ファイルデータは複数のレコードレイアウトを持てること", records.size(), is(2));
+    }
 }

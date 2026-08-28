@@ -205,6 +205,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 1,
           "description": "電文本文のレコード定義。FW 制御ヘッダは fw_header に記述するため records には含めない（旧形式の record_type: FW_HEADER は廃止）。MessageParser はこの records の record_type を内部で常に \"default\" に置換する",
           "items": {
             "$ref": "#/$defs/record_fragment"
@@ -238,6 +239,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 1,
           "description": "電文フィールドのレコード定義。requestId 等の FW 制御ヘッダフィールドも含め、すべてのフィールドをここに定義する（fw_header は使用しない）",
           "items": {
             "$ref": "#/$defs/record_fragment"
@@ -269,6 +271,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 1,
           "description": "電文フィールドのレコード定義。先頭値が `errorMode:timeout` または `errorMode:msgException` の行を含めると MockMessagingContext / MockMessagingClient 経路で送受信エラーをシミュレートできる（RequestTestingSendSyncSupport 経路では errorMode は無視される）",
           "items": {
             "$ref": "#/$defs/record_fragment"

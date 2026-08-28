@@ -13,6 +13,7 @@ import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.reader.yaml.YamlSchemaValidationException;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.log.app.OnMemoryLogWriter;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
@@ -927,10 +928,12 @@ public class YamlTestDataParserTest {
      * {@code record_type} に特別な予約値はなく、フレームワーク制御ヘッダは {@code fw_header:} マップで記述する。
      * {@code messages}（MESSAGE）では記載した値は使われず、デフォルトのレコード種別（"default"）になる
      * （記載値がそのままレコード種別になるのは同期応答メッセージ送信の 4 データタイプのみ）<br>
+     * 電文のレコードレイアウトは1つなので、records には record_type: FW_HEADER のレコードを1件だけ書く<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: messages の id=fwHeaderRecordType001 が fw_header: マップ（requestId/userId）と
-     *        record_type が "FW_HEADER"・"BODY" の 2 レコード（各 10 バイト）を持つ<br>
+     *        record_type が "FW_HEADER" のレコード1件（10 バイト・値行 2 行）を持つ<br>
      * When:  getMessage(dir, resource, "fwHeaderRecordType001") を呼ぶ<br>
-     * Then:  2 レコードとも電文本文になり（record_type は "default" になる）、
+     * Then:  値行が読み飛ばされず電文本文になり（record_type は "default" になる）、
      *        fw_header: の値は本文に混ざらず FW 制御ヘッダとして取得できること
      * </p>
      */
@@ -948,7 +951,7 @@ public class YamlTestDataParserTest {
         assertThat("messages では記載値が使われず \"default\" になること",
                 messages.get(1).getRecordType(), is("default"));
         assertThat(messages.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
-        assertThat(messages.get(1).getString("SEARCH_KEY"), is("SEARCHKEY1"));
+        assertThat(messages.get(1).getString("HEAD_KEY"), is("HEADKEY002"));
 
         // Then: fw_header: に書いた項目は本文フラグメントにならないこと
         assertThat("fw_header: の requestId は本文に混ざらないこと",
@@ -973,13 +976,15 @@ public class YamlTestDataParserTest {
      * フラグメントになり、値行に連番が付与されること。
      *
      * <p>
-     * "FW_HEADER" は予約値ではないため、送信同期経路では単に "FW_HEADER" というレコード種別になる<br>
-     * Given: response_body_messages の group_id=fwHeaderSync に record_type が "FW_HEADER"（値行1行）と
-     *        "BODY"（値行2行）の 2 レコード（各 10 バイト）がある<br>
+     * "FW_HEADER" は予約値ではないため、送信同期経路では単に "FW_HEADER" というレコード種別になる。
+     * 電文のレコードレイアウトは1つなので、records には record_type: FW_HEADER のレコードを1件だけ書く<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
+     * Given: response_body_messages の group_id=fwHeaderSync に record_type が "FW_HEADER" の
+     *        レコード1件（10 バイト・値行 2 行）がある<br>
      * When:  getSendSyncMessage(dir, resource, "[fwHeaderSync]", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
-     * Then:  FW_HEADER レコードの値行を含む 3 件が電文本文になり、記載どおりのレコード種別
-     *        （"FW_HEADER"／"BODY"）が保持され、
-     *        連番（FIRST_FIELD_NO）がフラグメントごとに 1 始まりで付与されていること
+     * Then:  FW_HEADER レコードの値行が読み飛ばされず 2 件の電文本文になり、記載どおりのレコード種別
+     *        （"FW_HEADER"）が保持され、
+     *        連番（FIRST_FIELD_NO）が 1 始まりで付与されていること
      * </p>
      */
     @Test
@@ -993,26 +998,21 @@ public class YamlTestDataParserTest {
         assertNotNull(result);
         assertThat("エントリが 1 件返ること", result.size(), is(1));
         List<DataRecord> messages = result.get(0).getExpectedMessageList();
-        assertThat("FW_HEADER レコードの値行も読み飛ばされず計 3 件になること", messages.size(), is(3));
+        assertThat("FW_HEADER レコードの値行も読み飛ばされず計 2 件になること", messages.size(), is(2));
         assertThat(messages.get(0).getString("HEAD_KEY"), is("HEADKEY001"));
-        assertThat(messages.get(1).getString("BODY_KEY"), is("BODYKEY001"));
-        assertThat(messages.get(2).getString("BODY_KEY"), is("BODYKEY002"));
+        assertThat(messages.get(1).getString("HEAD_KEY"), is("HEADKEY002"));
 
         // Then: "FW_HEADER" は予約値ではなく、記載どおりのレコード種別になること
         assertThat("record_type: FW_HEADER が単に \"FW_HEADER\" というレコード種別になること",
                 messages.get(0).getRecordType(), is("FW_HEADER"));
-        assertThat("record_type: BODY が記載どおりのレコード種別になること",
-                messages.get(1).getRecordType(), is("BODY"));
-        assertThat("record_type: BODY が記載どおりのレコード種別になること",
-                messages.get(2).getRecordType(), is("BODY"));
+        assertThat("record_type: FW_HEADER が単に \"FW_HEADER\" というレコード種別になること",
+                messages.get(1).getRecordType(), is("FW_HEADER"));
 
         // Then: 連番はフラグメント単位で 1 始まり（現行挙動）
         assertThat("FW_HEADER レコードの値行にも連番が付与されること",
                 messages.get(0).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
-        assertThat("BODY レコードの 1 行目の連番が \"1\" であること",
-                messages.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("1"));
-        assertThat("BODY レコードの 2 行目の連番が \"2\" にインクリメントされること",
-                messages.get(2).getString(DataFileFragment.FIRST_FIELD_NO), is("2"));
+        assertThat("2 行目の連番が \"2\" にインクリメントされること",
+                messages.get(1).getString(DataFileFragment.FIRST_FIELD_NO), is("2"));
     }
 
     /**
@@ -1092,29 +1092,35 @@ public class YamlTestDataParserTest {
 
     /**
      * getMessage: 旧形式（FW 制御ヘッダを record_type: FW_HEADER のレコードで表す書き方）が
-     * messages に残っている場合、固定長ファイルのレコード長不一致として IllegalStateException になること。
+     * messages に残っている場合、スキーマ検証で弾かれること。
      *
      * <p>
-     * 現仕様では FW 制御ヘッダは {@code fw_header:} マップで記述し、{@code record_type} に予約値はない。
-     * 旧形式の FW_HEADER レコードは読み飛ばされず本文レコードとして扱われるため、
-     * ヘッダ（25 バイト）と本文（10 バイト）のレコード長が食い違い、
-     * {@code FixedLengthFile#createLayout()} が例外を投げる。この帰結を固定する<br>
+     * 何を担保するか: 旧形式の書き方は通らないこと。現仕様では FW 制御ヘッダは {@code fw_header:} マップで
+     * 記述し、{@code record_type} に予約値はない。旧形式は FW_HEADER レコードと本文レコードの
+     * 2 レコードレイアウトになるが、電文のレコードレイアウトは1つであり 2 つ以上記述するとエラーになるため、
+     * 電文を組み立てる手前のスキーマ検証（{@code records} の {@code maxItems: 1}）で弾かれる<br>
+     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: messages の id=legacyFwHeaderRecord001 に旧形式の FW_HEADER レコード（25 バイト）と
-     *        BODY レコード（10 バイト）がある<br>
+     *        BODY レコード（10 バイト）の 2 レコードがある読み込み単位<br>
      * When:  getMessage(dir, resource, "legacyFwHeaderRecord001") を呼ぶ<br>
-     * Then:  IllegalStateException がスローされ、メッセージに "record-length differs." が含まれること
+     * Then:  YamlSchemaValidationException がスローされ、メッセージに出所
+     *        （ファイルパスと messages セクションの records のパス）が含まれること
      * </p>
      */
     @Test
-    public void getMessage_legacyFwHeaderRecordCausesRecordLengthMismatch() {
+    public void getMessage_legacyFwHeaderRecordIsRejectedBySchemaValidation() {
         // Given / When
         try {
-            sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "legacyFwHeaderRecord001");
-            fail("IllegalStateException が期待される");
-        } catch (IllegalStateException e) {
+            sut.getMessage(DIR, "YamlTestDataParserTest/legacyFwHeaderRecord", "legacyFwHeaderRecord001");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
             // Then
-            assertThat("レコード長不一致であることがメッセージに含まれること",
-                    e.getMessage(), containsString("record-length differs."));
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlTestDataParserTest/legacyFwHeaderRecord"));
+            assertThat("エラーメッセージに出所（messages セクションの records）が含まれること",
+                    e.getMessage(), containsString("messages[0].records"));
+            assertThat("レコードレイアウトの上限超過として弾かれること（maxItems 違反）",
+                    e.getErrors().get(0).getType(), is("maxItems"));
         }
     }
 
