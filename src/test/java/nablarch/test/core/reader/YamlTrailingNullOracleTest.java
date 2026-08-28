@@ -128,7 +128,7 @@ public class YamlTrailingNullOracleTest {
     /**
      * 可変長ファイルデータのシートを組み立てる。
      *
-     * <p>可変長はフィールド長の行を持たない（出典: {@code implementation/testdata_notation.rst:857}）。</p>
+     * <p>可変長はフィールド長の行を持たない（出典: {@code implementation/testdata_notation.rst:856}）。</p>
      *
      * @param book   組み立て先
      * @param name   シート名（＝グループ ID）
@@ -234,7 +234,7 @@ public class YamlTrailingNullOracleTest {
      * [YamlTestDataParser] getSetupFile: 先頭が "" で後続フィールドを書かない場合、全フィールドが "" になること（F3）。
      *
      * <p>
-     * 根拠: {@code implementation/testdata_notation.rst:887}
+     * 根拠: {@code implementation/testdata_notation.rst:882}
      * 「いずれか1つのフィールドに {@code ""} と記述した行」で全フィールドが {@code ""} のレコードになる。
      * 本ケースは、本体では「空セル」でも「{@code ""}」でも同じ結果になることを示す対照ケースであり、
      * 是正の前後で結果が変わらない。<br>
@@ -268,7 +268,7 @@ public class YamlTrailingNullOracleTest {
      * [YamlTestDataParser] getSetupFile: 後続フィールドの値を書かない場合、それらが "" になること（F5）。
      *
      * <p>
-     * 根拠: {@code implementation/testdata_notation.rst:886}
+     * 根拠: {@code implementation/testdata_notation.rst:882}
      * 「末尾のフィールドの値を書かなければ、そのフィールドは {@code ""} として扱われる」。
      * 本ケースは是正の前後で結果が変わらない対照ケースである。<br>
      * Given: fields 3 件に対し値行 {@code ["x"]}<br>

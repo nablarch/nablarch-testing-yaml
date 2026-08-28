@@ -53,7 +53,7 @@ public class YamlTableDataBuilderTest {
     /**
      * {@code ${文字種,文字数}} で使用できる14文字種。
      *
-     * <p>出典: implementation/testdata_notation.rst:1313-:1320</p>
+     * <p>出典: implementation/testdata_notation.rst:1315-:1322</p>
      */
     private static final String[] CHARACTER_TYPES = {
             "半角英字", "半角数字", "半角記号", "半角カナ",
@@ -911,7 +911,7 @@ public class YamlTableDataBuilderTest {
      * <p>
      * 何を担保するか: {@code ${文字種,文字数}} で使用できる文字種が解説書の列挙する14種類すべてで
      * 変換され、指定した文字数（サロゲートペアは3コードポイント）になること。<br>
-     * 根拠: implementation/testdata_notation.rst:1313-:1320<br>
+     * 根拠: implementation/testdata_notation.rst:1315-:1322<br>
      * Given: list_maps の charTypeTest_&lt;文字種&gt; に GEN_COL: "${&lt;文字種&gt;,3}" を書いた YAML（文字種ごとに別エントリ）<br>
      * When:  文字種ごとに buildListMapRows(yaml, "charTypeTest_&lt;文字種&gt;", path) を呼ぶ<br>
      * Then:  いずれの文字種でも記法が変換され、3 コードポイントの文字列になること
@@ -964,7 +964,7 @@ public class YamlTableDataBuilderTest {
      * <p>
      * 何を担保するか: {@code ${文字種,文字数}} を組み合わせて使った場合、記法の部分だけが変換され、
      * それ以外の文字はそのまま残ること。<br>
-     * 根拠: implementation/testdata_notation.rst:1322<br>
+     * 根拠: implementation/testdata_notation.rst:1324<br>
      * Given: list_maps の charTypeCombinedTest に COMBINED_COL: "${半角数字,2}-${半角数字,4}"<br>
      * When:  buildListMapRows(yaml, "charTypeCombinedTest", path) を呼ぶ<br>
      * Then:  値が 7 文字になり、3 文字目が "-" のまま残ること
@@ -997,7 +997,7 @@ public class YamlTableDataBuilderTest {
      * YAML のパーサが制御文字へ変換すること。CR 側は
      * {@link #buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser} で固定しており、
      * ここでは LF 側を固定する。<br>
-     * 根拠: implementation/testdata_notation.rst:1441-:1443<br>
+     * 根拠: implementation/testdata_notation.rst:1443-:1445<br>
      * Given: list_maps の lineFeedTest に YAML_LF_COL: "\n"<br>
      * When:  buildListMapRows(yaml, "lineFeedTest", path) を呼ぶ<br>
      * Then:  値が LF（U+000A）1 文字になること

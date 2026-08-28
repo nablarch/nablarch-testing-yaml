@@ -30,7 +30,7 @@ list_maps:
         description: "ファイル入力"
         expectedStatusCode: "0"
 
-  # 3-6: ${attach:ファイルパス}（implementation/testdata_notation.rst:1337）。
+  # 3-6: ${attach:ファイルパス}（implementation/testdata_notation.rst:1339）。
   #      パスはテスト実行時のカレントディレクトリ（プロジェクトルート）からの相対パス。
   - id: attachNotationTest
     rows:

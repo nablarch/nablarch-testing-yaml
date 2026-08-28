@@ -80,12 +80,12 @@ list_maps:
     rows:
       - DQ_COL: '"'
 
-  # 3-4: 改行文字 "\n"（LF）（implementation/testdata_notation.rst:1441-:1443）
+  # 3-4: 改行文字 "\n"（LF）（implementation/testdata_notation.rst:1443-:1445）
   - id: lineFeedTest
     rows:
       - YAML_LF_COL: "\n"
 
-  # 3-2: ${文字種,文字数} で使用できる14文字種（implementation/testdata_notation.rst:1313-:1320）。
+  # 3-2: ${文字種,文字数} で使用できる14文字種（implementation/testdata_notation.rst:1315-:1322）。
   #      どの文字種で落ちたかが分かるよう、文字種ごとに別エントリにしてある。
   - id: charTypeTest_半角英字
     rows:
@@ -130,7 +130,7 @@ list_maps:
     rows:
       - GEN_COL: "${外字,3}"
 
-  # 3-3: 組み合わせ記法（implementation/testdata_notation.rst:1322）
+  # 3-3: 組み合わせ記法（implementation/testdata_notation.rst:1324）
   - id: charTypeCombinedTest
     rows:
       - COMBINED_COL: "${半角数字,2}-${半角数字,4}"

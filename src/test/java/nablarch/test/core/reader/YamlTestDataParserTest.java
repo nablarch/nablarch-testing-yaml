@@ -353,7 +353,7 @@ public class YamlTestDataParserTest {
      * YAML の読み込み経路でそのままの表記として取り出せること。アップロードファイルの指定は
      * {@code HttpRequestTestSupport}（nablarch-testing）が値の表記 {@code ${attach:...}} を見て
      * 判定するため、YAML 経路が表記を保ったまま渡すことがその前提になる。<br>
-     * 根拠: implementation/testdata_notation.rst:1337<br>
+     * 根拠: implementation/testdata_notation.rst:1339<br>
      * Given: list_maps の 1 行に uploadFile: "${attach:&lt;プロジェクトルートからの相対パス&gt;}" を書いた YAML<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  値が {@code ${attach:...}} の表記のまま取得でき、示すファイルが
