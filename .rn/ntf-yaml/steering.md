@@ -1504,14 +1504,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
+- **Status**: paused
 - **Date**: 2026-08-29
-- **Last completed**: #43 カバレッジ C0/C1 計測・converter 実測・報告書の作成（`eb0676e`）
-- **Next**: #44-B ユーザーの判定（`/rn:ty` 承認 または `/rn:gm` 差し戻し）を待つ。#44-A（完了条件10項目の実測と提示）は完了
-- **Notes**: ブランチ `feature/ntf-yaml`（HEAD `eb0676e`、push 済み、`git status --short` 空）。成果物は `.rn/ntf-yaml/report-step4-2.md`（990行。`src/` の最終コミットは `00fc164`）。
-  完了条件10項目のうち **#2 のみ判定が割れる**: 2-1〜2-5 の着手前特定は `7480453`（2026-08-28 21:00:22）の steering.md に5件すべて記録され、最初の実装コミット `ce81530`（21:23:11）に先行するが、
-  指示書 `:40` が求める「実装に入る前に**先に報告**」を1本の報告として出した記録は無い（#38 以降はユーザーの明示指示で連続実行したため）。#8・#9 は報告書の外（作業ツリー・リポジトリの状態）で、いずれも実測 OK。
-  ユーザーに返した判断事項5件は報告書 §8.1〜§8.5（T5・L5 の恒久的仕様差／converter 4件の是正主体／解説書 `:889` の起票／2-5 の規則のスキーマ追随／行番号出典の方式）。
-  下流 `nablarch-testing-converter`（ブランチ `ntf-test-data-converter`、`d611bec`、未変更）は本モジュール HEAD を install すると `Tests run: 656, Failures: 3, Errors: 1` で **BUILD FAILURE のまま**。指示書 §5 が「直さない」と定めているため未着手。
-  スコープ拡張1件: #42 で `src/` の解説書出典を18箇所訂正（`+2` ずれ13・別種5）。報告書 §8.6。
-  Notes 原文: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Last completed**: #44-A 指示書 §4 の完了条件10項目の実測と提示（`aac55ad`）。#43 は `eb0676e` でチェックオフ済み
+- **Next**: #44-B ユーザーの判定を待つ。`/rn:ty`（承認）で Step 4 第2回を締め、`/rn:gm`（差し戻し）なら指摘に応じて再開する
+- **Notes**: ブランチ `feature/ntf-yaml`（HEAD `aac55ad`、push 済み、`git status --porcelain` 空）。成果物は `.rn/ntf-yaml/report-step4-2.md`（990行。`src/` の最終コミットは `00fc164` で以降は文書のみ）。
+  ユーザー未決の判断事項5件（報告書 §8.1〜§8.5）: (1) T5・L5 の恒久的仕様差（マーカーカラムのみの行で省略カラムの値が本体 `""`・YAML null）をこの差で確定してよいか (2) converter の4件を誰がいつ直すか (3) 解説書 `testdata_notation.rst:889` の曖昧さを起票するか (4) 2-5 の規則をスキーマ `description` 5箇所以上に追随させるか (5) 行番号出典の方式を変えるか。
+  完了条件で **#2 のみ判定が割れる**: 着手前特定5件は `7480453`（08-28 21:00:22）の steering.md に記録され最初の実装 `ce81530`（21:23:11）に先行するが、指示書 `:40` の「実装前に先に報告」を1本の報告として出した記録は無い（#38 以降はユーザー指示で連続実行）。
+  ブロッカー: 下流 `nablarch-testing-converter`（ブランチ `ntf-test-data-converter`、`d611bec`、未変更）は本モジュール HEAD を install すると `Tests run: 656, Failures: 3, Errors: 1` で **BUILD FAILURE のまま**。指示書 §5 が「直さない」と定めているため未着手で、(2) の判断待ち。
+  スコープ拡張1件: #42 で `src/` の解説書出典を18箇所訂正（`+2` ずれ13・別種5）。報告書 §8.6。ユーザー未解決の未追跡パス: なし。
