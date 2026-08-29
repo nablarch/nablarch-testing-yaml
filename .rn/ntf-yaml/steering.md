@@ -1456,7 +1456,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #43: カバレッジ C0/C1 計測・converter 実測・報告書の作成
+### ~~#43: カバレッジ C0/C1 計測・converter 実測・報告書の作成~~
 
 **Purpose**: 指示書 §4 の完了条件6・10 と §6 の報告6項目を満たす。
 
@@ -1517,19 +1517,58 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
+### #45: 解説書への参照を `src/` から取り除き、2-5 の規則をスキーマへ追随させる
+
+**Purpose**: 報告書 §8.4 の追随と §8.5 のユーザー判断（2026-08-29）を実施する。解説書の出典は `src/` に置かず
+`.rn/` の報告書・台帳で追跡する方式へ移す。あわせて §8.1 の判定を T5/L5 の Javadoc に反映し、
+付録 A の失効記録に注記を入れる。
+
+**出典**: ユーザー指示（2026-08-29、`/rn:up` の引数）。報告書 `.rn/ntf-yaml/report-step4-2.md` の §8.1・§8.4・§8.5・付録 A。
+
+**Prerequisites**: #44
+
+**Steps**:
+
+- [ ] A. `src/main`・`src/test`（フィクスチャの YAML とそのコメントを含む）から解説書への参照を取り除く。
+      対象は `.rst` のパス（行番号の有無を問わない）・`nablarch-document`・「解説書」「出典」「根拠:」という語による
+      見出し・逐語引用。Javadoc とテストコメントは自分の言葉で書き直す（既存の Given/When/Then と本体クラス名への
+      言及は残す）。**ソースを `path:line` で指す7箇所**（`../nablarch-testing/…` `../nablarch-testing-converter/…`）は
+      行番号とパスをそのまま残す。着手の手前に取り除く行の全件（`file:line`）を機械抽出して件数を報告する
+- [ ] B. 2-5 の規則（バックスラッシュと `r` の2文字を含む値はエラー）を、スキーマ `description` の5箇所
+      （`table_data.rows` / `list_map_data.rows` / `record_fragment.rows` / `message_data.fw_header` / `$defs.fw_header`）に
+      1文ずつ追記する。文言は `record-separator` の既存文（#42。`:293`）と揃える
+- [ ] C. `YamlBlankEntryOracleTest` の T5/L5 の Javadoc から「仕様差」の枠組みを外し、「YAML のキー省略は null を
+      明示したのと同じ。Excel の空セルは `""` なので入力が非等価」という説明に書き直す（A のとおり解説書は引かない）。
+      あわせて、等価な入力（Excel 側は他のセルに `null` と記述、YAML 側はキーを省略）で結果が一致することを
+      oracle で示すケースを T6/L6 として足す。足したテストは期待値をわざと崩すと落ちることを1度確認する
+- [ ] D. `.rn/ntf-yaml/checks/task-31.md` の3箇所（`:8`・`:9`・`:23`）に「#41 で削除」の注記を入れる
+- [ ] E. 報告書 `.rn/ntf-yaml/report-step4-2.md` に §9 として追記する（A の全件の `file:line`、T6/L6 の本体の値と
+      YAML の値、崩す確認の結果）
+- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` 緑。`git status --short` 空。commit・push
+- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-45.md)
+
+**Completion criteria**:
+
+- `mvn -o clean test` 緑
+- `@Ignore` が0件
+- `git grep -nE '\.rst|nablarch-document|解説書|出典|根拠:' -- src` が0件
+- `git status --short` 空、push 済み
+- 報告書に §9 が追記されている
+
+**やらないこと**: 解説書・`nablarch-testing`・`nablarch-testing-converter` を直さない。テストの動作は変えない
+（変えるのは Javadoc・テストコメント・フィクスチャのコメントだけ。ただし C の T6/L6 は足す）。変えたら報告に挙げる。
+解説書に無い書き方を追いかけない。
+
+---
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-29
-- **Last completed**: #44 Evaluation sign-off（Step 4 第2回）。ユーザーが `/rn:ty` で承認し、報告書 §8 の未決5件のうち §8.1〜§8.4 の判定も確定した（§8.5 のみ継続中）。判定内容は Tasks の #44 に記録済み
-- **Next**: **未定。ユーザーが次タスクの指示を差し替える**。承認直後に #45（解説書ピンの `a6da1f6` への取り直し／2-5 の規則をスキーマ `description` 5箇所へ追記／`YamlBlankEntryOracleTest` T5・L5 の Javadoc 書き直しと T6・L6 の追加／`checks/task-31.md` への「#41 で削除」注記）が渡されたが、着手前にユーザーが差し替えを宣言したため steering には登録していない。**差し替え後の指示を受けてから登録・着手すること**
-- **Notes**: ブランチ `feature/ntf-yaml`（push 済み）。`src/` は #44 承認時点から未変更（最終コミットは `00fc164`）。
-  Step 4 第2回は締まっており、成果物は `.rn/ntf-yaml/report-step4-2.md`（990行）。
-  解説書の新しいピンは `nablarch-document@a6da1f6`（`afa4f9e` からの差分は `testdata_notation.rst:889`・`:1502` と `testdata_converter.rst:63` の3行のみ、行番号不変）。**Rules の「参照点（ピン）」は `afa4f9e` のままで、まだ取り直していない**。
-  継続中の未決1件: 報告書 §8.5（行番号出典の方式を変えるか）。方式は変えない・行番号を書くなら現行どおり、が現時点のユーザーの意向。
-  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュール HEAD を install すると `Tests run: 656, Failures: 3, Errors: 1` で BUILD FAILURE のままだが、§8.2 の判定により **converter 側の第2回指示書で直す**ことが決まっており、当リポジトリの作業ではない。
-  ユーザー未解決の未追跡パス: なし。
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
