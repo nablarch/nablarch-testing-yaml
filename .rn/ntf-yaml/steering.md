@@ -1480,7 +1480,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #44: Evaluation sign-off（Step 4 第2回）
+### ~~#44: Evaluation sign-off（Step 4 第2回）~~
 
 **Purpose**: 指示書「4. 完了条件」10項目を実測で通し、ユーザーの評価ゲートを取る。
 
@@ -1489,12 +1489,31 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 **Steps**:
 
 - [x] A. 指示書 §4 の完了条件10項目を1つずつ実測し、結果をユーザーに提示する
-- [ ] B. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
+- [x] B. `/rn:ty`（承認）または `/rn:gm`（差し戻し）の判定を受ける
 
 **Completion criteria**:
 
 - 完了条件10項目の実測結果が提示されている
 - ユーザーの判定が出ている
+
+**ユーザー判定（2026-08-29・`/rn:ty` で承認）**: ディレクターの独立検証に合格したため Step 4 第2回を締める。
+検証の内訳は scratchpad の clone で `mvn -o clean test` 318件緑・`@Ignore` 0件、`src/main` の差分5ファイルの全量読み、
+ミューテーション7件（2-1 `trimTailCopy` 無効／2-3 未知キー素通し／2-3 設定値無視／2-4 旧判定／2-5 検査無効／
+2-5 `fw_header` 経路だけ未検査／2-5 判定を過剰に）がすべて検知されること、converter `d611bec` で同じ4件
+（`656 / Failures: 3, Errors: 1`）が落ちることの再現。完了条件 #2 は満たすと判定（特定結果は `7480453` で最初の実装
+`ce81530` に先行して記録されており、タスクごとの停止は #38 以降ユーザーが免除した）。#42 の出典訂正18箇所（§8.6）は受け入れ。
+
+**報告書 §8 の未決5件に対するユーザーの判定（2026-08-29）**:
+
+- **§8.1 仕様差ではない。** 解説書 `testdata_notation.rst:818` が「後続の行がこのキーの一部を持たない場合、そのカラムは null を明示的に指定したのと同じ扱いになる」と既に定めている。T5/L5 は入力が非等価（Excel の空セル＝`""`、YAML のキー省略＝null）なだけ。`:1502` の「他のカラムがすべて空文字のエントリとして読み込まれる」はこれと矛盾していたため、`nablarch-document@a6da1f6` で「他のカラムの値は通常どおり読み込まれる（Excel 形式の空セルは `""`、YAML 形式でキーを省略した場合は前述のとおり null）」に改訂済み
+- **§8.2 converter 側で直す。** ディレクター作成済みの converter 第2回の指示書で扱う。yaml 側では何もしない
+- **§8.3 起票不要。** `:889` を `a6da1f6` で「後ろに空文字でも null でもないフィールドがあれば null のまま保持される（末尾側に並んだ `""` と `null` は、まとめて `""` になる）」に改訂済み
+- **§8.4 追随する。** 次のタスクで扱う
+- **§8.5 user 判断待ち（継続）。** 方式は変えない。行番号を書くなら現行どおりでよい
+
+**解説書の新しいピン**: `nablarch-document@a6da1f6`。`ja/` は `afa4f9e` から
+`implementation/testdata_notation.rst:889`・`:1502` と `tools/testdata_converter.rst:63` の3行だけが変わり、
+行番号は変わっていない（`git -C ../nablarch-document diff --stat afa4f9e a6da1f6 -- ja/` で実測: 2ファイル 3挿入 3削除）。
 
 ---
 
@@ -1506,10 +1525,11 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-29
-- **Last completed**: #44-A 指示書 §4 の完了条件10項目の実測と提示（`aac55ad`）。#43 は `eb0676e` でチェックオフ済み
-- **Next**: #44-B ユーザーの判定を待つ。`/rn:ty`（承認）で Step 4 第2回を締め、`/rn:gm`（差し戻し）なら指摘に応じて再開する
-- **Notes**: ブランチ `feature/ntf-yaml`（HEAD `aac55ad`、push 済み、`git status --porcelain` 空）。成果物は `.rn/ntf-yaml/report-step4-2.md`（990行。`src/` の最終コミットは `00fc164` で以降は文書のみ）。
-  ユーザー未決の判断事項5件（報告書 §8.1〜§8.5）: (1) T5・L5 の恒久的仕様差（マーカーカラムのみの行で省略カラムの値が本体 `""`・YAML null）をこの差で確定してよいか (2) converter の4件を誰がいつ直すか (3) 解説書 `testdata_notation.rst:889` の曖昧さを起票するか (4) 2-5 の規則をスキーマ `description` 5箇所以上に追随させるか (5) 行番号出典の方式を変えるか。
-  完了条件で **#2 のみ判定が割れる**: 着手前特定5件は `7480453`（08-28 21:00:22）の steering.md に記録され最初の実装 `ce81530`（21:23:11）に先行するが、指示書 `:40` の「実装前に先に報告」を1本の報告として出した記録は無い（#38 以降はユーザー指示で連続実行）。
-  ブロッカー: 下流 `nablarch-testing-converter`（ブランチ `ntf-test-data-converter`、`d611bec`、未変更）は本モジュール HEAD を install すると `Tests run: 656, Failures: 3, Errors: 1` で **BUILD FAILURE のまま**。指示書 §5 が「直さない」と定めているため未着手で、(2) の判断待ち。
-  スコープ拡張1件: #42 で `src/` の解説書出典を18箇所訂正（`+2` ずれ13・別種5）。報告書 §8.6。ユーザー未解決の未追跡パス: なし。
+- **Last completed**: #44 Evaluation sign-off（Step 4 第2回）。ユーザーが `/rn:ty` で承認し、報告書 §8 の未決5件のうち §8.1〜§8.4 の判定も確定した（§8.5 のみ継続中）。判定内容は Tasks の #44 に記録済み
+- **Next**: **未定。ユーザーが次タスクの指示を差し替える**。承認直後に #45（解説書ピンの `a6da1f6` への取り直し／2-5 の規則をスキーマ `description` 5箇所へ追記／`YamlBlankEntryOracleTest` T5・L5 の Javadoc 書き直しと T6・L6 の追加／`checks/task-31.md` への「#41 で削除」注記）が渡されたが、着手前にユーザーが差し替えを宣言したため steering には登録していない。**差し替え後の指示を受けてから登録・着手すること**
+- **Notes**: ブランチ `feature/ntf-yaml`（push 済み）。`src/` は #44 承認時点から未変更（最終コミットは `00fc164`）。
+  Step 4 第2回は締まっており、成果物は `.rn/ntf-yaml/report-step4-2.md`（990行）。
+  解説書の新しいピンは `nablarch-document@a6da1f6`（`afa4f9e` からの差分は `testdata_notation.rst:889`・`:1502` と `testdata_converter.rst:63` の3行のみ、行番号不変）。**Rules の「参照点（ピン）」は `afa4f9e` のままで、まだ取り直していない**。
+  継続中の未決1件: 報告書 §8.5（行番号出典の方式を変えるか）。方式は変えない・行番号を書くなら現行どおり、が現時点のユーザーの意向。
+  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュール HEAD を install すると `Tests run: 656, Failures: 3, Errors: 1` で BUILD FAILURE のままだが、§8.2 の判定により **converter 側の第2回指示書で直す**ことが決まっており、当リポジトリの作業ではない。
+  ユーザー未解決の未追跡パス: なし。
