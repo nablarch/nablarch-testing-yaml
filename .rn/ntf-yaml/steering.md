@@ -1508,8 +1508,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 - **§8.1 仕様差ではない。** 解説書 `testdata_notation.rst:818` が「後続の行がこのキーの一部を持たない場合、そのカラムは null を明示的に指定したのと同じ扱いになる」と既に定めている。T5/L5 は入力が非等価（Excel の空セル＝`""`、YAML のキー省略＝null）なだけ。`:1502` の「他のカラムがすべて空文字のエントリとして読み込まれる」はこれと矛盾していたため、`nablarch-document@a6da1f6` で「他のカラムの値は通常どおり読み込まれる（Excel 形式の空セルは `""`、YAML 形式でキーを省略した場合は前述のとおり null）」に改訂済み
 - **§8.2 converter 側で直す。** ディレクター作成済みの converter 第2回の指示書で扱う。yaml 側では何もしない
 - **§8.3 起票不要。** `:889` を `a6da1f6` で「後ろに空文字でも null でもないフィールドがあれば null のまま保持される（末尾側に並んだ `""` と `null` は、まとめて `""` になる）」に改訂済み
-- **§8.4 追随する。** 次のタスクで扱う
-- **§8.5 user 判断待ち（継続）。** 方式は変えない。行番号を書くなら現行どおりでよい
+- **§8.4 追随する。** #45 の B で扱う
+- **§8.5 ソースコメントから解説書への参照をすべて取り除く**（#45 の A）。解説書を指す行番号も節見出しも逐語引用も
+  ソースには書かない。根拠の追跡は `.rn/` の報告書・台帳で行う。機械検証（§8.5 の案1）も作らない。
+  リリース済みの `nablarch-testing`・`nablarch-testing-rest`・`nablarch-testing-junit5` の `src/` には解説書への参照が
+  1件も無い（ディレクター実測）
 
 **解説書の新しいピン**: `nablarch-document@a6da1f6`。`ja/` は `afa4f9e` から
 `implementation/testdata_notation.rst:889`・`:1502` と `tools/testdata_converter.rst:63` の3行だけが変わり、
@@ -1523,41 +1526,55 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 `.rn/` の報告書・台帳で追跡する方式へ移す。あわせて §8.1 の判定を T5/L5 の Javadoc に反映し、
 付録 A の失効記録に注記を入れる。
 
-**出典**: ユーザー指示（2026-08-29、`/rn:up` の引数）。報告書 `.rn/ntf-yaml/report-step4-2.md` の §8.1・§8.4・§8.5・付録 A。
+**出典**: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md` §8（§8.1 承認文面の全文・§8.2 確認2件への回答と訂正3件）。
+報告書 `.rn/ntf-yaml/report-step4-2.md` の §8.1・§8.4・§8.5・付録 A。
 
 **Prerequisites**: #44
 
 **Steps**:
 
+- [ ] O. Rules の「参照点（ピン）」の解説書だけを `afa4f9e` → `a6da1f6` に取り直す（本モジュール・`nablarch-testing`・
+      converter のピンは変えない）。理由: `afa4f9e` の `testdata_notation.rst:1502` は「他のカラムがすべて空文字の
+      エントリとして読み込まれる」のままで、C の前提と矛盾する。`a6da1f6` との差は `testdata_notation.rst:889`・`:1502` と
+      `testdata_converter.rst:63` の3行で行番号は変わらない（指示書 §8.2-2）
 - [ ] A. `src/main`・`src/test`（フィクスチャの YAML とそのコメントを含む）から解説書への参照を取り除く。
-      対象は `.rst` のパス（行番号の有無を問わない）・`nablarch-document`・「解説書」「出典」「根拠:」という語による
-      見出し・逐語引用。Javadoc とテストコメントは自分の言葉で書き直す（既存の Given/When/Then と本体クラス名への
-      言及は残す）。**ソースを `path:line` で指す7箇所**（`../nablarch-testing/…` `../nablarch-testing-converter/…`）は
-      行番号とパスをそのまま残す。着手の手前に取り除く行の全件（`file:line`）を機械抽出して件数を報告する
-- [ ] B. 2-5 の規則（バックスラッシュと `r` の2文字を含む値はエラー）を、スキーマ `description` の5箇所
-      （`table_data.rows` / `list_map_data.rows` / `record_fragment.rows` / `message_data.fw_header` / `$defs.fw_header`）に
-      1文ずつ追記する。文言は `record-separator` の既存文（#42。`:293`）と揃える
-- [ ] C. `YamlBlankEntryOracleTest` の T5/L5 の Javadoc から「仕様差」の枠組みを外し、「YAML のキー省略は null を
-      明示したのと同じ。Excel の空セルは `""` なので入力が非等価」という説明に書き直す（A のとおり解説書は引かない）。
-      あわせて、等価な入力（Excel 側は他のセルに `null` と記述、YAML 側はキーを省略）で結果が一致することを
-      oracle で示すケースを T6/L6 として足す。足したテストは期待値をわざと崩すと落ちることを1度確認する
+      対象は `.rst` のパス（行番号の有無を問わない）・`nablarch-document`・「解説書」「出典」「根拠:」として解説書を
+      指す記述・解説書の節見出し・逐語引用。Javadoc とテストの説明は**何を確かめるかを自分の言葉で書く**
+      （既存の Given/When/Then と本体クラス名への言及は残してよい）。
+      **他リポジトリのソースを指す箇所は行番号とパスを落とし、クラス名だけ残す**（指示書 §8.2 の訂正）。
+      対象はフルパスの7箇所（`YamlSection.java:384`・`:407`／`YamlMessageBuilderTest.java:66`・`:124`・`:1078`／
+      `YamlSectionTest.java:262`／`YamlTableDataBuilderTest.java:748`）に加え、パス無しで他リポジトリの行番号を指す3箇所
+      （`YamlTestDataParserTest.java:1857` の `SendSyncSupport.java:347`／`YamlTrailingNullOracleTest.java:317` の
+      `MockMessages.java:64`／`YamlMessageBuilderTest.java:1155` の `MessageParser.java:108`）。
+      本モジュール自身を指す `YamlLoader.java:151`（`YamlMessageBuilderTest.java:1385`）は対象外で残す。
+      着手前に取り除く行の全件（`file:line`）を機械抽出して件数を報告する
+- [ ] B. 2-5 の規則（バックスラッシュと `r` の2文字を含む値はエラー）を、スキーマ `description` の5箇所に1文ずつ追記する。
+      `table_data.rows`（`:108`）／`list_map_data.rows`（`:136`）／`message_data.fw_header`（`:216`）／
+      `record_fragment.rows`（`:380`）／`$defs.fw_header`（`:433`）。行番号は `ef1fc63` のスキーマ（指示書 §8.2-1）。
+      文言は `record-separator` の既存文（#42。`:293`）と揃える。**実装の挙動を写さない**
+- [ ] C. `YamlBlankEntryOracleTest` の T5/L5 の Javadoc から「仕様差」の枠組みを外し、「キーを省略したカラムは null を
+      明示したのと同じ。Excel の空セルは `""` なので入力が非等価」と自分の言葉で書く（A のとおり解説書は引かない）。
+      あわせて、等価な入力（Excel 側は他のセルに `null` と記述、YAML 側はキー省略）で本体と YAML が一致することを
+      oracle で示すケースを T6/L6 として足す。足したテストは期待値を崩すと落ちることを1度確認する
 - [ ] D. `.rn/ntf-yaml/checks/task-31.md` の3箇所（`:8`・`:9`・`:23`）に「#41 で削除」の注記を入れる
-- [ ] E. 報告書 `.rn/ntf-yaml/report-step4-2.md` に §9 として追記する（A の全件の `file:line`、T6/L6 の本体の値と
-      YAML の値、崩す確認の結果）
+- [ ] E. 報告書 `.rn/ntf-yaml/report-step4-2.md` に §9 として追記する（A の件数と抽出方法、B〜D の変更箇所の
+      `file:line`、T6/L6 の本体の値と YAML の値、崩す確認の結果）
 - [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` 緑。`git status --short` 空。commit・push
 - [ ] G. self-check (OK/NG per completion criterion, record in checks/task-45.md)
 
 **Completion criteria**:
 
-- `mvn -o clean test` 緑
+- `mvn -o clean test` 緑（318件＋T6/L6）
 - `@Ignore` が0件
-- `git grep -nE '\.rst|nablarch-document|解説書|出典|根拠:' -- src` が0件
+- `git grep -nE '\.rst|nablarch-document|解説書|出典' -- src/` が0件（指示書の式）。
+  併せて「根拠:」も0件であることを報告に書く（A の除去対象に含めるため）
 - `git status --short` 空、push 済み
 - 報告書に §9 が追記されている
 
-**やらないこと**: 解説書・`nablarch-testing`・`nablarch-testing-converter` を直さない。テストの動作は変えない
-（変えるのは Javadoc・テストコメント・フィクスチャのコメントだけ。ただし C の T6/L6 は足す）。変えたら報告に挙げる。
-解説書に無い書き方を追いかけない。
+**やらないこと**: 解説書・`nablarch-testing`・`nablarch-testing-converter` を直さない。テストの動作・期待値を変えない
+（A で変えるのはコメントとフィクスチャのコメントだけ。ただし C の T6/L6 は足す）。変えたら報告に挙げる。
+解説書に無い書き方を追いかけない。§8.5 の機械検証（案1）は作らない。
 
 ---
 
