@@ -1464,12 +1464,12 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] A. JaCoCo で `src/main` の C0（命令）/C1（分岐）を計測し、第1回（`#33` 記録）からの差分を出す。是正で下がった箇所があれば挙げる
-- [ ] B. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean install` で本モジュールを `.m2` に入れる
-- [ ] C. `nablarch-testing-converter@d611bec`（**変更しない**）で `mvn -o clean test` を実行し、着手前（`Tests run: 656, Failures: 0, Errors: 0, Skipped: 0`）からの差分を全件挙げる。落ちたテスト名と理由を記録する
-- [ ] D. 報告書 `.rn/ntf-yaml/report-step4-2.md` を指示書 §6 の6項目の順で書く（1. 着手前調査の結果／2. 第2節7件の是正結果／3. 本体を oracle にしたテストの一覧／4. 変異確認の結果／5. 既存テストの期待値を変えた箇所の全件／6. カバレッジ C0/C1 と converter で落ちたテストの全件）
-- [ ] E. `git status --short` が空（`tmp/` はテストスイート自身が作る空ディレクトリなので残ってよい）。commit・push
-- [ ] F. self-check (OK/NG per completion criterion, record in checks/task-43.md)
+- [x] A. JaCoCo で `src/main` の C0（命令）/C1（分岐）を計測し、第1回（`#33` 記録）からの差分を出す。是正で下がった箇所があれば挙げる
+- [x] B. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean install` で本モジュールを `.m2` に入れる
+- [x] C. `nablarch-testing-converter@d611bec`（**変更しない**）で `mvn -o clean test` を実行し、着手前（`Tests run: 656, Failures: 0, Errors: 0, Skipped: 0`）からの差分を全件挙げる。落ちたテスト名と理由を記録する
+- [x] D. 報告書 `.rn/ntf-yaml/report-step4-2.md` を指示書 §6 の6項目の順で書く（1. 着手前調査の結果／2. 第2節7件の是正結果／3. 本体を oracle にしたテストの一覧／4. 変異確認の結果／5. 既存テストの期待値を変えた箇所の全件／6. カバレッジ C0/C1 と converter で落ちたテストの全件）
+- [x] E. `git status --short` が空（`tmp/` はテストスイート自身が作る空ディレクトリなので残ってよい）。commit・push
+- [x] F. self-check (OK/NG per completion criterion, record in checks/task-43.md)
 
 **Completion criteria**:
 
