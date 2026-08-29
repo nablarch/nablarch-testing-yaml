@@ -1,6 +1,5 @@
 # TestDataParser を直接使う場合、第2引数 <ファイル名>/<読み込み単位の名前> は
 # <ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml に解決される。
-# 出典: implementation/class_unit_test/component.rst:313
 list_maps:
   - id: params
     rows:

@@ -66,7 +66,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 **Step 4 第2回（#36〜#44）に適用する Rules**（出典: 指示書 `nablarch-document@origin/ntf-yaml-support` の
 `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`）
 
-- **参照点（ピン）** — 解説書 `nablarch-document`: `afa4f9e`（`git show afa4f9e:<path>` で読む。**作業ツリーの HEAD を読まない**。`ja/` 配下は `05e57a1` と同一。パスは `ja/development_tools/testing_framework/…`）／本モジュール: `3ee39c9`（作業ツリーで作業してよい）／`nablarch-testing`: `3c4bd2a`（変更しない）／`nablarch-testing-converter`: `d611bec`（変更しない）
+- **参照点（ピン）** — 解説書 `nablarch-document`: `a6da1f6`（`#45` で `afa4f9e` から取り直した。`git show a6da1f6:<path>` で読む。**作業ツリーの HEAD を読まない**。`afa4f9e` との差は `ja/` の3行のみで `implementation/testdata_notation.rst:889`・`:1502` と `tools/testdata_converter.rst:63`、行番号は変わらない。パスは `ja/development_tools/testing_framework/…`）／本モジュール: `3ee39c9`（作業ツリーで作業してよい）／`nablarch-testing`: `3c4bd2a`（変更しない）／`nablarch-testing-converter`: `d611bec`（変更しない）
 - **判断の軸**（2026-08-28 ユーザー確定）— 中間モデル＝NTF 仕様＝現行 Excel 実装が定める意味。「YAML で表せて Excel で表せない意味」は存在しない。YAML の記法がこの意味集合からはみ出す場合、**対応する意味があれば写す（末尾 `null` → `""`）、無ければ弾く（エラー）**。静的に決まるものはスキーマで、設定に依存するもの（`fw_header:` のキー）は実装で検査する
 - **第2節の7件は直す。範囲の判断を持たない**（指示書 §1・渡し文面）。解説書が正であり、実装が追いついていない
 - **既存テストが落ちたら、期待値を解説書に合わせて直す**（指示書 §1）。「変えた／変えなかった」を件数つきで報告する（完了条件4）
@@ -1520,7 +1520,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 ---
 
-### #45: 解説書への参照を `src/` から取り除き、2-5 の規則をスキーマへ追随させる
+### ~~#45: 解説書への参照を `src/` から取り除き、2-5 の規則をスキーマへ追随させる~~
 
 **Purpose**: 報告書 §8.4 の追随と §8.5 のユーザー判断（2026-08-29）を実施する。解説書の出典は `src/` に置かず
 `.rn/` の報告書・台帳で追跡する方式へ移す。あわせて §8.1 の判定を T5/L5 の Javadoc に反映し、
@@ -1534,11 +1534,11 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 
 **Steps**:
 
-- [ ] O. Rules の「参照点（ピン）」の解説書だけを `afa4f9e` → `a6da1f6` に取り直す（本モジュール・`nablarch-testing`・
+- [x] O. Rules の「参照点（ピン）」の解説書だけを `afa4f9e` → `a6da1f6` に取り直す（本モジュール・`nablarch-testing`・
       converter のピンは変えない）。理由: `afa4f9e` の `testdata_notation.rst:1502` は「他のカラムがすべて空文字の
       エントリとして読み込まれる」のままで、C の前提と矛盾する。`a6da1f6` との差は `testdata_notation.rst:889`・`:1502` と
       `testdata_converter.rst:63` の3行で行番号は変わらない（指示書 §8.2-2）
-- [ ] A. `src/main`・`src/test`（フィクスチャの YAML とそのコメントを含む）から解説書への参照を取り除く。
+- [x] A. `src/main`・`src/test`（フィクスチャの YAML とそのコメントを含む）から解説書への参照を取り除く。
       対象は `.rst` のパス（行番号の有無を問わない）・`nablarch-document`・「解説書」「出典」「根拠:」として解説書を
       指す記述・解説書の節見出し・逐語引用。Javadoc とテストの説明は**何を確かめるかを自分の言葉で書く**
       （既存の Given/When/Then と本体クラス名への言及は残してよい）。
@@ -1549,19 +1549,19 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
       `MockMessages.java:64`／`YamlMessageBuilderTest.java:1155` の `MessageParser.java:108`）。
       本モジュール自身を指す `YamlLoader.java:151`（`YamlMessageBuilderTest.java:1385`）は対象外で残す。
       着手前に取り除く行の全件（`file:line`）を機械抽出して件数を報告する
-- [ ] B. 2-5 の規則（バックスラッシュと `r` の2文字を含む値はエラー）を、スキーマ `description` の5箇所に1文ずつ追記する。
+- [x] B. 2-5 の規則（バックスラッシュと `r` の2文字を含む値はエラー）を、スキーマ `description` の5箇所に1文ずつ追記する。
       `table_data.rows`（`:108`）／`list_map_data.rows`（`:136`）／`message_data.fw_header`（`:216`）／
       `record_fragment.rows`（`:380`）／`$defs.fw_header`（`:433`）。行番号は `ef1fc63` のスキーマ（指示書 §8.2-1）。
       文言は `record-separator` の既存文（#42。`:293`）と揃える。**実装の挙動を写さない**
-- [ ] C. `YamlBlankEntryOracleTest` の T5/L5 の Javadoc から「仕様差」の枠組みを外し、「キーを省略したカラムは null を
+- [x] C. `YamlBlankEntryOracleTest` の T5/L5 の Javadoc から「仕様差」の枠組みを外し、「キーを省略したカラムは null を
       明示したのと同じ。Excel の空セルは `""` なので入力が非等価」と自分の言葉で書く（A のとおり解説書は引かない）。
       あわせて、等価な入力（Excel 側は他のセルに `null` と記述、YAML 側はキー省略）で本体と YAML が一致することを
       oracle で示すケースを T6/L6 として足す。足したテストは期待値を崩すと落ちることを1度確認する
-- [ ] D. `.rn/ntf-yaml/checks/task-31.md` の3箇所（`:8`・`:9`・`:23`）に「#41 で削除」の注記を入れる
-- [ ] E. 報告書 `.rn/ntf-yaml/report-step4-2.md` に §9 として追記する（A の件数と抽出方法、B〜D の変更箇所の
+- [x] D. `.rn/ntf-yaml/checks/task-31.md` の3箇所（`:8`・`:9`・`:23`）に「#41 で削除」の注記を入れる
+- [x] E. 報告書 `.rn/ntf-yaml/report-step4-2.md` に §9 として追記する（A の件数と抽出方法、B〜D の変更箇所の
       `file:line`、T6/L6 の本体の値と YAML の値、崩す確認の結果）
-- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` 緑。`git status --short` 空。commit・push
-- [ ] G. self-check (OK/NG per completion criterion, record in checks/task-45.md)
+- [x] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` 緑。`git status --short` 空。commit・push
+- [x] G. self-check (OK/NG per completion criterion, record in checks/task-45.md)
 
 **Completion criteria**:
 

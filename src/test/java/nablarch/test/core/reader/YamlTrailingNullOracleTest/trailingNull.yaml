@@ -1,5 +1,4 @@
-# 末尾フィールドの null の扱い（解説書 implementation/testdata_notation.rst:889・:1155）を
-# 本体（Excel 経路）と突き合わせるための YAML 側入力。
+# 末尾フィールドの null の扱いを本体（Excel 経路）と突き合わせるための YAML 側入力。
 #
 # 本体側の同じ意味の入力は YamlTrailingNullOracleTest#buildOracleBook が POI で組み立てる。
 # ケース名（F1〜F6・M1・S2）は Excel 側のシート名と一致しており、1 対 1 に対応する。

@@ -63,14 +63,14 @@ public class YamlMessageBuilderTest {
      * 「上流が変わった」ことと次にすべきことを明示する。</p>
      */
     private static final String UPSTREAM_CHANGED =
-            "本体 ../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107-:110 の"
+            "本体 MessageParser の"
                     + "集合生成が変わった可能性がある。YamlMessageBuilder.fwHeaderFields() を本体に合わせ直すこと。";
 
     private YamlMessageBuilder builder;
 
     @Before
     public void before() {
-        // 電文用のインタープリタリスト（解説書が定める CompositeInterpreter の 1 つだけ）を使う。
+        // 電文用のインタープリタリスト（CompositeInterpreter の 1 つだけ）を使う。
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("yamlMessagingInterpreters");
         builder = new YamlMessageBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
@@ -121,8 +121,7 @@ public class YamlMessageBuilderTest {
      * 取り出すヘルパー。
      *
      * <p>
-     * 本体 {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107}-{@code :110}
-     * のフィールド初期化は {@code MessageParser} の生成時に走るため、生成のたびに現在の
+     * 本体 {@code MessageParser} のフィールド初期化は {@code MessageParser} の生成時に走るため、生成のたびに現在の
      * {@code reader.fwHeaderfields} が反映される。解析は行わないので reader・interpreters は null でよい。
      * </p>
      * <p>
@@ -935,11 +934,8 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
-    // fw_header: のキーは reader.fwHeaderfields の名前だけを許すこと
-    // 出典: nablarch-document の implementation/testdata_notation.rst
-    //       「メッセージングのデータを記述する」節の「YAML形式の場合」項
-    //       「fw_header: に記載できるキーは、reader.fwHeaderfields の名前
-    //         （省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」
+    // fw_header: のキーは reader.fwHeaderfields の名前
+    // （省略時は requestId・userId・resendFlag・resultCode）だけを許し、それ以外はエラーになること
     // ========================================================================
 
     /**
@@ -1074,9 +1070,8 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * 完了条件「集合の作り方が本体と同じ（同じキー・同じ既定 4 つ・同じ {@code makeArray}）」を
-     * javadoc やレビューではなくテストで守る。本体の集合は
-     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107}-{@code :110}
-     * の private フィールド {@code fwHeaderFields} をリフレクションで読む。
+     * javadoc やレビューではなくテストで守る。本体の集合は {@code MessageParser} の
+     * private フィールド {@code fwHeaderFields} をリフレクションで読む。
      * </p>
      *
      * <p>
@@ -1152,7 +1147,7 @@ public class YamlMessageBuilderTest {
 
     /**
      * [YamlMessageBuilder][MS-04] buildMessagePool: {@code reader.fwHeaderfields} が空文字の場合、
-     * 未設定と同じく既定 4 キーが通ること（本体 {@code MessageParser.java:108} の {@code isNullOrEmpty} ガード）。
+     * 未設定と同じく既定 4 キーが通ること（本体 {@code MessageParser} の {@code isNullOrEmpty} ガード）。
      *
      * <p>
      * 「messages の {@code fw_header:} マップの既定 4 キーが getFwHeader() に保持されること」（MS-04）も
@@ -1881,12 +1876,9 @@ public class YamlMessageBuilderTest {
      * エラーになること（2-5）。
      *
      * <p>
-     * 解説書 {@code implementation/testdata_notation.rst} の
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
-     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
-     * YAML 形式ではエラーになる。」
-     * {@code fw_header:} の値は解釈（interpret）を通らないため、{@code convertFwHeader} が検査を直接呼ぶ<br>
+     * 何を担保するか: バックスラッシュと {@code r} の 2 文字（{@code "\\r"}）を含む値は YAML 形式では
+     * 書けずエラーになること。{@code fw_header:} の値は解釈（interpret）を通らないため、
+     * {@code convertFwHeader} が検査を直接呼ぶ<br>
      * Given: messages の literalCrInFwHeaderValue001 の fw_header に requestId: "\\r"（2 文字）<br>
      * When:  buildMessagePool(yaml, "messages", "literalCrInFwHeaderValue001", path) を呼ぶ<br>
      * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれること
@@ -2087,7 +2079,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] 電文用のインタープリタリストが解説書の定める 1 つだけであること。
+     * [YamlMessageBuilder] 電文用のインタープリタリストが CompositeInterpreter の 1 つだけであること。
      *
      * <p>
      * null・空文字・ダブルクォート・改行文字は YAML のパーサが構文として解釈するため、Excel 形式で

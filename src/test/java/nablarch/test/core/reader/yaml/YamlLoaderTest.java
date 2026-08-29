@@ -567,7 +567,6 @@ public class YamlLoaderTest {
      * 解決されること（前方一致は発生しない）。{@code setup_tables_extra} のように
      * {@code setup_tables} に前方一致するキーは {@code setup_tables} として読まれず、
      * スキーマ（{@code additionalProperties: false}）違反になる。<br>
-     * 根拠: implementation/testdata_notation.rst:205<br>
      * Given: トップレベルキーが setup_tables_extra だけの YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされ、違反の種別が additionalProperties で、
@@ -605,7 +604,6 @@ public class YamlLoaderTest {
      * <p>
      * 何を担保するか: 電文のレコードレイアウトは1つであり、2つ以上記述するとエラーになること。
      * ファイルデータと異なり、電文は複数のレコードレイアウトを持たない。<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: messages の1エントリが records を2つ持つ YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
@@ -638,7 +636,6 @@ public class YamlLoaderTest {
      * <p>
      * 何を担保するか: 要求電文の期待値（expected_request_message_data）でも
      * レコードレイアウトは1つに限られること。<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: expected_request_body_messages の1エントリが records を2つ持つ YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
@@ -672,7 +669,6 @@ public class YamlLoaderTest {
      * <p>
      * 何を担保するか: 同期応答メッセージ送信の応答電文（group_message_data）でも
      * レコードレイアウトは1つに限られること。<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: response_body_messages の1エントリが records を2つ持つ YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  YamlSchemaValidationException がスローされ、違反の種別が maxItems で、
@@ -706,7 +702,6 @@ public class YamlLoaderTest {
      * 何を担保するか: レコードレイアウト1つの上限は電文だけの制約であり、
      * ファイルデータには課されないこと（ファイルは複数のレコードレイアウトを持てる）。
      * 電文3セクションだけに maxItems を入れていることの対照となる。<br>
-     * 根拠: implementation/testdata_notation.rst:1153（「ファイルデータのように複数のレコードレイアウトを持たない」）<br>
      * Given: setup_files の1エントリが records を2つ持つ YAML ファイル<br>
      * When:  load を呼ぶ<br>
      * Then:  例外は発生せず、records が2件のままロードできること

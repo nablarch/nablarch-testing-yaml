@@ -62,7 +62,7 @@ public class YamlFileBuilderTest {
 
     @Before
     public void before() {
-        // YAML 形式のインタープリタリスト（解説書が定める 2 つだけ）を使う。
+        // YAML 形式のインタープリタリスト（DateTimeInterpreter・CompositeInterpreter の 2 つだけ）を使う。
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("yamlInterpreters");
         builder = new YamlFileBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
@@ -1049,11 +1049,9 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: データ行にバックスラッシュと r の 2 文字を書くとエラーになること（2-5）。
      *
      * <p>
-     * 解説書 {@code implementation/testdata_notation.rst} の
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
-     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
-     * YAML 形式ではエラーになる。」<br>
+     * 何を担保するか: バックスラッシュと {@code r} の 2 文字（{@code "\\r"}）を含む値は YAML 形式では書けず、
+     * エラーになること。Excel 形式ではこの 2 文字が必ず CR に変換されるため、
+     * この 2 文字を含む値はテスティングフレームワークの仕様上存在しない<br>
      * Given: expected_files の literalCrInRow グループのデータ行に {@code "\\r"}（2 文字）<br>
      * When:  buildFileList(yaml, "expected_files", "[literalCrInRow]", path) を呼ぶ<br>
      * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・path）が含まれること
@@ -1082,7 +1080,7 @@ public class YamlFileBuilderTest {
      *
      * <p>
      * 何を担保するか: ファイル系のデータ行でも検査が部分一致（{@code String#contains}）であること。
-     * 解説書が言うのは「2 文字を<b>含む</b>値」である<br>
+     * 禁じているのは「2 文字を<b>含む</b>値」である<br>
      * Given: expected_files の literalCrInsideRow グループのデータ行に {@code "AB\\rCD"}<br>
      * When:  buildFileList(yaml, "expected_files", "[literalCrInsideRow]", path) を呼ぶ<br>
      * Then:  IllegalStateException がスローされ、メッセージに値全体と出所（セクション・path）が含まれること
@@ -1139,9 +1137,7 @@ public class YamlFileBuilderTest {
      * [YamlFileBuilder] buildFileList: データ行のバックスラッシュと n の 2 文字はそのまま値になること（2-5）。
      *
      * <p>
-     * 解説書 {@code implementation/testdata_notation.rst} の
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-     * 「{@code "\\n"} は Excel 形式と同じく2文字のまま残る」。
+     * 何を担保するか: {@code "\\n"} は Excel 形式と同じく 2 文字のまま残ること。
      * 拒否するのはバックスラッシュと {@code r} の 2 文字だけであることを固定する<br>
      * Given: expected_files の literalLfInRow グループのデータ行に {@code "\\n"}（2 文字）<br>
      * When:  buildFileList(yaml, "expected_files", "[literalLfInRow]", path) を呼ぶ<br>

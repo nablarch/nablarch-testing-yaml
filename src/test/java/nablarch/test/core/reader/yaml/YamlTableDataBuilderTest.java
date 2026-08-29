@@ -52,8 +52,6 @@ public class YamlTableDataBuilderTest {
 
     /**
      * {@code ${文字種,文字数}} で使用できる14文字種。
-     *
-     * <p>出典: implementation/testdata_notation.rst:1315-:1322</p>
      */
     private static final String[] CHARACTER_TYPES = {
             "半角英字", "半角数字", "半角記号", "半角カナ",
@@ -616,11 +614,9 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: データ行にバックスラッシュと r の 2 文字を書くとエラーになること（2-5）。
      *
      * <p>
-     * 解説書 {@code implementation/testdata_notation.rst} の
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-     * 「バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は書けない。Excel 形式ではこの2文字が必ず
-     * CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在せず、
-     * YAML 形式ではエラーになる。」<br>
+     * 何を担保するか: バックスラッシュと {@code r} の 2 文字（{@code "\\r"}）を含む値は YAML 形式では書けず、
+     * エラーになること。Excel 形式ではこの 2 文字が必ず CR に変換されるため、
+     * この 2 文字を含む値はテスティングフレームワークの仕様上存在しない<br>
      * Given: list_maps の literalCrTest エントリに LITERAL_CR_COL: "\\r"（2 文字）<br>
      * When:  buildListMapRows(yaml, "literalCrTest", path) を呼ぶ<br>
      * Then:  IllegalStateException がスローされ、メッセージに値と出所（セクション・id）が含まれ、
@@ -657,9 +653,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: バックスラッシュと n の 2 文字はそのまま値になること（2-5）。
      *
      * <p>
-     * 解説書 {@code implementation/testdata_notation.rst} の
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-     * 「{@code "\\n"} は Excel 形式と同じく2文字のまま残る」。
+     * 何を担保するか: {@code "\\n"} は Excel 形式と同じく 2 文字のまま残ること。
      * 拒否するのはバックスラッシュと {@code r} の 2 文字だけであることを固定する<br>
      * Given: list_maps の literalLfTest エントリに LITERAL_LF_COL: "\\n"（2 文字）<br>
      * When:  buildListMapRows(yaml, "literalLfTest", path) を呼ぶ<br>
@@ -684,7 +678,7 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: 2 文字が長い値の途中にあってもエラーになること（2-5）。
      *
      * <p>
-     * 何を担保するか: 検査が部分一致（{@code String#contains}）であること。解説書が言うのは
+     * 何を担保するか: 検査が部分一致（{@code String#contains}）であること。禁じているのは
      * 「2 文字を<b>含む</b>値」であり、値がちょうど 2 文字の場合しか固定していないと
      * 完全一致・前方一致・後方一致に退化させても気づけない<br>
      * Given: list_maps の literalCrInsideTest エントリに LONG_COL: "AB\\rCD"（2 文字が途中にある）<br>
@@ -745,8 +739,8 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * 何を担保するか: 検査が大文字小文字を区別すること。依存先 nablarch-testing の
-     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31}
-     * の {@code DEFAULT_PATTERN}（{@code "\\\\r"}）は小文字の {@code r} だけを対象にしており、
+     * {@code LineSeparatorInterpreter} の {@code DEFAULT_PATTERN}（{@code "\\\\r"}）は
+     * 小文字の {@code r} だけを対象にしており、
      * バックスラッシュと大文字 {@code R} は Excel 形式でも CR にならず 2 文字のまま残る。
      * したがって YAML 形式でも書けてよい<br>
      * Given: list_maps の upperCaseRTest エントリに UPPER_R_COL: "\\R"（2 文字）<br>
@@ -909,9 +903,8 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildListMapRows: 14文字種それぞれで ${文字種,3} が該当文字種3文字になること。
      *
      * <p>
-     * 何を担保するか: {@code ${文字種,文字数}} で使用できる文字種が解説書の列挙する14種類すべてで
+     * 何を担保するか: {@code ${文字種,文字数}} で使用できる14種類の文字種すべてで
      * 変換され、指定した文字数（サロゲートペアは3コードポイント）になること。<br>
-     * 根拠: implementation/testdata_notation.rst:1315-:1322<br>
      * Given: list_maps の charTypeTest_&lt;文字種&gt; に GEN_COL: "${&lt;文字種&gt;,3}" を書いた YAML（文字種ごとに別エントリ）<br>
      * When:  文字種ごとに buildListMapRows(yaml, "charTypeTest_&lt;文字種&gt;", path) を呼ぶ<br>
      * Then:  いずれの文字種でも記法が変換され、3 コードポイントの文字列になること
@@ -919,7 +912,7 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * 1 つの文字種で落ちても残りが検証されるよう、文字種ごとの結果を集めてから一度に判定する。
-     * 各文字種がどの文字集合から生成されるかは解説書に列挙が無いため、ここでは変換されることと
+     * 各文字種がどの文字集合から生成されるかは定められていないため、ここでは変換されることと
      * コードポイント数だけを固定する（半角英字・半角数字の文字集合は
      * {@link #buildListMapRows_charTypeGeneratorProducesSpecifiedLength} で固定している）。
      * </p>
@@ -964,7 +957,6 @@ public class YamlTableDataBuilderTest {
      * <p>
      * 何を担保するか: {@code ${文字種,文字数}} を組み合わせて使った場合、記法の部分だけが変換され、
      * それ以外の文字はそのまま残ること。<br>
-     * 根拠: implementation/testdata_notation.rst:1324<br>
      * Given: list_maps の charTypeCombinedTest に COMBINED_COL: "${半角数字,2}-${半角数字,4}"<br>
      * When:  buildListMapRows(yaml, "charTypeCombinedTest", path) を呼ぶ<br>
      * Then:  値が 7 文字になり、3 文字目が "-" のまま残ること
@@ -997,7 +989,6 @@ public class YamlTableDataBuilderTest {
      * YAML のパーサが制御文字へ変換すること。CR 側は
      * {@link #buildListMapRows_lineSeparatorIsInterpretedOnlyByYamlParser} で固定しており、
      * ここでは LF 側を固定する。<br>
-     * 根拠: implementation/testdata_notation.rst:1443-:1445<br>
      * Given: list_maps の lineFeedTest に YAML_LF_COL: "\n"<br>
      * When:  buildListMapRows(yaml, "lineFeedTest", path) を呼ぶ<br>
      * Then:  値が LF（U+000A）1 文字になること
@@ -1476,9 +1467,8 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: setup_tables の先頭行の値が全て空文字でも、その行が残り列名を決めること。
      *
      * <p>
-     * 全ての値が空文字の行は「値を 1 つも持たない行」ではないため残る（出典: 解説書
-     * 「コメント・マーカーカラム・空エントリを扱う」節「{@code ""} と書いた空文字は値であり、
-     * すべての値が {@code ""} のエントリは読み飛ばされず、全カラムが空文字のエントリとして読み込まれる」）。
+     * {@code ""} と書いた空文字は値であるため、全ての値が空文字の行は「値を 1 つも持たない行」ではなく、
+     * 読み飛ばされずに全カラムが空文字の行として読み込まれる。
      * 先頭行のキー集合を後続行と変えてあるので、列名が先頭行から決まらなければ列名リストが食い違って落ちる。<br>
      * Given: setup_tables の blankValueRowLeading グループに 値が全て空の 2 キーの行・5 キーの通常行 の 2 エントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[blankValueRowLeading]", false, path) を呼ぶ<br>
@@ -1806,8 +1796,8 @@ public class YamlTableDataBuilderTest {
      * [YamlTableDataBuilder] buildTableDataList: 値が全て Java null の行も、行として保持されること。
      *
      * <p>
-     * 解説書「コメント・マーカーカラム・空エントリを扱う」節が YAML 形式のスキップ条件として挙げるのは
-     * 「{@code rows:} 内の要素が空マッピング（{@code {}}）の場合」だけであり、Java null はこれに当たらない。
+     * YAML 形式で読み飛ばされる条件は「{@code rows:} の要素が空マッピング {@code {}} であること」だけであり、
+     * Java null はこれに当たらない。
      * クォートなしの {@code null} とキーだけ書いた {@code COL:} はロード時点で Java null になるため、
      * これらだけの行が消えないことを固定する。<br>
      * Given: setup_tables の nullValueOnlyRow グループに 通常行・全ての値が Java null の行 の 2 エントリ<br>
@@ -1954,7 +1944,6 @@ public class YamlTableDataBuilderTest {
      * <p>
      * 何を担保するか: YAML 形式のグループ ID はグループ ID の完全一致で判定され、前方一致は発生しないこと。
      * {@code case01} を指定したとき、前方一致する {@code case010} を持つエントリは収集されない。<br>
-     * 根拠: implementation/testdata_notation.rst:255-:269<br>
      * Given: setup_tables に group_id が {@code case01} のエントリと {@code case010} のエントリ<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[case01]", false, path) を呼ぶ<br>
      * Then:  {@code case01} のエントリ 1 件だけが返り、{@code case010} のエントリは含まれないこと
@@ -1990,7 +1979,6 @@ public class YamlTableDataBuilderTest {
      * 何を担保するか: トップレベルのキーごとに独立して読み込むため、記述順序や異なるデータブロックの
      * 交互記述を気にする必要がないこと。group_id が {@code a}・{@code b}・{@code a} の順に並んでいても、
      * {@code a} の収集結果は 2 件になる（Excel 形式のように 1 件で打ち切られない）。<br>
-     * 根拠: implementation/testdata_notation.rst:339<br>
      * Given: expected_tables に group_id が interleavedA・interleavedB・interleavedA の順で並ぶ 3 エントリ<br>
      * When:  buildTableDataList(yaml, "expected_tables", "[interleavedA]", false, path) を呼ぶ<br>
      * Then:  interleavedA のエントリが 2 件とも収集され、記述順に並ぶこと
@@ -2019,7 +2007,6 @@ public class YamlTableDataBuilderTest {
      * 何を担保するか: バッチ起動時のコマンドライン引数を表す {@code args[n]} 形式のカラムが、
      * {@code [} {@code ]} を含んでいてもマーカーカラム（{@code [COL]} 形式）とはみなされず、
      * 返る Map のキーが文字列 {@code "args[0]"} のまま残ること。<br>
-     * 根拠: implementation/testdata_notation.rst:503-:507<br>
      * Given: list_maps の argsColumnTest に args[0]・args[1] のキーを持つ行<br>
      * When:  buildListMapRows(yaml, "argsColumnTest", path) を呼ぶ<br>
      * Then:  キー "args[0]"・"args[1]" が結果 Map にそのまま含まれ、値が取得できること

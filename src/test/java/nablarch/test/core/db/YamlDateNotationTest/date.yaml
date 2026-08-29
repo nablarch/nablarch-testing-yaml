@@ -1,4 +1,4 @@
-# 3-5: 日付の記述形式（implementation/testdata_notation.rst:1328-:1333）を実経路で固定するフィクスチャ。
+# 3-5: 日付の記述形式を実経路で固定するフィクスチャ。
 # 時刻のミリ秒または全部を後置0埋めの形で省略できることを、TIMESTAMP_COL への INSERT で確認する。
 # DATE_COL は NOT NULL カラムなので値が要るが、こちらは JDBC タイムスタンプエスケープ形式で書き、
 # 検証対象（yyyyMMddHHmmssSSS の後置0埋め省略）と混ざらないようにしてある。

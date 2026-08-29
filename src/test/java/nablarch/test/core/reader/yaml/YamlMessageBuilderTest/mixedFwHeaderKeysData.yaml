@@ -1,10 +1,8 @@
 # 同一ファイルに「不正キーのエントリ」と「正常エントリ」を同居させたフィクスチャ。
 # fw_header: のキー検査が、実際に読み出すエントリに対してのみ遅延実行されること
 # （誤記エントリが他エントリの読み出しを巻き添えにしないこと）を検証する。
-# fw_header に記載できるキーは reader.fwHeaderfields の名前だけである
-# （出典: nablarch-document の implementation/testdata_notation.rst
-#  「メッセージングのデータを記述する」節の「YAML形式の場合」項
-#  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）。
+# fw_header に記載できるキーは reader.fwHeaderfields の名前
+# （省略時は requestId・userId・resendFlag・resultCode）だけであり、それ以外のキーがあるとエラーになる。
 #
 # 不正キーの境界値（大文字小文字違い・~・数値・真偽値）も、実 YAML から到達できるものはこのファイルで押さえる。
 #

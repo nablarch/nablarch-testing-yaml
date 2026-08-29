@@ -988,3 +988,152 @@ worktree も `git worktree remove --force` 済み（`git worktree list` は本�
 ### B. §8.3 の起票先
 
 `.rn/ntf-yaml/report-nablarch-document-discrepancies.md` は本タスクでは書き換えていない。
+
+---
+
+## 9. `#45`: 解説書への参照の除去・2-5 のスキーマ追随・T6/L6 の追加
+
+指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md` §8（承認文面と確認2件への回答・訂正3件）による。
+
+### 9.0 Rules の参照点（ピン）の取り直し
+
+`steering.md:69` の「参照点（ピン）」の解説書だけを `afa4f9e` → `a6da1f6` に取り直した
+（本モジュール `3ee39c9`・`nablarch-testing` `3c4bd2a`・`nablarch-testing-converter` `d611bec` は変えていない）。
+`git -C ../nablarch-document diff --stat afa4f9e a6da1f6 -- ja/` は 2 ファイル 3 挿入 3 削除で、行番号は変わらない。
+あわせて、ピン行にあった「`ja/` 配下は `05e57a1` と同一」の注記を落とした。
+`git diff --stat 05e57a1 a6da1f6 -- ja/` が 2 ファイル 3 挿入 3 削除を返し、`a6da1f6` では成り立たないためである。
+
+### 9.1 `src/` から取り除いた解説書への参照 — 122 行・28 ファイル
+
+抽出方法は `git grep -nE '\.rst|nablarch-document|解説書|出典|根拠:' -- src`（着手前・`58c7bc1` 時点）。
+パターン別の出現行数（重複あり。`git grep -ncE '<pat>' -- src` の合計）は
+`.rst` 77 行（26 ファイル）／`nablarch-document` 9 行／「解説書」52 行／「出典」28 行／「根拠:」37 行で、
+ユニークな行の合計が 122 行・28 ファイルである。`.rst` 77 行・26 ファイルと
+「解説書／出典／根拠:」108 行は `aac55ad` の実測と一致する。
+
+| ファイル | 件数 | 取り除いた行（着手前の行番号） |
+|---|---|---|
+| `src/main/java/nablarch/test/core/reader/yaml/YamlFileBuilder.java` | 1 | 261 |
+| `src/main/java/nablarch/test/core/reader/yaml/YamlMessageBuilder.java` | 3 | 54, 55, 57 |
+| `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java` | 12 | 174, 175, 275, 276, 344, 345, 347, 360, 361, 377, 406, 421 |
+| `src/test/java/nablarch/test/core/db/YamlDateNotationTest.java` | 3 | 30, 113, 133 |
+| `src/test/java/nablarch/test/core/db/YamlDateNotationTest/date.yaml` | 1 | 1 |
+| `src/test/java/nablarch/test/core/reader/YamlBlankEntryOracleTest.java` | 16 | 32, 33, 187, 223, 240, 256, 273, 297, 459, 460, 484, 485, 506, 508, 524, 526 |
+| `src/test/java/nablarch/test/core/reader/YamlBlankEntryOracleTest/blankEntry.yaml` | 1 | 2 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java` | 16 | 290, 318, 321, 324, 356, 932, 981, 1102, 1205, 1658, 1662, 1702, 1718, 1813, 1855, 1897 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/legacyFwHeaderRecord.yaml` | 1 | 4 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/messageData.yaml` | 3 | 24, 43, 122 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/nativeTypes.yaml` | 3 | 17, 25, 33 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/otherDir/CommonTestData/employees.yaml` | 1 | 3 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/quotedValues.yaml` | 1 | 1 |
+| `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest/sendSyncTestData/RM21AA0101/message.yaml` | 1 | 4 |
+| `src/test/java/nablarch/test/core/reader/YamlTrailingNullOracleTest.java` | 15 | 29, 31, 45, 131, 205, 221, 237, 255, 271, 288, 309, 342, 373, 397, 399 |
+| `src/test/java/nablarch/test/core/reader/YamlTrailingNullOracleTest/trailingNull.yaml` | 1 | 1 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest.java` | 4 | 65, 1052, 1085, 1142 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest/fileData.yaml` | 1 | 468 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlLoaderTest.java` | 5 | 570, 608, 641, 675, 709 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlLoaderTest/schemaViolation_prefixMatchedTopLevelKey.yaml` | 1 | 4 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest.java` | 4 | 73, 939, 1884, 2090 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/customFwHeaderData.yaml` | 1 | 3 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/fwHeaderMapData.yaml` | 2 | 7, 54 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest/mixedFwHeaderKeysData.yaml` | 1 | 5 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlSectionTest.java` | 2 | 563, 598 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest.java` | 14 | 56, 619, 660, 687, 912, 914, 922, 967, 1000, 1479, 1809, 1957, 1993, 2022 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest/nativeTypes.yaml` | 4 | 19, 83, 88, 133 |
+| `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest/tableData.yaml` | 4 | 169, 189, 326, 414 |
+
+Javadoc・テストの説明は、引用と出典表記をやめて「何を確かめるか」を自分の言葉で書き直した。
+既存の Given/When/Then と本体クラス名への言及は残している。
+
+**他リポジトリのソースを指す `path:line` は、パスと行番号を落としてクラス名だけ残した（10 箇所）。**
+
+| 箇所 | 前 | 後 |
+|---|---|---|
+| `YamlSection.java`（`:384`） | `../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31` | `LineSeparatorInterpreter` |
+| `YamlSection.java`（`:407`） | `../nablarch-testing/src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:183` | `TestDataParsingTemplate` |
+| `YamlMessageBuilderTest.java`（`:66`・`:124`・`:1078`） | `../nablarch-testing/src/main/java/nablarch/test/core/reader/MessageParser.java:107`-`:110` | `MessageParser` |
+| `YamlMessageBuilderTest.java`（`:1155`） | `MessageParser.java:108` | `MessageParser` |
+| `YamlSectionTest.java`（`:262`） | `../nablarch-testing-converter/src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java:73` | `YamlTestCoreAdapter` |
+| `YamlTableDataBuilderTest.java`（`:748`） | `../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31` | `LineSeparatorInterpreter` |
+| `YamlTestDataParserTest.java`（`:1857`） | `SendSyncSupport.java:347`・`:393` | `SendSyncSupport#createTestDataInfo` |
+| `YamlTrailingNullOracleTest.java`（`:317`） | `nablarch-testing` の `MockMessages.java:64` | `MockMessages$MockMessage#removePadding` |
+
+本モジュール自身を指す `YamlLoader.java:151`（`YamlMessageBuilderTest.java:1385`）は指示どおり対象外で、そのまま残している。
+
+**確認**（作業後・`git grep` は追跡ファイルに対して実行）:
+
+- `git grep -nE '\.rst|nablarch-document|解説書|出典' -- src/` → **0 件**（指示書の式）
+- `git grep -n '根拠:' -- src/` → **0 件**
+- `git grep -nE '\.\./nablarch-|[A-Za-z]+\.java:[0-9]+' -- src` → **1 件**（上記の `YamlLoader.java:151` のみ）
+
+### 9.2 2-5 の規則をスキーマ `description` 5 箇所へ追記
+
+文言は `record-separator`（`:293`。`#42` で追記）の既存文をそのまま切り出して揃えた。
+
+| 追記先 | 行（追記後） | 追記した文 |
+|---|---|---|
+| `$defs.table_data.properties.rows` | `:108` | 【値に書けない2文字】バックスラッシュと `r` の2文字（`"\\r"`）を含む値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない） |
+| `$defs.list_map_data.properties.rows` | `:136` | 同上 |
+| `$defs.message_data.properties.fw_header` | `:216` | バックスラッシュと `r` の2文字（`"\\r"`）を含むキー名・値はエラーになる（以下同文） |
+| `$defs.record_fragment.properties.rows` | `:380` | バックスラッシュと `r` の2文字（`"\\r"`）を含む値はエラーになる（以下同文） |
+| `$defs.fw_header` | `:433` | バックスラッシュと `r` の2文字（`"\\r"`）を含むキー名・値はエラーになる（以下同文） |
+
+**前提（指示書 §8 に無いため、ここに書いて進めた）**: `fw_header` の 2 箇所だけ「キー名・値」とした。
+`YamlMessageBuilder`（`convertFwHeader`）がキーと値の両方に `YamlSection#rejectLiteralCr` を掛けており、
+スキーマ検証を通過した入力に対して外から観測できる挙動だからである（`$defs.fw_header` は
+`additionalProperties: {"type":"string"}` でキー名を制限しないため、この 2 文字を含むキーはスキーマでは止まらない）。
+残る 3 箇所は値だけを対象にした。テーブル系・`list_maps` のカラム名は検査を通らず素通りするためである。
+JSON として壊れていないことは `json.load` で確認した。
+
+### 9.3 `YamlBlankEntryOracleTest` の T5/L5 の書き直しと T6/L6 の追加
+
+T5/L5 の Javadoc から「仕様差」の枠組みを外し、「キーを省略したカラムは `null` を明示したのと同じ扱いになる。
+Excel の空セルは `""` なので入力が非等価であり、値だけが分かれる」という説明に書き直した
+（`YamlBlankEntryOracleTest.java` の T5・L5 の Javadoc と、本文コメント 2 箇所の「（仕様差）」→「（入力が非等価なため）」）。
+クラス Javadoc の「マーカーカラムだけに値がある行」の節も、2 通り → 3 通り（T4/L4・T5/L5・T6/L6）に書き直した。
+
+**足したケース**:
+
+| ケース | 本体（Excel）側の入力 | YAML 側の入力 | 本体の値 | YAML の値 |
+|---|---|---|---|---|
+| T6（`setup_tables`） | カラム名行 `[NO]`,`PK_COL1`,`VARCHAR2_COL`,`NULL_COL`。通常行 `1`,`00001`,`v1`,`n1`。判定対象行 `2`,`null`,`null`,`null` | 通常行 `"[NO]": "1"` ＋ 3 カラム。判定対象行は `- "[NO]": "2"` のみ（他はキーごと省略） | 1 行目 `00001`／`v1`／`n1`、2 行目 `null`／`null`／`null` | 本体と同一（カラム名・行数・全カラムの値が一致） |
+| L6（`list_maps`） | キー名行 `[NO]`,`KEY1`,`KEY2`,`KEY3`。通常行 `1`,`v1`,`v2`,`v3`。判定対象行 `2`,`null`,`null`,`null` | 通常行 `"[NO]": "1"` ＋ 3 キー。判定対象行は `- "[NO]": "2"` のみ | 1 件目 `v1`／`v2`／`v3`、2 件目 `null`／`null`／`null` | 本体と同一（キー集合・件数・全キーの値が一致） |
+
+Excel 側の `null` が Java `null` になるのは、本体の `interpreters` に含まれる `NullInterpreter` による。
+これにより「キーの省略」と「`null` の明示」が等価な入力になり、T5/L5 の食い違いが形式間の仕様差ではなく
+入力の非等価によることが示される。
+
+**期待値を崩すと落ちることの確認（1 度）**: T6・L6 の期待値を `{null, null, null}` → `{"", "", ""}` に変え、
+`mvn -o clean test -Dtest=YamlBlankEntryOracleTest` を実行して
+`Tests run: 12, Failures: 2, Errors: 0, Skipped: 0` を得た。落ちた 2 件は
+`getSetupTableData_markerOnlyRowWithOmittedColumnsMatchesExplicitNull`（`Expected: is "" but: was null`。
+`assertTableValues` の「T6 本体（Excel）: 1 行目の PK_COL1」）と
+`getListMap_markerOnlyRowWithOmittedKeysMatchesExplicitNull`（同じく「L6 本体（Excel）: 1 件目の KEY1」）である。
+崩した箇所は元に戻し、再実行で緑を確認した。
+
+### 9.4 `checks/task-31.md` への「#41 で削除」注記
+
+指示の 3 箇所（`:8`・`:9`・`:23`）に「**【#41 で削除】このテストは `#41`（2-6）でテストごと削除済み。
+現在の `src/` に該当メソッドは無く、`@Ignore` は 0 件である。以下は当時の実測記録。**」を入れた。
+`:23` は表のセルのため「**#41 で削除**」と「`@Ignore`（**#41 で削除済み**）」の短い形にしてある。
+
+**前提（指示書 §8 に無いため、ここに書いて進めた）**: `:7` にも同じテスト名が出るため、
+`（負）` → `（負。**#41 で削除**）` の短い注記を 1 箇所足した（指示の 3 箇所に加えて 4 箇所目）。
+`:94` の「失効した記述」の表は `:8`・`:9`・`:23` の失効をすでに記録しているため、手を入れていない。
+
+### 9.5 完了条件の確認
+
+| 完了条件 | 結果 | 根拠 |
+|---|---|---|
+| `mvn -o clean test` 緑（318 件＋T6/L6） | OK | `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` → `BUILD SUCCESS` / `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`（318 + T6/L6 の 2 件） |
+| `@Ignore` 0 件 | OK | `grep -rnE '^\s*@Ignore' src/test` → 0 件 |
+| 9.1 の grep が 0 件 | OK | `git grep -nE '\.rst|nablarch-document|解説書|出典' -- src/` → 0 件。「根拠:」も 0 件 |
+| `git status --short` 空・push | OK | 9.6 のとおり |
+
+### 9.6 テストの動作・期待値を変えていないこと
+
+`#45` で変えたのは Javadoc・テストコメント・フィクスチャのコメントと、スキーマの `description`・
+`steering.md` のピン行・`checks/task-31.md` の注記である。**既存テストの動作・期待値は 1 件も変えていない。**
+足したのは T6・L6 の 2 件と、それに対応する oracle シート 2 枚（`buildOracleBook`）・フィクスチャの
+2 エントリ（`blankEntry.yaml` の `T6`・`L6`）だけである。

@@ -1,7 +1,6 @@
 # 旧形式（FW 制御ヘッダを record_type: FW_HEADER のレコードで表す書き方）が残ったケース。
 # 現仕様では FW 制御ヘッダは fw_header: マップで記述し、電文の records に書けるレコードレイアウトは1つである。
 # 2レコード書いたこのファイルはスキーマ検証（maxItems: 1）で弾かれる。
-# 出典: implementation/testdata_notation.rst:1153, :1299
 # ロード自体が失敗するため、他の読み込み単位を巻き込まないよう独立したファイルに置く。
 messages:
   - id: legacyFwHeaderRecord001

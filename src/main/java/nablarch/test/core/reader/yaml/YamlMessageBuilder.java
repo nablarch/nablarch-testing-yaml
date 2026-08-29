@@ -51,20 +51,11 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * </p>
  *
  * <p>
- * 出典は解説書（{@code nablarch-document} リポジトリの
- * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）である。
- * 行番号は改版で腐るため、節見出しと引用文で示す。「Excel形式の場合」「YAML形式の場合」という見出しは
- * この解説書に 8 回ずつ現れるため、親節「メッセージングのデータを記述する」を添えて一意にする。
+ * まとめると、Excel 形式では {@code reader.fwHeaderfields} にもディレクティブ名にも無い名前の行が
+ * フィールド名称行として読み込まれるのに対し、YAML 形式では {@code fw_header:} に書けるキーが
+ * {@code reader.fwHeaderfields} の名前（省略時は {@code requestId}・{@code userId}・{@code resendFlag}・
+ * {@code resultCode}）だけに限られ、それ以外のキーはエラーになる。
  * </p>
- * <ul>
- * <li>「メッセージングのデータを記述する」節の「Excel形式の場合」項: 「名前・値の行のうち、ディレクティブ名でなく
- *     {@code reader.fwHeaderfields} にも無い名前の行は、フレームワーク制御ヘッダではなくフィールド名称行として
- *     読み込まれる。」（本体の挙動）</li>
- * <li>「メッセージングのデータを記述する」節の「YAML形式の場合」項: 「{@code fw_header:} に記載できるキーは、
- *     {@code reader.fwHeaderfields} の名前
- *     （省略時は {@code requestId}・{@code userId}・{@code resendFlag}・{@code resultCode}）だけである。
- *     それ以外のキーがあるとエラーになる。」（本クラスの挙動）</li>
- * </ul>
  *
  * @author kiyotis
  */

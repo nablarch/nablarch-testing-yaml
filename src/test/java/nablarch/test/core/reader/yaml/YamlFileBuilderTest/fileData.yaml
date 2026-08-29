@@ -465,9 +465,7 @@ expected_files:
         rows: []
 
   # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
-  #      解説書 implementation/testdata_notation.rst の
-  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  #      この2文字を含む値は YAML 形式では書けず、エラーになる。
   #      データ行に書いた場合。
   - group_id: literalCrInRow
     path: dummy/literal_cr_row.csv

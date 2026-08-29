@@ -16,9 +16,7 @@ list_maps:
         YAML_CR_COL: "\r"
 
   # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
-  #      解説書 implementation/testdata_notation.rst の
-  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  #      この2文字を含む値は YAML 形式では書けず、エラーになる。
   #      ロード（YamlLoader.load）は成功する。エラーになるのはこのエントリを組み立てたとき
   #      （buildListMapRows(yaml, "literalCrTest", ...)）である。他のエントリの組み立てを
   #      巻き添えにしないよう単独のエントリにしてある。
@@ -80,12 +78,12 @@ list_maps:
     rows:
       - DQ_COL: '"'
 
-  # 3-4: 改行文字 "\n"（LF）（implementation/testdata_notation.rst:1443-:1445）
+  # 3-4: 改行文字 "\n"（LF）。
   - id: lineFeedTest
     rows:
       - YAML_LF_COL: "\n"
 
-  # 3-2: ${文字種,文字数} で使用できる14文字種（implementation/testdata_notation.rst:1315-:1322）。
+  # 3-2: ${文字種,文字数} で使用できる14文字種。
   #      どの文字種で落ちたかが分かるよう、文字種ごとに別エントリにしてある。
   - id: charTypeTest_半角英字
     rows:
@@ -130,7 +128,7 @@ list_maps:
     rows:
       - GEN_COL: "${外字,3}"
 
-  # 3-3: 組み合わせ記法（implementation/testdata_notation.rst:1324）
+  # 3-3: 組み合わせ記法。
   - id: charTypeCombinedTest
     rows:
       - COMBINED_COL: "${半角数字,2}-${半角数字,4}"

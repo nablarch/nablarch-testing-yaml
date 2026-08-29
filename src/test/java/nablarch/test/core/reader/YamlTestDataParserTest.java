@@ -287,7 +287,6 @@ public class YamlTestDataParserTest {
      * <p>
      * 何を担保するか: YAML ファイルが YAML 1.2 に準拠し、YAML 1.1 のように
      * {@code yes}/{@code no}/{@code on}/{@code off} を真偽値へ型変換しないこと。<br>
-     * 根拠: implementation/testdata_notation.rst:92<br>
      * Given: list_maps の 1 行に、キーも値もクォートなしの no / yes / on / off を書いた YAML<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  キーが no / yes / on / off の 4 つのまま取得でき、値もそれぞれ同じ文字列になること
@@ -315,13 +314,12 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * getListMap: 解説書の実例どおり、testShots のカラム {@code no} をクォートなしのキーで書いても文字列キーになること。
+     * getListMap: testShots のカラム {@code no} をクォートなしのキーで書いても文字列キーになること。
      *
      * <p>
-     * 何を担保するか: 解説書のバッチテスト例がクォートなしの {@code - no: "1"} を使っており、
-     * YAML 1.1 ならキーが真偽値 false になってしまうところ、YAML 1.2 では文字列キー {@code no} のまま
-     * 読めること。<br>
-     * 根拠: implementation/deal_unit_test/batch.rst:352（実例）、implementation/testdata_notation.rst:92<br>
+     * 何を担保するか: バッチテストの testShots では {@code - no: "1"} のようにクォートなしのキーを
+     * 書くのが通例であり、YAML 1.1 ならキーが真偽値 false になってしまうところ、YAML 1.2 では
+     * 文字列キー {@code no} のまま読めること。<br>
      * Given: list_maps の 1 行に、クォートなしのキー no と値 "1" を書いた YAML<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  キー "no" で値 "1" が取得でき、キー "false" にはならないこと
@@ -353,7 +351,6 @@ public class YamlTestDataParserTest {
      * YAML の読み込み経路でそのままの表記として取り出せること。アップロードファイルの指定は
      * {@code HttpRequestTestSupport}（nablarch-testing）が値の表記 {@code ${attach:...}} を見て
      * 判定するため、YAML 経路が表記を保ったまま渡すことがその前提になる。<br>
-     * 根拠: implementation/testdata_notation.rst:1339<br>
      * Given: list_maps の 1 行に uploadFile: "${attach:&lt;プロジェクトルートからの相対パス&gt;}" を書いた YAML<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  値が {@code ${attach:...}} の表記のまま取得でき、示すファイルが
@@ -929,7 +926,6 @@ public class YamlTestDataParserTest {
      * {@code messages}（MESSAGE）では記載した値は使われず、デフォルトのレコード種別（"default"）になる
      * （記載値がそのままレコード種別になるのは同期応答メッセージ送信の 4 データタイプのみ）<br>
      * 電文のレコードレイアウトは1つなので、records には record_type: FW_HEADER のレコードを1件だけ書く<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: messages の id=fwHeaderRecordType001 が fw_header: マップ（requestId/userId）と
      *        record_type が "FW_HEADER" のレコード1件（10 バイト・値行 2 行）を持つ<br>
      * When:  getMessage(dir, resource, "fwHeaderRecordType001") を呼ぶ<br>
@@ -978,7 +974,6 @@ public class YamlTestDataParserTest {
      * <p>
      * "FW_HEADER" は予約値ではないため、送信同期経路では単に "FW_HEADER" というレコード種別になる。
      * 電文のレコードレイアウトは1つなので、records には record_type: FW_HEADER のレコードを1件だけ書く<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: response_body_messages の group_id=fwHeaderSync に record_type が "FW_HEADER" の
      *        レコード1件（10 バイト・値行 2 行）がある<br>
      * When:  getSendSyncMessage(dir, resource, "[fwHeaderSync]", RESPONSE_BODY_MESSAGES) を呼ぶ<br>
@@ -1099,7 +1094,6 @@ public class YamlTestDataParserTest {
      * 記述し、{@code record_type} に予約値はない。旧形式は FW_HEADER レコードと本文レコードの
      * 2 レコードレイアウトになるが、電文のレコードレイアウトは1つであり 2 つ以上記述するとエラーになるため、
      * 電文を組み立てる手前のスキーマ検証（{@code records} の {@code maxItems: 1}）で弾かれる<br>
-     * 根拠: implementation/testdata_notation.rst:1153, :1299<br>
      * Given: messages の id=legacyFwHeaderRecord001 に旧形式の FW_HEADER レコード（25 バイト）と
      *        BODY レコード（10 バイト）の 2 レコードがある読み込み単位<br>
      * When:  getMessage(dir, resource, "legacyFwHeaderRecord001") を呼ぶ<br>
@@ -1202,7 +1196,6 @@ public class YamlTestDataParserTest {
      * 投入対象が 0 件になり、例外も警告も出ないこと。
      *
      * <p>
-     * 解説書 {@code tools/master_data_tool.rst:28}（important）が述べる挙動を担保する。
      * {@code MasterDataSetUpper} は Excel 形式のマスタデータファイルに対して
      * {@code <ファイル名>/<シート名>} をリソース名として問い合わせるため、
      * 同名の YAML が無ければ空リストが返る。
@@ -1655,11 +1648,11 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // #16: yamlInterpreters（解説書が定める 2 つだけ）
+    // #16: yamlInterpreters（DateTimeInterpreter・CompositeInterpreter の 2 つだけ）
     // ========================================================================
 
     /**
-     * [#16] yamlInterpreters: 解説書が定める 2 つ（DateTimeInterpreter・CompositeInterpreter）だけが
+     * [#16] yamlInterpreters: DateTimeInterpreter・CompositeInterpreter の 2 つだけが
      * 指定されていること。
      *
      * <p>
@@ -1699,7 +1692,6 @@ public class YamlTestDataParserTest {
      * リクエスト ID と同じ名前の<b>ディレクトリ</b>配下の {@code message.yaml} が読み込み単位になる。
      * このため {@code fileExtensions} に {@code sendSyncTestData} の拡張子を設定してはならない。
      * 設定するとテストデータが見つからず、テストの実行時に例外が発生する。<br>
-     * 根拠: setup/common.rst:264（{@code .. important::} の本文）<br>
      * Given: unit-test-yaml.xml（経由 unit-test.xml）が定義する filePathSetting<br>
      * When:  リポジトリから filePathSetting を取得し fileExtensions を見る<br>
      * Then:  sendSyncTestData キーが存在しないこと
@@ -1715,7 +1707,7 @@ public class YamlTestDataParserTest {
         assertNotNull("filePathSetting コンポーネントが定義されていること", filePathSetting);
         Map<String, String> fileExtensions = filePathSetting.getFileExtensions();
         assertNotNull("fileExtensions が取得できること", fileExtensions);
-        assertFalse("fileExtensions に sendSyncTestData キーが無いこと（setup/common.rst:264）",
+        assertFalse("fileExtensions に sendSyncTestData キーが無いこと",
                 fileExtensions.containsKey("sendSyncTestData"));
     }
 
@@ -1810,7 +1802,6 @@ public class YamlTestDataParserTest {
      * 何を担保するか: データタイプ MESSAGE の識別子として予約値 {@code setUpMessages}（要求電文）・
      * {@code expectedMessages}（応答電文）を書いて、テストの入力データ・期待値となる電文を
      * 取得できること。これらの識別子は固定である。<br>
-     * 根拠: implementation/testdata_notation.rst:1149<br>
      * Given: messages に id=setUpMessages と id=expectedMessages のエントリ<br>
      * When:  getMessage(dir, resource, "setUpMessages")／getMessage(dir, resource, "expectedMessages") を呼ぶ<br>
      * Then:  それぞれの電文本文と FW 制御ヘッダが取得できること
@@ -1852,11 +1843,9 @@ public class YamlTestDataParserTest {
      * リクエスト ID と同じ名前のディレクトリ配下の固定名 {@code message.yaml} から読まれること。
      * {@code <リクエストID>.yaml}（Excel 形式の {@code <リクエストID>.xlsx} に相当する置き方）は
      * 読み込み単位にならない。<br>
-     * 根拠: implementation/deal_unit_test/mom.rst:72、implementation/testdata_notation.rst:1151<br>
      * 呼び出し方は、モックアップクラス経路の入口である nablarch-testing の
-     * {@code SendSyncSupport#createTestDataInfo}（{@code SendSyncSupport.java:347} が
-     * リソース名を {@code リクエストID + "/" + "message"} として組み立て、
-     * {@code :393} が {@code getMessageWithoutCache} を呼ぶ）に合わせている。<br>
+     * {@code SendSyncSupport#createTestDataInfo}（リソース名を {@code リクエストID + "/" + "message"} として
+     * 組み立て、{@code getMessageWithoutCache} を呼ぶ）に合わせている。<br>
      * Given: {@code <base>/RM21AA0101/message.yaml}（RESULT_KEY="FROM_DIR01"）と、
      *        囮の {@code <base>/RM21AA0101.yaml}（RESULT_KEY="FROM_FILE1"）の 2 ファイル<br>
      * When:  getMessageWithoutCache(base, "RM21AA0101/message", RESPONSE_BODY_MESSAGES, "RM21AA0101") を呼ぶ<br>
@@ -1894,7 +1883,6 @@ public class YamlTestDataParserTest {
      * {@code TestDataParser} を直接使うとき、第1引数のディレクトリ・第2引数の
      * {@code <ファイル名>/<読み込み単位の名前>} が {@code <ディレクトリ>/<ファイル名>/<読み込み単位の名前>.yaml}
      * に解決されること。{@code <ディレクトリ>/<ファイル名>.yaml} は読まれない。<br>
-     * 根拠: implementation/class_unit_test/component.rst:313<br>
      * Given: {@code <dir>/CommonTestData/employees.yaml}（list_maps の id=params）と、
      *        囮の {@code <dir>/CommonTestData.yaml}（同じ id=params で別の値）<br>
      * When:  getListMap(dir, "CommonTestData/employees", "params") を呼ぶ<br>

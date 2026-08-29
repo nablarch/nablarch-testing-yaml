@@ -21,7 +21,6 @@ messages:
   # record_type に予約値はない。"FW_HEADER" という値も装飾的な名前として扱われ、
   # レコードは読み飛ばされずフラグメントになる（FW 制御ヘッダは fw_header: マップから別途取得される）。
   # 電文のレコードレイアウトは1つなので records は1件だけ書く。
-  # 出典: implementation/testdata_notation.rst:1153, :1299
   - id: fwHeaderRecordType001
     directives:
       text-encoding: Windows-31J
@@ -40,7 +39,6 @@ messages:
 
   # データタイプ MESSAGE の識別子 setUpMessages（要求電文）・expectedMessages（応答電文）は
   # テスティングフレームワークの予約語であり固定である。
-  # 出典: implementation/testdata_notation.rst:1149
   - id: setUpMessages
     directives:
       text-encoding: Windows-31J
@@ -119,7 +117,6 @@ response_body_messages:
 
   # 送信同期（getSendSyncMessage）経路でも record_type の値 "FW_HEADER" は特別扱いされない。
   # 電文のレコードレイアウトは1つなので records は1件だけ書く。
-  # 出典: implementation/testdata_notation.rst:1153, :1299
   - group_id: fwHeaderSync
     id: sync001
     directives:

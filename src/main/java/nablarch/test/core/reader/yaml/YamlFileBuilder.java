@@ -258,7 +258,6 @@ public final class YamlFileBuilder {
                 // null のまま保持されるのは、この trim と DataFileFragment#addValue
                 // （フィールド名称の数だけ "" で埋める）の組み合わせによる。規則を手写しせず
                 // 本体の実装（NablarchTestUtils#trimTailCopy）をそのまま使う。
-                // 出典: implementation/testdata_notation.rst:889（ファイル）・:1155（電文）
                 List<String> trimmedValues = NablarchTestUtils.trimTailCopy(rowValues);
                 if (withId) {
                     // 送信同期メッセージ：値行先頭の連番（本体は値行先頭セル）を 1 始まりの行インデックスで補う。

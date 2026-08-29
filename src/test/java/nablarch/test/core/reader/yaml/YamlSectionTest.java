@@ -259,8 +259,7 @@ public class YamlSectionTest {
      * 空かどうかを見る早期 return より<b>前</b>に呼ぶこと。空チェーンは実在する経路であり、
      * {@link InterpreterResolver#raw()} は常に空チェーンを返す。これを使うのが下流の変換ツール
      * {@code nablarch-testing-converter} の {@code YamlTestCoreAdapter}
-     * （{@code ../nablarch-testing-converter/src/main/java/nablarch/test/core/reader/YamlTestCoreAdapter.java:73}
-     * の {@code InterpreterResolver.raw()}）である。順序が入れ替わると、変換ツールの YAML 読み取りだけが
+     * （{@code InterpreterResolver.raw()} を使う）である。順序が入れ替わると、変換ツールの YAML 読み取りだけが
      * 黙ってこの 2 文字を受け入れてしまう<br>
      * Given: value に 2 文字（{@code "\\r"}）、interps に空リスト<br>
      * When:  {@code YamlSection.interpret(value, emptyList, source)} を呼ぶ<br>
@@ -560,10 +559,9 @@ public class YamlSectionTest {
      * [YamlSection] dropBlankRows: 空マッピング行だけが取り除かれ、全ての値が空文字の行は残ること。
      *
      * <p>
-     * 出典: 解説書「コメント・マーカーカラム・空エントリを扱う」節「記法として空のエントリは
-     * 読み飛ばされる。（中略）YAML 形式では {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。
-     * {@code ""} と書いた空文字は値であり、すべての値が {@code ""} のエントリは読み飛ばされず、
-     * 全カラムが空文字のエントリとして読み込まれる。」<br>
+     * 何を担保するか: 読み飛ばされるのは値を 1 つも持たない行だけであり、YAML 形式ではその条件は
+     * {@code rows:} の要素が空マッピング {@code {}} であること。{@code ""} と書いた空文字は値であるため、
+     * すべての値が {@code ""} の行は読み飛ばされず、全カラムが空文字の行として読み込まれる<br>
      * 本体（Excel 経路）でも同じである。{@code PoiXlsReader#isBlankLine} は生セル
      * （{@code Cell#toString()}）を {@code String#isEmpty()} だけで判定するため、Excel で {@code ""} と
      * 書いたセルは 2 文字の文字列として非空になり、その行は読み飛ばされない（セルから引用符を外す
@@ -595,9 +593,8 @@ public class YamlSectionTest {
      * [YamlSection] dropBlankRows: マーカーカラムだけが値を持つ行も残ること。
      *
      * <p>
-     * 出典: 解説書「コメント・マーカーカラム・空エントリを扱う」節「この判定はマーカーカラムを
-     * 除外する前に行われる。そのため、マーカーカラムだけに値があるエントリは読み飛ばされず、
-     * 他のカラムがすべて空文字のエントリとして読み込まれる。」<br>
+     * 何を担保するか: 空行の判定はマーカーカラムを除外する前に行われるため、マーカーカラムだけに
+     * 値がある行も読み飛ばされないこと<br>
      * Given: "[NO]" のみ値を持ち他は空文字の行 1 件からなる rows<br>
      * When:  YamlSection.dropBlankRows(rows) を呼ぶ<br>
      * Then:  その行が残ること

@@ -1,4 +1,4 @@
-# #16: yamlInterpreters（解説書が定める DateTimeInterpreter・CompositeInterpreter の 2 つだけ）
+# #16: yamlInterpreters（DateTimeInterpreter・CompositeInterpreter の 2 つだけ）
 # でのクォート値・null 記法の処理テスト。
 # YAML はパーサがダブルクォートと null を構文として処理するため、
 # QuotationTrimmer・NullInterpreter なしで正しく値が取得できることを確認する。

@@ -3,10 +3,7 @@
 
 messages:
   # 既定キー（requestId/userId/resendFlag/resultCode）のみ
-  # 既定キー以外は reader.fwHeaderfields に設定しない限り書けない
-  # （出典: nablarch-document の implementation/testdata_notation.rst
-  #  「メッセージングのデータを記述する」節の「YAML形式の場合」項
-  #  「fw_header: に記載できるキーは、reader.fwHeaderfields の名前（省略時は requestId・userId・resendFlag・resultCode）だけである。それ以外のキーがあるとエラーになる。」）
+  # 既定キー以外は reader.fwHeaderfields に設定しない限り書けず、書くとエラーになる
   - id: req001
     directives:
       text-encoding: Windows-31J
@@ -51,9 +48,7 @@ messages:
           - ["HELLO"]
 
   # 2-5: fw_header の値にバックスラッシュと r の2文字（"\\r"）を書いた場合。
-  #      解説書 implementation/testdata_notation.rst の
-  #      「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項:
-  #      「バックスラッシュと r の2文字（"\\r"）を含む値は書けない。…YAML 形式ではエラーになる」
+  #      この2文字を含む値は YAML 形式では書けず、エラーになる。
   - id: literalCrInFwHeaderValue001
     fw_header:
       requestId: "\\r"

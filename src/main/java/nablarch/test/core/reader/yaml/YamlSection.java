@@ -171,12 +171,10 @@ public final class YamlSection {
      * </p>
      *
      * <p>
-     * 出典は解説書（{@code nablarch-document} リポジトリの
-     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
-     * 「コメント・マーカーカラム・空エントリを扱う」節である。行番号は改版で腐るため引用文で示す。
-     * 「記法として空のエントリは読み飛ばされる。Excel 形式では行の全セルが空セルの場合、YAML 形式では
-     * {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。{@code ""} と書いた空文字は値であり、
-     * すべての値が {@code ""} のエントリは読み飛ばされず、全カラムが空文字のエントリとして読み込まれる。」
+     * 読み飛ばす条件は形式ごとに異なる。Excel 形式では行の全セルが空セルのとき、YAML 形式では
+     * {@code rows:} の要素が空マッピング {@code {}} のときである。どちらも「値を 1 つも持たない」ことが条件で、
+     * {@code ""} と書いた空文字は値であるため、全ての値が {@code ""} の行は読み飛ばさず
+     * 全カラムが空文字の行として読み込む。
      * </p>
      *
      * <p>
@@ -272,10 +270,7 @@ public final class YamlSection {
      *
      * <p>
      * 変換の前に {@code rejectLiteralCr} で値を検査し、バックスラッシュと {@code r} の 2 文字を含む値を
-     * 拒否する。出典は解説書（{@code nablarch-document} リポジトリの
-     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項にある表の「改行文字」の行であり、
-     * 引用文と設計判断はこのクラスの {@code rejectLiteralCr} の javadoc に記す
+     * 拒否する。なぜ拒否するのか、なぜキーも検査するのかはこのクラスの {@code rejectLiteralCr} の javadoc に記す
      * （{@code rejectLiteralCr} は package private のため既定スコープの生成 javadoc には出力されない。
      * ソースを開いて読むこと）。
      * </p>
@@ -341,28 +336,17 @@ public final class YamlSection {
      * </p>
      *
      * <p>
-     * 出典は解説書（{@code nablarch-document} リポジトリの
-     * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）
-     * 「null・空文字・改行など特殊な値を記述する」節の「YAML形式の場合」項にある表の「改行文字」の行である
-     * （「YAML形式の場合」という見出しはこの解説書に 8 回現れるため、親節を添えて一意にする）。
-     * 行番号は改版で腐るため引用文で示す。
-     * 「YAML のパーサが制御文字に変換する。バックスラッシュと {@code r} の2文字（{@code "\\r"}）を含む値は
-     * 書けない。Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティング
-     * フレームワークの仕様上存在せず、YAML 形式ではエラーになる。{@code "\\n"} は Excel 形式と同じく
-     * 2文字のまま残る」
-     * </p>
-     *
-     * <p>
-     * Excel 形式でこの2文字が必ず CR になるのは、依存先 nablarch-testing の
+     * この 2 文字を含む値は、テスティングフレームワークの仕様上どの形式でも存在しない。
+     * Excel 形式では依存先 nablarch-testing の
      * {@link nablarch.test.core.util.interpreter.LineSeparatorInterpreter} が既定の置換パターン
      * （{@code DEFAULT_PATTERN}。Java 文字列 {@code "\\\\r"}、正規表現としてはリテラルのバックスラッシュ＋{@code r}）を
-     * 既定の改行コード（{@code DEFAULT_LINE_SEP}。{@code LineSeparator.CR}）へ置換するためである。
-     * YAML 形式ではこのインタープリタを使わない。出典は解説書
-     * {@code ja/development_tools/testing_framework/setup/common.rst} の
-     * 「テストデータの形式をYAMLに変更する」節である。
-     * 「{@code yamlInterpreters} に指定するのは、この2つだけでよい。null ・空文字・ダブルクォート・改行文字は
+     * 既定の改行コード（{@code DEFAULT_LINE_SEP}。{@code LineSeparator.CR}）へ必ず置換するため、
+     * この 2 文字のまま残る値を作れないからである。一方 YAML 形式は
+     * {@code yamlInterpreters} にこのインタープリタを指定しない（null ・空文字・ダブルクォート・改行文字は
      * YAML のパーサが構文として解釈するため、Excel 形式で必要な {@code NullInterpreter} ・
-     * {@code QuotationTrimmer} ・ {@code LineSeparatorInterpreter} は指定しない。」
+     * {@code QuotationTrimmer} ・ {@code LineSeparatorInterpreter} を使わない）。
+     * したがって「CR として解釈する」は採れず、エラーにする。
+     * なお、バックスラッシュと {@code n} の 2 文字は Excel 形式でも 2 文字のまま残るため通す。
      * </p>
      *
      * <p>
@@ -374,14 +358,13 @@ public final class YamlSection {
      *
      * <p>
      * 判定は 2 文字ちょうどの一致ではなく<b>部分一致</b>（{@link String#contains(CharSequence)}）である。
-     * 解説書が言うのは「2 文字を含む値」だからで、{@code "AB\\rCD"} のように途中に現れる場合も拒否する
+     * 禁じているのは「この 2 文字を含む値」であり、{@code "AB\\rCD"} のように途中に現れる場合も拒否する
      * （{@code YamlTableDataBuilderTest#buildListMapRows_literalBackslashRInsideLongerValueThrows} と
      * {@code YamlFileBuilderTest#buildFileList_literalBackslashRInsideLongerValueInRowThrows} が固定する）。
      * また大文字小文字を区別し、{@code r} だけを見る。バックスラッシュと {@code R} の 2 文字は通す
      * （{@code YamlTableDataBuilderTest#buildListMapRows_backslashUpperCaseRIsKeptAsIs} が固定する）。
      * 依存先 nablarch-testing の {@link nablarch.test.core.util.interpreter.LineSeparatorInterpreter} が
-     * CR へ置換するパターン（{@code DEFAULT_PATTERN}。
-     * {@code ../nablarch-testing/src/main/java/nablarch/test/core/util/interpreter/LineSeparatorInterpreter.java:31}）が
+     * CR へ置換するパターン（{@code LineSeparatorInterpreter} の {@code DEFAULT_PATTERN}）が
      * 小文字の {@code r} だけを対象にしており、大文字は Excel 形式でも CR にならず 2 文字のまま残るためである。
      * バックスラッシュ 2 つと {@code r} の 3 文字（YAML に {@code "\\\\r"} と書いた値）は、後ろ 2 文字が
      * 一致するため拒否する
@@ -400,13 +383,13 @@ public final class YamlSection {
      * </p>
      *
      * <p>
-     * キーについては {@code fw_header:} のキーだけを検査する。理由は次のとおりで、根拠はすべて実物にある。
+     * キーについては {@code fw_header:} のキーだけを検査する。理由は次のとおり。
      * </p>
      * <ul>
-     * <li>キーも検査してよい根拠: Excel 形式ではキーも値も同じセルであり、本体
-     *     {@code ../nablarch-testing/src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:183}
-     *     が読み込んだ行の全セルをまとめて {@code interpret} に通す。名前を書いたセルもここを通るため、
-     *     Excel 形式ではキーに書いたこの 2 文字も必ず CR になる。値と同じ理由でキーにも書けない。</li>
+     * <li>キーも検査してよい理由: Excel 形式ではキーも値も同じセルであり、本体
+     *     {@code TestDataParsingTemplate} が読み込んだ行の全セルをまとめて {@code interpret} に通す。
+     *     名前を書いたセルもここを通るため、Excel 形式ではキーに書いたこの 2 文字も必ず CR になる。
+     *     値と同じ理由でキーにも書けない。</li>
      * <li>{@code fw_header:} のキーを検査する理由: スキーマ {@code $defs.fw_header} は
      *     {@code additionalProperties: {"type":"string"}} で任意のキーを許すため、スキーマ検証は止めない。
      *     さらに許可キー集合は {@code reader.fwHeaderfields} で差し替えられる（空白トリムなしのカンマ分割。
@@ -418,8 +401,8 @@ public final class YamlSection {
      *     スキーマ検証で落ちるため、Java 側に検査を置いても到達しない。</li>
      * <li>カラム名を検査しない理由: 検査していないことを明示する。テーブル系・{@code list_maps} の
      *     {@code rows} のキーはスキーマが任意キーを許し（{@code additionalProperties} が型のみ指定）、
-     *     本メソッドも通らないため素通りする。これは意図した対象外である。解説書がこの 2 文字について
-     *     定めているのは「値」であり、本メソッドの契約もそれに合わせている。</li>
+     *     本メソッドも通らないため素通りする。これは意図した対象外である。この 2 文字を禁じる規則が
+     *     対象にしているのは「値」であり、本メソッドの契約もそれに合わせている。</li>
      * </ul>
      *
      * @param value  検査する値（null 可。null の場合は何もしない）

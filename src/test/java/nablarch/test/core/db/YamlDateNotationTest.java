@@ -27,11 +27,10 @@ import static org.junit.Assert.assertTrue;
  * 日付の記述形式（{@code yyyyMMddHHmmssSSS} の後置0埋め省略）を YAML 経由の実経路で固定するテストクラス。
  *
  * <p>
- * 解説書 {@code implementation/testdata_notation.rst:1328}-{@code :1333} は、日付を
- * {@code yyyyMMddHHmmssSSS} 形式または JDBC タイムスタンプエスケープ形式で記述でき、
- * 時刻のミリ秒または全部を後置0埋めの形で省略できると述べている。ミリ秒を省略した場合はミリ秒0、
- * 時刻全部を省略した場合は0時0分0秒000として扱われ、例として {@code 20210123123456} は
- * 「2021年1月23日 12時34分56秒000」と評価されるとしている。
+ * 日付は {@code yyyyMMddHHmmssSSS} 形式または JDBC タイムスタンプエスケープ形式で記述でき、
+ * 時刻のミリ秒または全部を後置0埋めの形で省略できる。ミリ秒を省略した場合はミリ秒0、
+ * 時刻全部を省略した場合は0時0分0秒000として扱われる。たとえば {@code 20210123123456} は
+ * 「2021年1月23日 12時34分56秒000」と評価される。
  * </p>
  *
  * <p>
@@ -110,7 +109,6 @@ public class YamlDateNotationTest {
      * 時刻のミリ秒を省略した {@code "20210123123456"} が「2021年1月23日 12時34分56秒000」と評価されること。
      *
      * <p>
-     * 根拠: {@code implementation/testdata_notation.rst:1328}-{@code :1333}<br>
      * Given: setup_tables の TIMESTAMP_COL に {@code "20210123123456"}（ミリ秒を省略した yyyyMMddHHmmss）<br>
      * When:  YAML を読み込んで DB へ INSERT する<br>
      * Then:  DB の値が {@code 2021-01-23 12:34:56.000} になること
@@ -130,7 +128,6 @@ public class YamlDateNotationTest {
      * 時刻を全部省略した {@code "20210123"} が「2021年1月23日 0時0分0秒000」と評価されること。
      *
      * <p>
-     * 根拠: {@code implementation/testdata_notation.rst:1328}-{@code :1333}<br>
      * Given: setup_tables の TIMESTAMP_COL に {@code "20210123"}（時刻を全部省略した yyyyMMdd）<br>
      * When:  YAML を読み込んで DB へ INSERT する<br>
      * Then:  DB の値が {@code 2021-01-23 00:00:00.000} になること

@@ -29,18 +29,12 @@ import static org.junit.Assert.assertThat;
  * 突き合わせるテストクラス。
  *
  * <p>
- * 解説書（{@code nablarch-document} リポジトリの
- * {@code ja/development_tools/testing_framework/implementation/testdata_notation.rst}）の
- * 「コメント・マーカーカラム・空エントリを扱う」節は次のように定める。行番号は改版で腐るため
- * 節見出しと引用文で示す。
+ * 押さえる規則は次の 3 つである。(1) 記法として空のエントリは読み飛ばされ、その条件は Excel 形式では
+ * 行の全セルが空セル、YAML 形式では {@code rows:} の要素が空マッピング {@code {}} であること。
+ * (2) {@code ""} と書いた空文字は値であり、すべての値が {@code ""} の行は読み飛ばされない。
+ * (3) この判定はマーカーカラムを除外する前に行われるため、マーカーカラムだけに値がある行も
+ * 読み飛ばされない（他のカラムの値は形式ごとの記法どおりに読み込まれる）。
  * </p>
- * <blockquote>
- * 記法として空のエントリは読み飛ばされる。Excel 形式では行の全セルが空セルの場合、YAML 形式では
- * {@code rows:} 内の要素が空マッピング（{@code {}}）の場合である。{@code ""} と書いた空文字は値であり、
- * すべての値が {@code ""} のエントリは読み飛ばされず、全カラムが空文字のエントリとして読み込まれる。
- * （中略）この判定はマーカーカラムを除外する前に行われる。そのため、マーカーカラムだけに値がある
- * エントリは読み飛ばされず、他のカラムがすべて空文字のエントリとして読み込まれる。
- * </blockquote>
  * <p>
  * 本体がこの規則を満たすのは、{@code PoiXlsReader#readLine} の空行判定
  * （{@code PoiXlsReader#isBlankLine}）が生セル（{@code Cell#toString()}）を
@@ -60,21 +54,30 @@ import static org.junit.Assert.assertThat;
  * </p>
  * <p>
  * 4 種（{@code {}} の行／全値 {@code ""} の行／{@code null} だけの行／マーカーカラムだけに値がある行）を
- * テーブルデータ（{@code setup_tables}、ケース T1〜T5）と {@code LIST_MAP}（{@code list_maps}、
- * ケース L1〜L5）の双方で確かめる。是正の前後で結果が変わるのは T2・L2 である
+ * テーブルデータ（{@code setup_tables}、ケース T1〜T6）と {@code LIST_MAP}（{@code list_maps}、
+ * ケース L1〜L6）の双方で確かめる。是正の前後で結果が変わるのは T2・L2 である
  * （是正前は「全ての値が空文字」の行も読み飛ばしていたため）。他は結果が
  * 変わらない対照ケースで、是正が {@code {}}・Java null・マーカーカラムの扱いを壊していないことを
  * 固定する（マーカーカラムだけに値がある行は、是正前の判定でもマーカーの値を非空と見て残していた）。
  * </p>
  * <p>
- * 「マーカーカラムだけに値がある行」は 2 通りの書き方で置く。T4・L4 は他のカラムに {@code ""} を
- * 明示した行で、Excel の空セル（{@code ""} として読み込まれる）と値までそろう対照である。
- * T5・L5 は他のカラムをキーごと省略した行で、YAML における素直な書き方である。T5・L5 では
- * 行が読み飛ばされない点（件数・カラム名）は本体と一致するが、省略したカラムの値は
- * 本体が {@code ""}・YAML が Java {@code null} になる。この仕様差は
- * {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と
- * {@link #getListMap_markerOnlyRowWithOmittedKeysIsKept()} が明示的に固定する。
+ * 「マーカーカラムだけに値がある行」は 3 通りの書き方で置く。いずれも行が読み飛ばされない点は同じで、
+ * 違うのは「他のカラムに何を書いたか」だけである。
  * </p>
+ * <ul>
+ * <li>T4・L4: 他のカラムに {@code ""} を明示した行。Excel の空セルは {@code ""} として読み込まれるため、
+ *     Excel 側の「他のセルは空セル」と入力の意味がそろい、値まで一致する。</li>
+ * <li>T5・L5: 他のカラムをキーごと省略した行。YAML における素直な書き方である。キーを省略したカラムは
+ *     その行で {@code null} を明示したのと同じ扱いになるので、Excel の空セル（{@code ""}）とは
+ *     入力の意味が異なる。したがって結果も本体が {@code ""}・YAML が Java {@code null} と分かれる。
+ *     これは形式間の仕様差ではなく、非等価な入力を与えた結果である。
+ *     {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と
+ *     {@link #getListMap_markerOnlyRowWithOmittedKeysIsKept()} がこの食い違いを明示的に固定する。</li>
+ * <li>T6・L6: T5・L5 と同じくキーを省略した行を YAML に置き、Excel 側は他のセルに {@code null} と
+ *     記述した行にそろえたもの。入力の意味が等価になるため、値まで含めて本体と一致する。
+ *     {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsMatchesExplicitNull()} と
+ *     {@link #getListMap_markerOnlyRowWithOmittedKeysMatchesExplicitNull()} が固定する。</li>
+ * </ul>
  *
  * @author kiyotis
  */
@@ -143,7 +146,7 @@ public class YamlBlankEntryOracleTest {
      * 本体に読ませる {@code .xlsx} を組み立てて書き出す。
      *
      * <p>
-     * シート名はケース名（T1〜T5・L1〜L5）と一致させ、{@code blankEntry.yaml} の
+     * シート名はケース名（T1〜T6・L1〜L6）と一致させ、{@code blankEntry.yaml} の
      * グループ ID／ID と 1 対 1 に対応させる。
      * </p>
      *
@@ -161,10 +164,15 @@ public class YamlBlankEntryOracleTest {
                 row("00001", "v1", "n1"), row("null", "null", "null"));
         dataSheet(book, "SETUP_TABLE[T4]=TEST_TABLE", "T4", MARKED_COLUMNS,
                 row("1", "00001", "v1", "n1"), row("2", "", "", ""));
-        // T5 の Excel は T4 と同じ内容。YAML 側だけがカラムごと省略した書き方であり、
-        // その仕様差を getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept が固定する。
+        // T5 の Excel は T4 と同じ内容（他のセルは空セル）。YAML 側だけがカラムごと省略した書き方であり、
+        // 入力が等価でないために生じる値の食い違いを
+        // getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept が固定する。
         dataSheet(book, "SETUP_TABLE[T5]=TEST_TABLE", "T5", MARKED_COLUMNS,
                 row("1", "00001", "v1", "n1"), row("2", "", "", ""));
+        // T6 は T5 の YAML（カラムごと省略）と入力が等価になるよう、Excel 側の他のセルに null と書く。
+        // NullInterpreter が Java null に変換するため、キー省略と同じ意味の入力になる。
+        dataSheet(book, "SETUP_TABLE[T6]=TEST_TABLE", "T6", MARKED_COLUMNS,
+                row("1", "00001", "v1", "n1"), row("2", "null", "null", "null"));
         // LIST_MAP。
         dataSheet(book, "LIST_MAP=L1", "L1", KEYS,
                 row("v1", "v2", "v3"), row("", "", ""));
@@ -177,6 +185,9 @@ public class YamlBlankEntryOracleTest {
         // L5 の Excel は L4 と同じ内容（T5 と同じ趣旨）。
         dataSheet(book, "LIST_MAP=L5", "L5", MARKED_KEYS,
                 row("1", "v1", "v2", "v3"), row("2", "", "", ""));
+        // L6 は T6 と同じ趣旨。Excel 側の他のセルに null と書き、YAML のキー省略と入力を等価にする。
+        dataSheet(book, "LIST_MAP=L6", "L6", MARKED_KEYS,
+                row("1", "v1", "v2", "v3"), row("2", "null", "null", "null"));
         return book.write();
     }
 
@@ -184,12 +195,9 @@ public class YamlBlankEntryOracleTest {
      * カラム名の行を持つデータブロック（テーブルデータ・{@code LIST_MAP}）のシートを組み立てる。
      *
      * <p>
-     * 識別子行の次の行がカラム名の行として読み込まれる（出典: 解説書「テーブルのデータを記述する」節の
-     * 「0件のデータを記述する」項の「Excel形式の場合」
-     * 「識別子行の次の行がカラム名の行として読み込まれるため、カラム名の行を書かないと、
-     * その次に現れた行がカラム名の行になる」）。{@code LIST_MAP} も同じくカラム名の行を持つ
-     * （同「データブロックとデータタイプ」節「マーカーカラムはカラム名の行を持つデータタイプ
-     * （テーブルデータと {@code LIST_MAP}）にかかる」）。
+     * Excel 形式では識別子行の次の行がカラム名の行として読み込まれるため、識別子行・カラム名の行・
+     * データ行の順に積む。{@code LIST_MAP} もカラム名の行を持つデータタイプであり、同じ並びでよい
+     * （マーカーカラムが効くのもカラム名の行を持つこの 2 つのデータタイプである）。
      * </p>
      *
      * @param book      組み立て先
@@ -220,9 +228,8 @@ public class YamlBlankEntryOracleTest {
      * [YamlTestDataParser] getSetupTableData: 空マッピング {@code &#123;&#125;} の行が読み飛ばされること（T1）。
      *
      * <p>
-     * 根拠: 「コメント・マーカーカラム・空エントリを扱う」節「記法として空のエントリは読み飛ばされる。
-     * Excel 形式では行の全セルが空セルの場合、YAML 形式では {@code rows:} 内の要素が
-     * 空マッピング（{@code {}}）の場合である」。是正の前後で結果が変わらない対照ケースである。<br>
+     * 読み飛ばしの条件は、Excel 形式では行の全セルが空セル、YAML 形式では {@code rows:} の要素が
+     * 空マッピング {@code {}} であることである。是正の前後で結果が変わらない対照ケースである。<br>
      * Given: 通常行 1 件と、空マッピング（Excel は全セル空）の行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
      * Then:  いずれも通常行 1 件だけになること
@@ -237,8 +244,8 @@ public class YamlBlankEntryOracleTest {
      * [YamlTestDataParser] getSetupTableData: すべての値が空文字の行が読み飛ばされないこと（T2）。
      *
      * <p>
-     * 根拠: 同節「{@code ""} と書いた空文字は値であり、すべての値が {@code ""} のエントリは
-     * 読み飛ばされず、全カラムが空文字のエントリとして読み込まれる」。<br>
+     * {@code ""} と書いた空文字は値であるため、すべての値が {@code ""} の行は読み飛ばされず、
+     * 全カラムが空文字の行として読み込まれる。<br>
      * Given: 通常行 1 件と、全カラムに {@code ""} を書いた行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
      * Then:  いずれも 2 件になり、2 件目の全カラムが空文字であること
@@ -253,9 +260,8 @@ public class YamlBlankEntryOracleTest {
      * [YamlTestDataParser] getSetupTableData: すべての値が null の行が読み飛ばされないこと（T3）。
      *
      * <p>
-     * 根拠: 同節が読み飛ばしの条件として挙げるのは「全セルが空セル」（Excel）と
-     * 「空マッピング {@code {}}」（YAML）だけであり、null はそのどちらでもない。
-     * 是正の前後で結果が変わらない対照ケースである。<br>
+     * 読み飛ばしの条件は「全セルが空セル」（Excel）と「空マッピング {@code {}}」（YAML）だけであり、
+     * null はそのどちらでもないため値として残る。是正の前後で結果が変わらない対照ケースである。<br>
      * Given: 通常行 1 件と、全カラムが null（Excel は全セル {@code null}）の行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
      * Then:  いずれも 2 件になり、2 件目の全カラムが null であること
@@ -270,8 +276,8 @@ public class YamlBlankEntryOracleTest {
      * [YamlTestDataParser] getSetupTableData: マーカーカラムだけに値がある行が読み飛ばされないこと（T4）。
      *
      * <p>
-     * 根拠: 同節「この判定はマーカーカラムを除外する前に行われる。そのため、マーカーカラムだけに値がある
-     * エントリは読み飛ばされず、他のカラムがすべて空文字のエントリとして読み込まれる」。<br>
+     * 空行の判定はマーカーカラムを除外する前に行われるため、マーカーカラムだけに値がある行も
+     * 読み飛ばされない。ここでは他のカラムに {@code ""} を明示し、Excel の空セルと入力の意味をそろえる。<br>
      * Given: マーカーカラム {@code [NO]} を持つカラム名の行と、通常行 1 件・
      *        {@code [NO]} だけに値がある行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
@@ -289,19 +295,18 @@ public class YamlBlankEntryOracleTest {
      *
      * <p>
      * 「マーカーカラムだけに値があるエントリ」の YAML における素直な書き方は、他のカラムをキーごと
-     * 省略した {@code - "[NO]": "2"} である。読み飛ばされない点（件数・カラム名）は本体と一致するが、
-     * 省略したカラムの値は本体の空セル（{@code ""}）に対して YAML では Java {@code null} になる。
-     * これは {@code #24} で確立した YAML の仕様であり、隠さずここで固定する。
+     * 省略した {@code - "[NO]": "2"} である。キーを省略したカラムは、その行でそのカラムに {@code null} を
+     * 書いたのと同じ扱いになる（キーが無い状態ではなく、値が {@code null} の状態で保持される）。
+     * 一方 Excel の空セルは {@code ""} として読み込まれる。つまり両者は入力として等価ではなく、
+     * 行が読み飛ばされない点（件数・カラム名）は一致する一方で、省略したカラムの値だけが
+     * 本体 {@code ""}・YAML {@code null} と分かれる。形式間の仕様差ではないが、
+     * 素直な書き方どうしを並べると値が変わることは分かりにくいため、隠さずここで固定する。
      * </p>
      * <p>
-     * 根拠: スキーマ {@code ntf-testdata-yaml-schema.json} の
-     * {@code $defs.table_data.properties.rows.description}
-     * 「(2) カラム名決定行にはあるが個々の行で省略したカラムは、その行でそのカラムに {@code null} を
-     * 書いたのと同じ扱いになる（キーが無い状態ではなく値が null の状態で保持される）」。
-     * </p>
-     * <p>
-     * 値までそろえたい場合は T4 のように {@code ""} を明示する
-     * （{@link #getSetupTableData_markerOnlyRowIsKept()}）。<br>
+     * 値までそろえたい場合は 2 通りある。他のカラムに {@code ""} を明示して Excel の空セルにそろえるか
+     * （T4。{@link #getSetupTableData_markerOnlyRowIsKept()}）、Excel 側に {@code null} と記述して
+     * キー省略にそろえるか（T6。{@link #getSetupTableData_markerOnlyRowWithOmittedColumnsMatchesExplicitNull()}）
+     * である。<br>
      * Given: マーカーカラム {@code [NO]} を持つカラム名の行と、通常行 1 件・{@code [NO]} だけを
      *        キーに持つ行 1 件（Excel は {@code [NO]} だけに値がある行）<br>
      * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
@@ -325,13 +330,33 @@ public class YamlBlankEntryOracleTest {
         assertThat("T5: 1 行目は本体と同じであること",
                 rowValuesOf(actual, 0), is(rowValuesOf(expected, 0)));
 
-        // 省略したカラムの値だけが食い違う（仕様差）。
+        // 省略したカラムの値だけが食い違う（入力が非等価なため）。
         for (String column : COLUMNS) {
             assertThat("T5: 本体（Excel）の 2 行目の " + column + " は空文字であること",
                     expected.getValue(1, column), is((Object) ""));
             assertNull("T5: YAML の 2 行目の " + column + " は省略により null になること",
                     actual.getValue(1, column));
         }
+    }
+
+    /**
+     * [YamlTestDataParser] getSetupTableData: マーカーカラム以外をキーごと省略した行は、他のカラムに
+     * {@code null} と記述した Excel の行と結果まで一致すること（T6）。
+     *
+     * <p>
+     * T5 が示すとおり、キーを省略したカラムは {@code null} を明示したのと同じ扱いになる。したがって
+     * Excel 側の他のセルに {@code null} と記述すれば（{@code NullInterpreter} が Java {@code null} に
+     * 変換する）、両者は入力として等価になり、カラム名・行数だけでなく値まで一致するはずである。
+     * T5 の食い違いが形式間の仕様差ではなく入力の非等価によることを、この対照で示す。<br>
+     * Given: マーカーカラム {@code [NO]} を持つカラム名の行と、通常行 1 件・{@code [NO]} だけを
+     *        キーに持つ行 1 件（Excel は他のセルに {@code null} と記述した行）<br>
+     * When:  YAML と本体（Excel）の双方を {@code getSetupTableData} で読む<br>
+     * Then:  カラム名・行数・全カラムの値が本体と一致し、2 行目は双方とも全カラム {@code null} であること
+     * </p>
+     */
+    @Test
+    public void getSetupTableData_markerOnlyRowWithOmittedColumnsMatchesExplicitNull() {
+        assertTableCase("T6", COLUMNS, new String[][]{{"00001", "v1", "n1"}, {null, null, null}});
     }
 
     // ========================================================================
@@ -406,14 +431,13 @@ public class YamlBlankEntryOracleTest {
      * 省略したキーの値だけが本体（{@code ""}）と YAML（Java {@code null}）で食い違うこと（L5）。
      *
      * <p>
-     * 趣旨は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と同じ。
-     * ただしスキーマ {@code $defs.list_map_data.properties.rows.description} には
-     * カラム（キー）省略の扱いを述べた記述が無い。省略したキーが Java {@code null} になるのは
-     * 実装上の共通化による。{@code list_maps} 経路もテーブル系と同じ
-     * {@code YamlTableDataBuilder#extractRows} を通り、そこで {@code rowMap.get(col)} が
-     * 省略したキーに対して {@code null} を返すため、{@code $defs.table_data.properties.rows.description}
-     * の (2)（カラム名決定行にはあるが個々の行で省略したカラムは値が null の状態で保持される）が
-     * そのまま当てはまる。<br>
+     * 趣旨は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsIsKept()} と同じで、
+     * キーを省略した行と Excel の空セルの行は入力として等価ではない。{@code list_maps} 経路も
+     * テーブル系と同じ {@code YamlTableDataBuilder#extractRows} を通り、そこで {@code rowMap.get(col)} が
+     * 省略したキーに対して {@code null} を返すため、「キーを省略したカラムは {@code null} を明示したのと
+     * 同じ扱いになる」がそのまま当てはまる。値までそろえた対照は L4（{@code ""} を明示）と
+     * L6（Excel 側に {@code null} と記述。{@link #getListMap_markerOnlyRowWithOmittedKeysMatchesExplicitNull()}）
+     * である。<br>
      * Given: マーカーカラム {@code [NO]} を持つキー名の行と、通常行 1 件・{@code [NO]} だけを
      *        キーに持つ行 1 件<br>
      * When:  YAML と本体（Excel）の双方を {@code getListMap} で読む<br>
@@ -439,13 +463,30 @@ public class YamlBlankEntryOracleTest {
         }
         assertThat("L5: 1 件目は本体と同じであること", actual.get(0), is(expected.get(0)));
 
-        // 省略したキーの値だけが食い違う（仕様差）。
+        // 省略したキーの値だけが食い違う（入力が非等価なため）。
         for (String key : KEYS) {
             assertThat("L5: 本体（Excel）の 2 件目の " + key + " は空文字であること",
                     expected.get(1).get(key), is(""));
             assertNull("L5: YAML の 2 件目の " + key + " は省略により null になること",
                     actual.get(1).get(key));
         }
+    }
+
+    /**
+     * [YamlTestDataParser] getListMap: マーカーカラム以外をキーごと省略した行は、他のキーに
+     * {@code null} と記述した Excel の行と結果まで一致すること（L6）。
+     *
+     * <p>
+     * 趣旨は {@link #getSetupTableData_markerOnlyRowWithOmittedColumnsMatchesExplicitNull()} と同じ。<br>
+     * Given: マーカーカラム {@code [NO]} を持つキー名の行と、通常行 1 件・{@code [NO]} だけを
+     *        キーに持つ行 1 件（Excel は他のセルに {@code null} と記述した行）<br>
+     * When:  YAML と本体（Excel）の双方を {@code getListMap} で読む<br>
+     * Then:  キー集合・件数・全キーの値が本体と一致し、2 件目は双方とも全キーが {@code null} であること
+     * </p>
+     */
+    @Test
+    public void getListMap_markerOnlyRowWithOmittedKeysMatchesExplicitNull() {
+        assertListMapCase("L6", KEYS, new String[][]{{"v1", "v2", "v3"}, {null, null, null}});
     }
 
     // ========================================================================
@@ -456,8 +497,8 @@ public class YamlBlankEntryOracleTest {
      * テーブルデータ 1 ケースについて、本体（Excel）の結果を正解として YAML の結果と突き合わせる。
      *
      * @param caseName        ケース名（＝ Excel のシート名 ＝ YAML のグループ ID）
-     * @param expectedColumns 本体が返すカラム名（解説書が定める挙動）
-     * @param expectedRows    本体が返す各行の値（解説書が定める挙動）
+     * @param expectedColumns 本体が返すはずのカラム名
+     * @param expectedRows    本体が返すはずの各行の値
      */
     private void assertTableCase(String caseName, String[] expectedColumns, String[][] expectedRows) {
         TableData expected = single(
@@ -481,8 +522,8 @@ public class YamlBlankEntryOracleTest {
      * {@code LIST_MAP} 1 ケースについて、本体（Excel）の結果を正解として YAML の結果と突き合わせる。
      *
      * @param caseName     ケース名（＝ Excel のシート名 ＝ YAML の ID）
-     * @param expectedKeys 本体が返すキー名（解説書が定める挙動）
-     * @param expectedRows 本体が返す各行の値（解説書が定める挙動）
+     * @param expectedKeys 本体が返すはずのキー名
+     * @param expectedRows 本体が返すはずの各行の値
      */
     private void assertListMapCase(String caseName, String[] expectedKeys, String[][] expectedRows) {
         List<Map<String, String>> expected =
@@ -503,9 +544,9 @@ public class YamlBlankEntryOracleTest {
     }
 
     /**
-     * 本体が返した {@link TableData} が解説書の定める挙動どおりであることを確かめる。
+     * 本体が返した {@link TableData} が、このテストの想定どおりの内容であることを確かめる。
      *
-     * <p>本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。</p>
+     * <p>本体を正解として扱う以上、その正解自体が意図した内容であることをここで固定する。</p>
      */
     private static void assertTableValues(String message, TableData table,
                                           String[] expectedColumns, String[][] expectedRows) {
@@ -521,9 +562,9 @@ public class YamlBlankEntryOracleTest {
     }
 
     /**
-     * 本体が返した {@code LIST_MAP} の結果が解説書の定める挙動どおりであることを確かめる。
+     * 本体が返した {@code LIST_MAP} の結果が、このテストの想定どおりの内容であることを確かめる。
      *
-     * <p>本体を正解として扱う以上、その正解自体が解説書と一致していることをここで固定する。</p>
+     * <p>本体を正解として扱う以上、その正解自体が意図した内容であることをここで固定する。</p>
      */
     private static void assertListMapValues(String message, List<Map<String, String>> rows,
                                             String[] expectedKeys, String[][] expectedRows) {
