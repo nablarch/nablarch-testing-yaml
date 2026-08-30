@@ -1603,8 +1603,17 @@ steering には無いが、報告書で足りるため差し戻さない。
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**:
-- **Last completed**:
-- **Next**:
-- **Notes**:
+- **Status**: paused
+- **Date**: 2026-08-30
+- **Last completed**: #45（ユーザー承認で締め済み。指示書 §9 の承認文面と独立検証の内訳を #45 に記録）。
+  コミット `886849c`、push 済み
+- **Next**: **未定。ユーザーの次の指示待ち。** 指示書 §9 が「yaml の Step 4 第2回はこれで完了。追加タスクは無い」と
+  定めており、未完了タスクは1件も無い
+- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --short` 空）。
+  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`、`@Ignore` 0件。
+  解説書のピンは `nablarch-document@a6da1f6`。`src/` に解説書への参照は無く、以後も書かない
+  （根拠の追跡は `.rn/` の報告書・台帳で行う。§8.5 のユーザー判断）。
+  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
+  `Tests run: 656, Failures: 3, Errors: 1` のままだが、§8.2 の判定により converter 側の第2回指示書で直すことが
+  決まっており、当リポジトリの作業ではない。
+  ユーザー未解決の未追跡パス: なし。
