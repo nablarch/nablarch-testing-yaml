@@ -1576,6 +1576,25 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 （A で変えるのはコメントとフィクスチャのコメントだけ。ただし C の T6/L6 は足す）。変えたら報告に挙げる。
 解説書に無い書き方を追いかけない。§8.5 の機械検証（案1）は作らない。
 
+**ユーザー判定（2026-08-30・`/rn:ty` で承認）**: ディレクターの独立検証に合格したため #45 を締める。
+**yaml の Step 4 第2回はこれで完了。追加タスクは無い。**（出典: 指示書
+`nablarch-document@origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md` §9）
+検証の内訳（scratchpad の clone・`3fecc4e` を対象。CC の報告書は根拠にしていない）:
+`git log ef1fc63..origin/feature/ntf-yaml` が `4688307`・`58c7bc1`・`3fecc4e` の3件で `git status --short` 空／
+`git grep -nE '\.rst|nablarch-document|解説書|出典|根拠:' -- src/` が0件、`[A-Za-z]+\.java:[0-9]+` は
+`YamlMessageBuilderTest.java:1380` の `YamlLoader.java:151` の1件だけ（`ef1fc63` では11件）／
+`f2891b7..3fecc4e` の `src/` 差分からコメント行を落とした実質差分はスキーマ `description` 5箇所・T6/L6・
+assert メッセージ文字列2件（`YamlTestDataParserTest.java:642`・`YamlMessageBuilderTest.java:42`）のみで、
+既存テストの動作・期待値の変更は無い／`mvn -o clean test` が `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`・
+`@Ignore` 0件／実装側のミューテーション（`YamlTableDataBuilder.java:155`・`:204` で省略カラムを `""` に置換）で
+T6/L6 が落ちること（`Tests run: 12, Failures: 6`）／スキーマ5箇所の追記文が `:293` の既存文と同文／
+`checks/task-31.md` の `:8`・`:9`・`:23` に注記あり。
+
+§8 に無く前提を置いて進めた3件は、いずれも受け入れ（`fw_header` 2箇所を「キー名・値」とした件は
+解説書 `testdata_notation.rst:1295`（`a6da1f6`）が `fw_header:` のキーを設定名に限定しているため導ける／
+`checks/task-31.md:7` の注記／ピン行から `05e57a1` 同一の注記を落とした件）。前提3件は報告書 §9.2・§9.4 にあり
+steering には無いが、報告書で足りるため差し戻さない。
+
 ---
 
 # State
@@ -1584,21 +1603,8 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-29
-- **Last completed**: #45（解説書への参照を `src/` から除去／2-5 の規則をスキーマ `description` 5箇所へ追記／
-  `YamlBlankEntryOracleTest` の T5・L5 の書き直しと T6・L6 の追加／`checks/task-31.md` への注記／
-  Rules のピン取り直し）。コミット `3fecc4e`、push 済み
-- **Next**: **未定。ユーザーの次の指示待ち。** #45 は指示どおり「終わったら報告して止まる」で締めており、
-  後続タスクは登録していない。報告は `.rn/ntf-yaml/report-step4-2.md` の §9（9.0〜9.6）
-- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --short` 空）。
-  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`、`@Ignore` 0件。
-  解説書のピンは `a6da1f6`（Rules の参照点を #45 で取り直し済み）。
-  `src/` に解説書への参照は無い（`git grep -nE '\.rst|nablarch-document|解説書|出典' -- src/` が0件、「根拠:」も0件）。
-  以後 `src/` に解説書の出典を書かないこと。根拠の追跡は `.rn/` の報告書・台帳で行う（§8.5 のユーザー判断）。
-  #45 で前提を置いて進めた3件は報告書 §9.2・§9.4 に記載（`fw_header` 2箇所を「キー名・値」とした／
-  `checks/task-31.md:7` に4箇所目の注記を足した／ピン行から `05e57a1` 同一の注記を落とした）。
-  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
-  `Tests run: 656, Failures: 3, Errors: 1` のままだが、§8.2 の判定により converter 側の第2回指示書で直すことが
-  決まっており、当リポジトリの作業ではない。
-  ユーザー未解決の未追跡パス: なし。
+- **Status**: not suspended
+- **Date**:
+- **Last completed**:
+- **Next**:
+- **Notes**:
