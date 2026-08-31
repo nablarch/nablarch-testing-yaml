@@ -1626,6 +1626,15 @@ steering には無いが、報告書で足りるため差し戻さない。
 **やらないこと**: 上記コメント以外の `src/` 変更・テスト変更をしない。force push・`--amend` をしない。
 レビューは回さない（指示書 §4。コメント追記のみでディレクターが実物で確認する）。
 
+**ユーザー判定（2026-08-31・`/rn:up` で承認）**: ディレクターの独立再測定（GitHub からの別 clone・JaCoCo agent 方式）が
+C0 1809/1822・C1 174/176・未達が承認済み2箇所のみ・320件緑で一致したため #46 を締める。
+判断待ちだった「指示書 §3-3 の 318件 vs 実測 320件」への回答は **指示書の件数を更新しない**。
+320件が正で、差は `#45` の T6/L6 追加によるもの。実測の記録は台帳と steering にあり、当該指示書は消費済みのため。
+（出典: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-10-yaml-coverage.md` §5）
+**この指示書の作業はこれで完了。** 次の指示書 `ntf-step4-13`（スキーマ `description` 全件突合）は
+converter の作業完了後に別途送付される（同 §5）。
+
 ---
 
 # State
@@ -1637,18 +1646,19 @@ so only a genuinely suspended session reads `paused`.)
 - **Status**: paused
 - **Date**: 2026-08-31
 - **Last completed**: #46（`YamlLoader.java:57`-`:58` に到達不能分岐の理由コメントを追記）。
-  成果物コミット `0910b5e`、締めコミット `8773796`、いずれも push 済み
-- **Next**: **未定。ユーザーの次の指示待ち。** 未完了タスクは1件も無い。#46 は指示書
-  `nablarch-document@origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-10-yaml-coverage.md` §4 により
-  レビューを回さず、ディレクターが実物で確認する段階にある
+  成果物コミット `0910b5e`、締めコミット `8773796`、いずれも push 済み。
+  **2026-08-31 ユーザー承認済み**（ディレクターの独立再測定が一致）
+- **Next**: **無し。次の指示書 `ntf-step4-13`（スキーマ `description` 全件突合）の送付待ち。**
+  送付は `nablarch-testing-converter` 側の作業完了後（出典: 指示書
+  `nablarch-document@origin/ntf-yaml-support` の
+  `.rn/20260724-ntf-yaml-support/ntf-step4-10-yaml-coverage.md` §5）。未完了タスクは1件も無い
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
-  カバレッジ再測定はコーディネータが自分で再実行した実測で C0 1809/1822（missed 13）・C1 174/176（missed 2）、
-  未達は `YamlFileBuilder.java:246`-`:247` と `YamlLoader.java:62`・`:63`・`:67`・`:68`（static 初期化子）の2箇所のみ。
+  カバレッジは C0 1809/1822（missed 13）・C1 174/176（missed 2）、未達は `YamlFileBuilder.java:246`-`:247` と
+  `YamlLoader.java:62`・`:63`・`:67`・`:68`（static 初期化子）の2箇所のみで、いずれもユーザー承認済み・理由コメント済み。
   `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`。
-  **ディレクター判断待ち1件**: 指示書 §3-3 は「全件緑（318件）」だが実測は 320件（`#45` の T6/L6 追加による）。
-  指示書側の件数更新の要否は未回答。
+  **判断待ちは解消済み**: 指示書 §3-3 の「318件」は更新しない。320件が正（`#45` の T6/L6 追加による差）。
   解説書のピンは `nablarch-document@a6da1f6`。`src/` に解説書への参照は無く、以後も書かない。
-  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
+  下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
   `Tests run: 656, Failures: 3, Errors: 1` のままだが、converter 側の第2回指示書で直すことが決まっており
   当リポジトリの作業ではない。
   ユーザー未解決の未追跡パス: なし。
