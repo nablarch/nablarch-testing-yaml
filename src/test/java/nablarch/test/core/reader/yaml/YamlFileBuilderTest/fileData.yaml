@@ -449,21 +449,6 @@ expected_files:
         rows:
           - []
 
-  - group_id: noRows
-    path: dummy/no_rows.csv
-    type: variable
-    directives:
-      text-encoding: UTF-8
-      field-separator: ","
-    records:
-      - record_type: DATA
-        fields:
-          - name: FIELD1
-            type: 半角
-          - name: FIELD2
-            type: 半角
-        rows: []
-
   # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
   #      この2文字を含む値は YAML 形式では書けず、エラーになる。
   #      データ行に書いた場合。

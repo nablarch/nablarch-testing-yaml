@@ -1299,35 +1299,6 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: rows が 0 件のとき、データ行が 0 件になること。
-     *
-     * <p>
-     * description が述べる挙動:
-     * {@code $defs.record_fragment.properties.rows.description} の「rows が0件でも有効」。<br>
-     * rows が 0 件でもレコード定義は生成され、データ行だけが 0 件になる。
-     * 0 件の rows をレコード定義ごと落とすとレコード定義の判定が落ち、空の値行を 1 件補うと
-     * データ行の判定が落ちる（どちらも実際に確認済み。{@code checks/task-22.md} の変異確認欄）。<br>
-     * Given: expected_files の noRows グループに、fields 2 件・{@code rows: []} のエントリ<br>
-     * When:  buildFileList(yaml, "expected_files", "[noRows]", path) を呼ぶ<br>
-     * Then:  DataFile が 1 件返り、レコード定義は 1 件生成され、toDataRecords() が 0 件であること
-     * </p>
-     */
-    @Test
-    public void buildFileList_noRowsBecomesZeroDataRecords() {
-        // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
-
-        // When
-        List<DataFile> result = buildFileList(yaml, "expected_files", "[noRows]", DIR);
-
-        // Then
-        assertThat("1 件取得できること", result.size(), is(1));
-        assertThat("レコード定義は生成されること",
-                result.get(0).createLayout().getRecords().size(), is(1));
-        assertThat("データ行が 0 件であること", result.get(0).toDataRecords().size(), is(0));
-    }
-
-    /**
      * メッセージ系のレコードレイアウト（1 フィールド・1 値行）を組み立てる。
      *
      * @param recordType record_type に設定する値

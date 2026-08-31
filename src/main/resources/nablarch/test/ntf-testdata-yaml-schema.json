@@ -184,7 +184,47 @@
             "$ref": "#/$defs/record_fragment"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "fixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "directives": {
+                "$ref": "#/$defs/directives_fixed"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "variable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "directives": {
+                "$ref": "#/$defs/directives_variable"
+              }
+            }
+          }
+        }
+      ]
     },
     "message_data": {
       "type": "object",
@@ -206,7 +246,7 @@
           "type": "array",
           "minItems": 1,
           "maxItems": 1,
-          "description": "電文本文のレコード定義。records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる（電文はファイルデータのように複数のレコードレイアウトを持たない）。FW 制御ヘッダは fw_header に記述するため records には含めない（旧形式の record_type: FW_HEADER は廃止）。MessageParser はこの records の record_type を内部で常に \"default\" に置換する",
+          "description": "電文本文のレコード定義。records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる（電文はファイルデータのように複数のレコードレイアウトを持たない）。FW 制御ヘッダは fw_header に記述するため records には含めない（旧形式の record_type: FW_HEADER は廃止）。この records の record_type は、記載した値が使われず内部で常に \"default\" になる",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
@@ -282,7 +322,8 @@
     "directives": {
       "type": "object",
       "additionalProperties": false,
-      "description": "ファイルディレクティブ。NTF のフォーマット定義に渡すファイル属性を指定する。固定長（type=fixed）と可変長（type=variable）で有効なキーが異なる",
+      "description": "ファイルディレクティブ。NTF のフォーマット定義に渡すファイル属性を指定する。固定長（type=fixed）と可変長（type=variable）で有効なキーが異なる。ファイルデータ（setup_files / expected_files）では type に応じて固定長11キー・可変長9キーに限定される。電文（messages / expected_request_* / response_*）では限定されず、ここに列挙した17キーすべてを記述できる",
+      "$comment": "ここは固定長11キーと可変長9キーの和集合（共通3キーを除いた17キー）を列挙し、型別の限定は type を持つ file_data 側の allOf/if-then で directives_fixed / directives_variable に切り替えて表現する（この def 自身は type を知らないため型別に分岐できない）。電文の3つの def(message_data / expected_request_message_data / group_message_data)は type キーを持たず、有効なディレクティブキーの一覧も定まっていないため、電文側では型別の限定を表現していない",
       "properties": {
         "text-encoding": {
           "type": "string",
@@ -346,12 +387,50 @@
         },
         "max-record-length": {
           "type": "integer",
-          "description": "[可変長専用] 最大レコード長（バイト数）"
+          "description": "[可変長専用] 最大レコード長"
         },
         "title-record-type-name": {
           "type": "string",
           "description": "[可変長専用] タイトルレコード種別名"
         }
+      }
+    },
+    "directives_fixed": {
+      "type": "object",
+      "description": "固定長ファイル（type=fixed）で有効なディレクティブキーの限定。共通3キーと固定長専用8キーの計11キー以外を書くと検証エラーになる。各キーの意味は directives を参照",
+      "$comment": "キーごとの型と説明は directives 側で一元管理し、ここではキー名の集合だけを限定する（description の二重管理を避けるため propertyNames.enum で表現する）",
+      "propertyNames": {
+        "enum": [
+          "file-type",
+          "text-encoding",
+          "record-length",
+          "record-separator",
+          "positive-zone-sign-nibble",
+          "negative-zone-sign-nibble",
+          "positive-pack-sign-nibble",
+          "negative-pack-sign-nibble",
+          "required-decimal-point",
+          "fixed-sign-position",
+          "required-plus-sign"
+        ]
+      }
+    },
+    "directives_variable": {
+      "type": "object",
+      "description": "可変長ファイル（type=variable）で有効なディレクティブキーの限定。共通3キーと可変長専用6キーの計9キー以外を書くと検証エラーになる。各キーの意味は directives を参照",
+      "$comment": "キーごとの型と説明は directives 側で一元管理し、ここではキー名の集合だけを限定する（description の二重管理を避けるため propertyNames.enum で表現する）",
+      "propertyNames": {
+        "enum": [
+          "file-type",
+          "text-encoding",
+          "record-separator",
+          "field-separator",
+          "quoting-delimiter",
+          "ignore-blank-lines",
+          "requires-title",
+          "max-record-length",
+          "title-record-type-name"
+        ]
       }
     },
     "record_fragment": {
@@ -377,6 +456,7 @@
         },
         "rows": {
           "type": "array",
+          "minItems": 1,
           "description": "データ行リスト。各要素は fields と同じ順序・同じ件数で値を並べた配列（NTF は fields の順序で先頭から対応付ける）。各配列の要素数が fields の件数に満たない場合、不足した末尾のフィールドは `\"\"` として扱われる。末尾のフィールドに `null` と書いた場合も `\"\"` になる（後ろに値のあるフィールドがあれば `null` のまま保持される）。ここでいう「値のあるフィールド」に `\"\"` は含まれない。末尾側に `\"\"` と `null` がどの順で並んでもまとめて `\"\"` になり、`null` は保持されない（例: fields 3 件に対し `[\"x\", null, \"\"]` と書くと `\"x\"`・`\"\"`・`\"\"` になる）。これを利用し、空配列 `[]` を1要素書くと全フィールドが `\"\"` のレコード1件になる。データは1件以上記述する（0バイトの空ファイルは、レコード定義を持たないブロックとして `records:` に空配列 `[]` を書いて表す）。バックスラッシュと `r` の2文字（`\"\\\\r\"`）を含む値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない）",
           "items": {
             "type": "array",
@@ -402,7 +482,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "フィールド名。NTF がフォーマット定義ファイルのフィールド名と照合するために使用する。同一レコード種別内で重複不可"
+          "description": "フィールド名。NTF はこの名前でレコードのフィールドを定義し、レコードの値を取り出すキーとして使用する。同一レコード種別内で重複不可"
         },
         "type": {
           "type": "string",
@@ -410,7 +490,7 @@
           "description": "データ型。日本語名称で記述する（半角英字 / 半角数字 / 半角 / 全角 / 全角漢字 / 数値 / 符号無ゾーン10進数 / 符号付ゾーン10進数 / 符号無パック10進数 / 符号付パック10進数 / 符号無数値 / 符号付数値 / バイナリ 等）。NTF が BasicDataTypeMapping により内部の型記号へ変換する。プロジェクト独自の型名称（dataTypeMapping で登録したもの）も許容するため、過度なパターン制約は設けない"
         },
         "length": {
-          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須（省略すると NTF が record-length を計算できない）。可変長ファイルでは不要（省略可）。\"0\" はダミーフィールド（意味のある長さを持たないプレースホルダー）に使用可。\"-\" はオンデマンド計算（そのフィールドに追加された全レコード値の最大バイト長に自動拡張される）。\"-\" フィールドの値は NTF が格納時に、値に含まれる改行とその前後の空白を除去する（改行を含まない値の前後の空白は除去されない）。integer 記法（10）も文字列記法（\"10\"）もどちらも有効",
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須（省略すると NTF が record-length を計算できない）。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（そのフィールドに追加された全レコード値の最大バイト長に自動拡張される）。\"-\" フィールドの値は NTF が格納時に、値に含まれる改行とその前後の空白を除去する（改行を含まない値の前後の空白は除去されない）。integer 記法（10）も文字列記法（\"10\"）もどちらも有効",
           "anyOf": [
             {
               "type": "integer",

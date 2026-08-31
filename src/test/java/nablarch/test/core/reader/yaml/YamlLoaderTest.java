@@ -720,4 +720,166 @@ public class YamlLoaderTest {
         List<Object> records = (List<Object>) setupFiles.get(0).get("records");
         assertThat("ファイルデータは複数のレコードレイアウトを持てること", records.size(), is(2));
     }
+
+    // ========================================================================
+    // load: レコード定義を持つブロックのデータ行は1件以上であること（minItems: 1）
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: レコード定義の rows を空配列にした YAML をロードした場合は
+     * YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: レコード定義（fields）を持つブロックのデータ行は1件以上であること。
+     * 0バイトの空ファイルは、レコード定義を持たないブロックとして {@code records: []} で表すため、
+     * {@code rows: []} は誤りである。<br>
+     * Given: setup_files の1レコード定義が rows: [] を持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、違反の種別が minItems で、
+     *        メッセージにファイルパスと出所（rows のパス）が含まれること
+     * </p>
+     */
+    @Test
+    public void load_emptyRowsIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_emptyRows");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/schemaViolation_emptyRows"));
+            assertThat("エラーメッセージに出所（setup_files のレコード定義の rows）が含まれること",
+                    e.getMessage(), containsString("setup_files[0].records[0].rows"));
+            List<ValidationMessage> errors = e.getErrors();
+            assertThat("違反が 1 件報告されること", errors.size(), is(1));
+            assertThat("データ行が0件であることとして弾かれること（minItems 違反）: " + errors.get(0),
+                    errors.get(0).getType(), is("minItems"));
+        }
+    }
+
+    // ========================================================================
+    // load: ファイルディレクティブは type（fixed / variable）ごとに有効なキーが限定されること
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: 固定長ファイル（type: fixed）に可変長専用のディレクティブキーを
+     * 記述した YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: 固定長ファイルで有効なディレクティブキーは11個に限定され、
+     * 可変長専用キー（field-separator 等）は検証で弾かれること。<br>
+     * Given: setup_files の type: fixed のエントリが field-separator を持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、メッセージにファイルパスと
+     *        違反したキー名が含まれること
+     * </p>
+     */
+    @Test
+    public void load_fixedFileWithVariableOnlyDirectiveIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_fixedFileWithVariableDirective");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(),
+                    containsString("YamlLoaderTest/schemaViolation_fixedFileWithVariableDirective"));
+            assertThat("エラーメッセージに出所（setup_files の directives）が含まれること",
+                    e.getMessage(), containsString("setup_files[0].directives"));
+            assertThat("違反した可変長専用キーが報告されること",
+                    e.getMessage(), containsString("field-separator"));
+            assertTrue("違反が 1 件以上報告されること", e.getErrors().size() >= 1);
+        }
+    }
+
+    /**
+     * [YamlLoader] load: 可変長ファイル（type: variable）に固定長専用のディレクティブキーを
+     * 記述した YAML をロードした場合は YamlSchemaValidationException がスローされること。
+     *
+     * <p>
+     * 何を担保するか: 可変長ファイルで有効なディレクティブキーは9個に限定され、
+     * 固定長専用キー（record-length 等）は検証で弾かれること。<br>
+     * Given: setup_files の type: variable のエントリが record-length を持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  YamlSchemaValidationException がスローされ、メッセージにファイルパスと
+     *        違反したキー名が含まれること
+     * </p>
+     */
+    @Test
+    public void load_variableFileWithFixedOnlyDirectiveIsSchemaViolation() {
+        // When
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_variableFileWithFixedDirective");
+            fail("YamlSchemaValidationException が期待される");
+        } catch (YamlSchemaValidationException e) {
+            // Then
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(),
+                    containsString("YamlLoaderTest/schemaViolation_variableFileWithFixedDirective"));
+            assertThat("エラーメッセージに出所（setup_files の directives）が含まれること",
+                    e.getMessage(), containsString("setup_files[0].directives"));
+            assertThat("違反した固定長専用キーが報告されること",
+                    e.getMessage(), containsString("record-length"));
+            assertTrue("違反が 1 件以上報告されること", e.getErrors().size() >= 1);
+        }
+    }
+
+    /**
+     * [YamlLoader] load: type に対応するディレクティブキーだけを記述した YAML はロードできること。
+     *
+     * <p>
+     * 何を担保するか: 型別限定が過剰でないこと。固定長11キー・可変長9キーをすべて記述しても
+     * 検証を通ること。<br>
+     * Given: type: fixed のエントリに固定長11キー、type: variable のエントリに可変長9キーを
+     *        記述した YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  例外は発生せず、2エントリともロードできること
+     * </p>
+     */
+    @Test
+    public void load_fileDirectivesOfMatchingTypeAreAllowed() {
+        // When
+        Map<String, Object> loaded = YamlLoader.load(DIR, "YamlLoaderTest/fileDirectivesOfMatchingType");
+
+        // Then
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> setupFiles = (List<Map<String, Object>>) loaded.get("setup_files");
+        assertThat("setup_files が2件ロードされること", setupFiles.size(), is(2));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> fixedDirectives = (Map<String, Object>) setupFiles.get(0).get("directives");
+        assertThat("固定長の11キーがすべてロードできること", fixedDirectives.size(), is(11));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> variableDirectives = (Map<String, Object>) setupFiles.get(1).get("directives");
+        assertThat("可変長の9キーがすべてロードできること", variableDirectives.size(), is(9));
+    }
+
+    /**
+     * [YamlLoader] load: 電文のディレクティブは型別に限定されないこと。
+     *
+     * <p>
+     * 何を担保するか: 型別限定はファイルデータ（type キーを持つ file_data）だけの制約であること。
+     * 電文の3セクション（messages / expected_request_* / response_*）は type キーを持たず、
+     * 有効なディレクティブキーの一覧も定まっていないため、スキーマでは限定していない
+     * （$defs.directives の $comment を参照）。ファイルデータ側に型別限定を入れていることの
+     * 対照となる。<br>
+     * Given: messages の1エントリが固定長専用キーと可変長専用キーを同時に持つ YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  例外は発生せず、directives が3件のままロードできること
+     * </p>
+     */
+    @Test
+    public void load_messageDirectivesAreNotTypeRestricted() {
+        // When
+        Map<String, Object> loaded = YamlLoader.load(DIR, "YamlLoaderTest/messageDirectivesAreNotTypeRestricted");
+
+        // Then
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> messages = (List<Map<String, Object>>) loaded.get("messages");
+        assertThat("messages が1件ロードされること", messages.size(), is(1));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> directives = (Map<String, Object>) messages.get(0).get("directives");
+        assertThat("電文では固定長専用キーと可変長専用キーが共存できること", directives.size(), is(3));
+    }
 }
