@@ -1595,6 +1595,37 @@ T6/L6 が落ちること（`Tests run: 12, Failures: 6`）／スキーマ5箇所
 `checks/task-31.md:7` の注記／ピン行から `05e57a1` 同一の注記を落とした件）。前提3件は報告書 §9.2・§9.4 にあり
 steering には無いが、報告書で足りるため差し戻さない。
 
+### #46: `YamlLoader` の static 初期化子に到達不能の理由コメントを入れる
+
+**Purpose**: 「本モジュールは全部新規なので未達0が基準。到達不能として user が承認した未達には、未達箇所に理由コメントを
+入れる」というユーザー基準（2026-08-31 確定）を満たす。未達2箇所のうち `YamlFileBuilder.java:244`-`:245` は既にコメントが
+あるため、コメントの無い `YamlLoader` の static 初期化子だけを対象とする。
+
+**出典**: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-10-yaml-coverage.md` §1〜§3。
+
+**Prerequisites**: #45
+
+**Steps**:
+
+- [ ] A. `YamlLoader.java` の static 初期化子の直前に、「スキーマは本モジュールの jar に同梱するリソースであり、
+      通常の実行環境ではクラスパスから欠落しない。`schemaStream == null` と `IOException` の分岐は、クラスローダを
+      細工しない限り到達できない防御である」旨のコメントを入れる。技術的理由だけを書き、カバレッジ計測・解説書・
+      `.rn/` 文書・タスク番号への言及はしない
+- [ ] B. カバレッジを再測定し、全体値と未達2箇所が #45 完了時と一致することを確認する
+- [ ] C. `mvn -o clean test` 緑・`git status --short` 空・1コミットで push
+- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-46.md)
+
+**Completion criteria**:
+
+- `YamlLoader.java` にコメントが入り、`git diff` の差分がコメント行のみである
+- 再測定の全体値と未達2箇所が #45 完了時（C0 1809/1822・C1 174/176、`INSTRUCTION_MISSED` 13・`BRANCH_MISSED` 2）と
+  一致する
+- `mvn -o clean test` 全件緑・`git status --short` 空・1コミットで push 済み
+
+**やらないこと**: 上記コメント以外の `src/` 変更・テスト変更をしない。force push・`--amend` をしない。
+レビューは回さない（指示書 §4。コメント追記のみでディレクターが実物で確認する）。
+
 ---
 
 # State
@@ -1603,17 +1634,8 @@ steering には無いが、報告書で足りるため差し戻さない。
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-30
-- **Last completed**: #45（ユーザー承認で締め済み。指示書 §9 の承認文面と独立検証の内訳を #45 に記録）。
-  コミット `886849c`、push 済み
-- **Next**: **未定。ユーザーの次の指示待ち。** 指示書 §9 が「yaml の Step 4 第2回はこれで完了。追加タスクは無い」と
-  定めており、未完了タスクは1件も無い
-- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --short` 空）。
-  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`、`@Ignore` 0件。
-  解説書のピンは `nablarch-document@a6da1f6`。`src/` に解説書への参照は無く、以後も書かない
-  （根拠の追跡は `.rn/` の報告書・台帳で行う。§8.5 のユーザー判断）。
-  ブロッカー: 下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
-  `Tests run: 656, Failures: 3, Errors: 1` のままだが、§8.2 の判定により converter 側の第2回指示書で直すことが
-  決まっており、当リポジトリの作業ではない。
-  ユーザー未解決の未追跡パス: なし。
+- **Status**: not suspended
+- **Date**:
+- **Last completed**:
+- **Next**:
+- **Notes**:
