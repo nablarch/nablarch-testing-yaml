@@ -1682,7 +1682,22 @@ force push・`--amend` をしない。レビューは回さない。
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-31
+- **Last completed**: #47（スキーマ `description` 全 64 件と解説書 `nablarch-document@ed3de95f` の全件突合）。
+  444 主張（description 由来 356・構造制約 88）を1件ずつ判定し、矛盾 8 件を description の是正で解消。
+  コミット `5543601`、push 済み。報告書は `.rn/ntf-yaml/report-step4-3.md`。**ユーザー承認はまだ受けていない**
+- **Next**: **無し。#47 のユーザー判定（`/rn:ty` または `/rn:gm`）待ち。** 未完了タスクは1件も無い
+- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
+  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`（318件ではなく 320 件が正。#46 で確定済み）。
+  解説書のピンは `nablarch-document@ed3de95f`（#47 で `a6da1f6` から取り直した。Rules の参照点を更新済み）。
+  **判断待ち 6 件**（いずれも変更していない。詳細は報告書 §6）:
+  Q1 = `record_fragment.rows` に `minItems: 1` を足すか（構造制約の矛盾 S1。検証挙動が変わるため指示書 §2 により保留）／
+  Q2 = `$defs.directives` の固定長11キー・可変長9キーの型別限定をスキーマで表現するか／
+  Q3 = `message_data.records` の `MessageParser` というクラス名（YAML 経路の実装は `YamlFileBuilder.java:206`-`:208`）／
+  Q4 = `field_def.name` の「フォーマット定義ファイルのフィールド名と照合する」の根拠が未確認／
+  Q5 = `field_def.length` の「`"0"` はダミーフィールド」の用途の根拠が未確認／
+  Q6 = `max-record-length` の「（バイト数）」の根拠が未確認。
+  `src/` に解説書への参照は無く、以後も書かない。
+  下流 `nablarch-testing-converter`（`d611bec`）の赤は converter 側の課題であり当リポジトリの作業ではない。
+  ユーザー未解決の未追跡パス: なし。
