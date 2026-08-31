@@ -1637,7 +1637,7 @@ converter の作業完了後に別途送付される（同 §5）。
 
 ---
 
-### #47: スキーマ `description` と解説書（SSoT）の全件突合
+### ~~#47: スキーマ `description` と解説書（SSoT）の全件突合~~
 
 **Purpose**: スキーマの `description` は SSoT の適用範囲である（user 確定 2026-08-25）。`#45` では点検で
 見つかった3件だけを直しており、全 `description` を解説書と突き合わせた網羅的な確認は未実施。`#54` で
@@ -1651,18 +1651,18 @@ converter の作業完了後に別途送付される（同 §5）。
 
 **Steps**:
 
-- [ ] A. 母集合を機械抽出で固定する。`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の
+- [x] A. 母集合を機械抽出で固定する。`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の
       全 `description`（`$defs` 10件とトップレベル・全プロパティ）を抽出コマンドつきで件数確定し、
       各 description を文単位の主張へ分解して主張の件数も出す
-- [ ] B. 全主張を1件ずつ「一致 / 解説書に記述なし / 矛盾」で判定する。「一致」は解説書の `file:line`、
+- [x] B. 全主張を1件ずつ「一致 / 解説書に記述なし / 矛盾」で判定する。「一致」は解説書の `file:line`、
       「解説書に記述なし」は実装の `file:line` ＋ 解説書にあるべきかの所見1行、「矛盾」は根拠を対応表に書く。
       description 単位で「概ね一致」とまとめない
-- [ ] C. 構造制約（`type`・`required`・`pattern`・`maxItems` 等）も対応する解説書の記述と突き合わせる
-- [ ] D. 「矛盾」のうちスキーマ側が誤っているものは、解説書の逐語に合わせて `description` を是正する。
+- [x] C. 構造制約（`type`・`required`・`pattern`・`maxItems` 等）も対応する解説書の記述と突き合わせる
+- [x] D. 「矛盾」のうちスキーマ側が誤っているものは、解説書の逐語に合わせて `description` を是正する。
       解説書側が誤っている疑いのあるものは直さず、根拠を添えて報告する。構造制約の変更は行わず矛盾として報告して止まる
-- [ ] E. `git diff` が `description` のみの変更であること（構造制約に差分なし）を確認する
-- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑・`git status --short` 空・push
-- [ ] G. 報告を ①結論（矛盾の件数と内訳）②対応表（全件）③是正の差分 ④解説書側の疑い の順で出して停止する
+- [x] E. `git diff` が `description` のみの変更であること（構造制約に差分なし）を確認する
+- [x] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑・`git status --short` 空・push
+- [x] G. 報告を ①結論（矛盾の件数と内訳）②対応表（全件）③是正の差分 ④解説書側の疑い の順で出して停止する
 
 **Completion criteria**:
 

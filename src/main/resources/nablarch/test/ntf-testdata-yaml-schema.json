@@ -50,7 +50,7 @@
     },
     "messages": {
       "type": "array",
-      "description": "MockMessaging 経路の要求/応答電文データ。id で完全一致検索され先着1件のみ有効（2件目以降は無視）。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールドを定義する。id はデータタイプ MESSAGE の識別子であり、`setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する。`sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーであり、`sendSyncTestData/{requestId}/message` は読み込み単位を指すパスであって、この id に書く値ではない",
+      "description": "メッセージング受信テストの要求電文（setUpMessages）と、同期応答メッセージ受信の応答電文期待値（expectedMessages）のデータ。応答電文を持たない応答不要メッセージ受信では expectedMessages は読み込まれない。id で完全一致検索され先着1件のみ有効（2件目以降は無視）。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールドを定義する。id はデータタイプ MESSAGE の識別子であり、`setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する。`sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーであり、`sendSyncTestData/{requestId}/message` は読み込み単位を指すパスであって、この id に書く値ではない",
       "items": {
         "$ref": "#/$defs/message_data"
       }
@@ -71,14 +71,14 @@
     },
     "response_header_messages": {
       "type": "array",
-      "description": "応答電文ヘッダデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。errorMode 行（先頭値が `errorMode:timeout` または `errorMode:msgException`）を含めると送受信エラーをシミュレートできる（経路B のみ）",
+      "description": "応答電文ヘッダデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。errorMode 行（先頭値が `errorMode:timeout` または `errorMode:msgException`）を含めると送受信エラーをシミュレートできる。errorMode は、リクエスト単体テストで応答電文を返す経路（A）と取引単体テストのモックアップクラス経由の送受信（B）の両方で反映される",
       "items": {
         "$ref": "#/$defs/group_message_data"
       }
     },
     "response_body_messages": {
       "type": "array",
-      "description": "応答電文ボディデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。各エントリの電文レコード全体のバイト長が同一でなければならない（不一致時はエラー）。errorMode 行を含めると送受信エラーをシミュレートできる（経路B のみ）",
+      "description": "応答電文ボディデータ。2経路で参照される: (A) RequestTestingSendSyncSupport 経路では group_id でフィルタリングして全件収集、(B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集。HTTP メッセージ送信の応答電文本文では、各データエントリの文字列長が同一である必要がある。複数回電文を送信する場合は、同一データタイプ・同一リクエストIDのデータをそれぞれまとめて記述し、電文の長さを揃える必要がある。errorMode 行を含めると送受信エラーをシミュレートできる。errorMode は、リクエスト単体テストで応答電文を返す経路（A）と取引単体テストのモックアップクラス経由の送受信（B）の両方で反映される",
       "items": {
         "$ref": "#/$defs/group_message_data"
       }
@@ -193,7 +193,7 @@
         "records"
       ],
       "additionalProperties": false,
-      "description": "messages エントリ1件。MockMessaging 経路の要求/応答電文1メッセージを表す。id で完全一致検索され先着1件のみ有効。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールド（型・長さつき）を定義する",
+      "description": "messages エントリ1件。メッセージング受信テストの要求電文（setUpMessages）または同期応答メッセージ受信の応答電文期待値（expectedMessages）の1メッセージを表す。id で完全一致検索され先着1件のみ有効。fw_header で FW 制御ヘッダを指定し、records で電文本文フィールド（型・長さつき）を定義する",
       "properties": {
         "id": {
           "type": "string",
@@ -213,7 +213,7 @@
         },
         "fw_header": {
           "$ref": "#/$defs/fw_header",
-          "description": "FW 制御ヘッダ（キー: 値）。messages（MESSAGE: MockMessaging 経路）でのみ使用する。記載できるキーは、プロジェクトの reader.fwHeaderfields 設定に指定した名前（省略時は requestId, userId, resendFlag, resultCode）だけであり、それ以外のキーがあるとエラーになる。キー名の検査は、そのエントリの電文を読み出したときに行われる。誤記のあるエントリを読み出したときだけエラーになり、同一ファイル内の他のエントリの読み出しは巻き添えにならない。値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `\"0000000001\"`）。値の型はキー名と違ってこのスキーマ自身が課す制約であり、クォートなしの数値・真偽値を1つでも書くとロード時にファイル全体がエラーになり、他のエントリも読み出せなくなる。バックスラッシュと `r` の2文字（`\"\\\\r\"`）を含むキー名・値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない）"
+          "description": "FW 制御ヘッダ（キー: 値）。messages（MESSAGE）でのみ使用する。記載できるキーは、プロジェクトの reader.fwHeaderfields 設定に指定した名前（省略時は requestId, userId, resendFlag, resultCode）だけであり、それ以外のキーがあるとエラーになる。キー名の検査は、そのエントリの電文を読み出したときに行われる。誤記のあるエントリを読み出したときだけエラーになり、同一ファイル内の他のエントリの読み出しは巻き添えにならない。値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `\"0000000001\"`）。値の型はキー名と違ってこのスキーマ自身が課す制約であり、クォートなしの数値・真偽値を1つでも書くとロード時にファイル全体がエラーになり、他のエントリも読み出せなくなる。バックスラッシュと `r` の2文字（`\"\\\\r\"`）を含むキー名・値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない）"
         }
       }
     },
@@ -272,7 +272,7 @@
           "type": "array",
           "minItems": 1,
           "maxItems": 1,
-          "description": "電文フィールドのレコード定義。records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる（電文はファイルデータのように複数のレコードレイアウトを持たない）。先頭値が `errorMode:timeout` または `errorMode:msgException` の行を含めると MockMessagingContext / MockMessagingClient 経路で送受信エラーをシミュレートできる（RequestTestingSendSyncSupport 経路では errorMode は無視される）",
+          "description": "電文フィールドのレコード定義。records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる（電文はファイルデータのように複数のレコードレイアウトを持たない）。先頭値が `errorMode:timeout` または `errorMode:msgException` の行を含めると送受信エラーをシミュレートできる。errorMode は、リクエスト単体テストで応答電文を返す経路と取引単体テストのモックアップクラス経由の送受信の両方で反映される",
           "items": {
             "$ref": "#/$defs/record_fragment"
           }
@@ -377,7 +377,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行リスト。各要素は fields と同じ順序・同じ件数で値を並べた配列（NTF は fields の順序で先頭から対応付ける）。各配列の要素数が fields の件数に満たない場合、不足した末尾のフィールドは `\"\"` として扱われる。末尾のフィールドに `null` と書いた場合も `\"\"` になる（後ろに値のあるフィールドがあれば `null` のまま保持される）。ここでいう「値のあるフィールド」に `\"\"` は含まれない。末尾側に `\"\"` と `null` がどの順で並んでもまとめて `\"\"` になり、`null` は保持されない（例: fields 3 件に対し `[\"x\", null, \"\"]` と書くと `\"x\"`・`\"\"`・`\"\"` になる）。これを利用し、空配列 `[]` を1要素書くと全フィールドが `\"\"` のレコード1件になる。rows が0件でも有効。バックスラッシュと `r` の2文字（`\"\\\\r\"`）を含む値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない）",
+          "description": "データ行リスト。各要素は fields と同じ順序・同じ件数で値を並べた配列（NTF は fields の順序で先頭から対応付ける）。各配列の要素数が fields の件数に満たない場合、不足した末尾のフィールドは `\"\"` として扱われる。末尾のフィールドに `null` と書いた場合も `\"\"` になる（後ろに値のあるフィールドがあれば `null` のまま保持される）。ここでいう「値のあるフィールド」に `\"\"` は含まれない。末尾側に `\"\"` と `null` がどの順で並んでもまとめて `\"\"` になり、`null` は保持されない（例: fields 3 件に対し `[\"x\", null, \"\"]` と書くと `\"x\"`・`\"\"`・`\"\"` になる）。これを利用し、空配列 `[]` を1要素書くと全フィールドが `\"\"` のレコード1件になる。データは1件以上記述する（0バイトの空ファイルは、レコード定義を持たないブロックとして `records:` に空配列 `[]` を書いて表す）。バックスラッシュと `r` の2文字（`\"\\\\r\"`）を含む値はエラーになる（Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値はテスティングフレームワークの仕様上存在しない）",
           "items": {
             "type": "array",
             "items": {
