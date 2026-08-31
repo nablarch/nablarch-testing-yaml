@@ -1769,8 +1769,25 @@ force push・`--amend` をしない。レビューは回さない。
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-31
+- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。直前に #48（同 §5 の第1ラウンド是正）。
+  コミット `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`、push 済み。
+  報告書は `.rn/ntf-yaml/report-step4-3.md`。**#48・#49 のユーザー判定はまだ受けていない**
+- **Next**: **無し。#48・#49 のユーザー判定（`/rn:ty` または `/rn:gm`）待ち。** 未完了タスクは1件も無い
+- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
+  `mvn -o clean test` は `Tests run: 324, Failures: 0, Errors: 0, Skipped: 0`（320 ＋ 新規5 − 削除1）。
+  カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致。
+  解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（変更しない）。
+  **判断待ち 3 件**（詳細は `.rn/ntf-yaml/checks/task-49.md` の「ディレクターへ報告する判断」と
+  報告書 §7）:
+  (1) §5 の指定外だが §1 の判定内訳を更新した（一致 344・併記 15・記述なし 76。合計 444 と行ID は不変）／
+  (2) description が変わり `$defs` が 64→66 になったが母集合 444 を据え置いた（Q2 の構造制約は
+  新規行を起こさず 37-構造3 に記録）／
+  (3) 既存テスト `YamlFileBuilderTest#buildFileList_noRowsBecomesZeroDataRecords` を削除した
+  （Q1 の `minItems: 1` で入力がスキーマ検証を通らなくなったため）。
+  **電文側のディレクティブ型別限定は未表現**（指示書 §6 Q2 が認めた「その箇所だけ報告」。理由は
+  `$defs.directives` の `$comment`）。
+  `src/` に解説書への参照は無く、以後も書かない。
+  下流 `nablarch-testing-converter`（`d611bec`）の赤は converter 側の課題であり当リポジトリの作業ではない。
+  ユーザー未解決の未追跡パス: なし。
