@@ -1775,13 +1775,13 @@ force push・`--amend` をしない。レビューは回さない。
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended（#48・#49 承認済み・未完了タスク 0 件）
+- **Status**: paused
 - **Date**: 2026-08-31
-- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**2026-08-31 に #48・#49 とも
-  ユーザー承認（`/rn:ty`）を受領し、成果は最終として確定。**
-  コミット `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`、push 済み。
+- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**#48・#49 とも 2026-08-31 に
+  ユーザー承認（`/rn:ty`）済みで、成果は最終として確定。** 承認の記録は `b67e106`。
+  作業コミットは `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`。すべて push 済み。
   報告書は `.rn/ntf-yaml/report-step4-3.md`
-- **Next**: 無し。全 49 タスク完了・承認済み。次の作業はディレクター指示書の到着待ち
+- **Next**: 無し。全 49 タスク完了・承認済み。次の指示書が来るまで着手する作業は無い
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
   `mvn -o clean test` は `Tests run: 324, Failures: 0, Errors: 0, Skipped: 0`（320 ＋ 新規5 − 削除1）。
   カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致。
