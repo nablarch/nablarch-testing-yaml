@@ -54,6 +54,8 @@ public final class YamlLoader {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final JsonSchema JSON_SCHEMA;
 
+    // スキーマは本モジュールの jar に同梱するリソースであり、通常の実行環境ではクラスパスから欠落しない。
+    // schemaStream == null と IOException の分岐は、クラスローダを細工しない限り到達不能な防御である。
     static {
         try (InputStream schemaStream = YamlLoader.class.getClassLoader()
                 .getResourceAsStream(SCHEMA_RESOURCE_PATH)) {
