@@ -1717,6 +1717,8 @@ force push・`--amend` をしない。レビューは回さない。
 **やらないこと**: 解説書を変更しない。`src/` を変更しない。force push・`--amend` をしない。
 レビューは回さない（指示書 §4。成果は対応表であり、ディレクターが全行を実物で突き合わせて独立検証する）。
 
+**判定**: 2026-08-31 ユーザー承認（`/rn:ty`）。成果は最終として確定。
+
 ---
 
 ### ~~#49: 指示書 `ntf-step4-13` §6 — Q1〜Q6 への回答の実施~~
@@ -1763,24 +1765,28 @@ force push・`--amend` をしない。レビューは回さない。
 ソースに解説書への参照（`file:line`・節名）を書かない。force push・`--amend` をしない。
 レビューは回さない（指示書 §6 末尾。検証はディレクターが実物で行う）。
 
+**判定**: 2026-08-31 ユーザー承認（`/rn:ty`）。報告書 `.rn/ntf-yaml/report-step4-3.md` §7 の
+判断待ち3件（判定内訳の更新／母集合 444 据え置き／既存テスト1件の削除）と、電文側ディレクティブ
+型別限定の未表現も、承認に含めて確定。
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
+- **Status**: not suspended（#48・#49 承認済み・未完了タスク 0 件）
 - **Date**: 2026-08-31
-- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。直前に #48（同 §5 の第1ラウンド是正）。
+- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**2026-08-31 に #48・#49 とも
+  ユーザー承認（`/rn:ty`）を受領し、成果は最終として確定。**
   コミット `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`、push 済み。
-  報告書は `.rn/ntf-yaml/report-step4-3.md`。**#48・#49 のユーザー判定はまだ受けていない**
-- **Next**: **無し。#48・#49 のユーザー判定（`/rn:ty` または `/rn:gm`）待ち。** 未完了タスクは1件も無い
+  報告書は `.rn/ntf-yaml/report-step4-3.md`
+- **Next**: 無し。全 49 タスク完了・承認済み。次の作業はディレクター指示書の到着待ち
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
   `mvn -o clean test` は `Tests run: 324, Failures: 0, Errors: 0, Skipped: 0`（320 ＋ 新規5 − 削除1）。
   カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致。
   解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（変更しない）。
-  **判断待ち 3 件**（詳細は `.rn/ntf-yaml/checks/task-49.md` の「ディレクターへ報告する判断」と
-  報告書 §7）:
+  承認により確定した判断3件（詳細は `.rn/ntf-yaml/checks/task-49.md` と報告書 §7）:
   (1) §5 の指定外だが §1 の判定内訳を更新した（一致 344・併記 15・記述なし 76。合計 444 と行ID は不変）／
   (2) description が変わり `$defs` が 64→66 になったが母集合 444 を据え置いた（Q2 の構造制約は
   新規行を起こさず 37-構造3 に記録）／
