@@ -1595,7 +1595,7 @@ T6/L6 が落ちること（`Tests run: 12, Failures: 6`）／スキーマ5箇所
 `checks/task-31.md:7` の注記／ピン行から `05e57a1` 同一の注記を落とした件）。前提3件は報告書 §9.2・§9.4 にあり
 steering には無いが、報告書で足りるため差し戻さない。
 
-### #46: `YamlLoader` の static 初期化子に到達不能の理由コメントを入れる
+### ~~#46: `YamlLoader` の static 初期化子に到達不能の理由コメントを入れる~~
 
 **Purpose**: 「本モジュールは全部新規なので未達0が基準。到達不能として user が承認した未達には、未達箇所に理由コメントを
 入れる」というユーザー基準（2026-08-31 確定）を満たす。未達2箇所のうち `YamlFileBuilder.java:244`-`:245` は既にコメントが
@@ -1608,13 +1608,13 @@ steering には無いが、報告書で足りるため差し戻さない。
 
 **Steps**:
 
-- [ ] A. `YamlLoader.java` の static 初期化子の直前に、「スキーマは本モジュールの jar に同梱するリソースであり、
+- [x] A. `YamlLoader.java` の static 初期化子の直前に、「スキーマは本モジュールの jar に同梱するリソースであり、
       通常の実行環境ではクラスパスから欠落しない。`schemaStream == null` と `IOException` の分岐は、クラスローダを
       細工しない限り到達できない防御である」旨のコメントを入れる。技術的理由だけを書き、カバレッジ計測・解説書・
       `.rn/` 文書・タスク番号への言及はしない
-- [ ] B. カバレッジを再測定し、全体値と未達2箇所が #45 完了時と一致することを確認する
-- [ ] C. `mvn -o clean test` 緑・`git status --short` 空・1コミットで push
-- [ ] D. self-check (OK/NG per completion criterion, record in checks/task-46.md)
+- [x] B. カバレッジを再測定し、全体値と未達2箇所が #45 完了時と一致することを確認する
+- [x] C. `mvn -o clean test` 緑・`git status --short` 空・1コミットで push
+- [x] D. self-check (OK/NG per completion criterion, record in checks/task-46.md)
 
 **Completion criteria**:
 
