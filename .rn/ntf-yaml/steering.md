@@ -1676,28 +1676,101 @@ converter の作業完了後に別途送付される（同 §5）。
 force push・`--amend` をしない。レビューは回さない。
 
 
+---
+
+### #48: 指示書 `ntf-step4-13` §5 — 対応表の第1ラウンド是正
+
+**Purpose**: ディレクターが `#47` の対応表全 444 行を実物（解説書 `ed3de95f`・スキーマ・本体 `3c4bd2a`）と
+突き合わせた結果、判定の誤り2行・出典の不備9行・件数の内部不整合1件・判定基準の非対称2組が出た。
+指定された行だけを是正し、対応表を実物と一致させる。
+
+**出典**: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-13-yaml-schema-consistency.md` §5。
+解説書の参照点は `nablarch-document@ed3de95f`（`git show ed3de95f:<path>`。作業ツリーを読まない）。
+
+**Prerequisites**: #47
+
+**Steps**:
+
+- [ ] A. 5-1 判定の誤り2行を是正する。**16-6**: 「キーだけ書いて値を省略した `COL:`」の記法は解説書に無いので
+      判定を「記述なし」に改め、実装の `file:line` を根拠に付けて所見を1行書く。**16-7**: 「いずれも」のうち
+      値省略（`COL:`）側が解説書に無いので「一致＋記述なし併記」等へ実態に合わせて改める
+- [ ] B. 5-2 出典の不備9行を是正する（判定は変えない）。**25-構造1・27-1・29-構造1・32-1・33-構造1・36-1**:
+      引用行 `notation.rst:1133` は空行なので実体の `:1134` に直す。**23-3・23-構造1**: 小文字リテラル
+      `variable` は `notation.rst` に0件なので逐語根拠を `testdata_examples.rst:1251`・`:1257` に差し替える。
+      **8-4**: 引用文の実体は `notation.rst:1260` でなく `:1279`
+- [ ] C. 5-3 §2 冒頭の件数を「矛盾は 8 件（是正は 7 箇所。C5 と C7 は同じ description）」の趣旨に正す
+- [ ] D. 5-4 判定基準の非対称2組4行を是正する。**18-4・19-15**: 「エラーになる」の断定は
+      `notation.rst:340` に無いので 9-5・10-5 と同じ扱い（1件以上は一致・エラー断定は根拠を付けるか未確認と明記）に揃える。
+      **19-12**: 「残った」は `:799` に無いので 16-29 と同じ扱い（その部分は記述なし併記）に揃える
+- [ ] E. 是正が A〜D の指定行と、それに伴う §2・§7 の記述のみであること、対象行以外の対応表の行に差分が
+      無いことを `git diff` で確認する。`src/` の差分が無いことも確認する
+- [ ] F. commit・push する
+
+**Completion criteria**:
+
+- 是正は 5-1〜5-4 の指定行と、それに伴う §2・§7 の記述のみ。`git diff` に `src/` の差分が無い
+- 対象行以外の対応表の行に差分が無い
+- commit・push 済み
+- 是正した行の一覧（行ID＋変更内容1行ずつ）が報告にある
+
+**やらないこと**: 解説書を変更しない。`src/` を変更しない。force push・`--amend` をしない。
+レビューは回さない（指示書 §4。成果は対応表であり、ディレクターが全行を実物で突き合わせて独立検証する）。
+
+---
+
+### #49: 指示書 `ntf-step4-13` §6 — Q1〜Q6 への回答の実施
+
+**Purpose**: `#47` で判断待ちとして残した6件にユーザー判断とディレクターの方針が出た。`description` は
+利用者が YAML テストデータを書くときに読む仕様文であり SSoT の適用範囲（2026-08-25 user 確定）なので、
+根拠を示せない記述は仕様文に置かない。yaml は未リリースのため `src/main` を変更してよい。
+
+**出典**: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-13-yaml-schema-consistency.md` §6。
+解説書の参照点は `nablarch-document@ed3de95f`、本体 `nablarch-testing` は `3c4bd2a`（変更しない）。
+
+**Prerequisites**: #48
+
+**Steps**:
+
+- [ ] A. **Q1（S1）**: `record_fragment.rows` に `minItems: 1` を追加する（user 確定 2026-08-31）。
+      先に落ちるテスト（`rows: []` が検証エラーになること）を書き、**変更前に落ちることを確認してから**追加する
+- [ ] B. **Q2（L1）**: `$defs.directives` の型別限定を表現する（user 確定 2026-08-31）。`type: fixed` /
+      `variable` に応じて有効キーを解説書の11キー・9キー（`notation.rst:884`・`:911`）に限定し、型違いのキーが
+      検証で落ちることを先に落ちるテストで確認する。type キーが無い文脈（電文側）等で表現できない箇所が
+      あれば、**その箇所だけ根拠を付けて報告して止まる**
+- [ ] C. **Q3**: `message_data.records` の description から `MessageParser` のクラス名を落とし、
+      経路に依存しない挙動の記述に改める
+- [ ] D. **Q4〜Q6**: 各主張を実装（本体 `3c4bd2a`・ty）で実測する。根拠が取れたものは残して対応表に実装の
+      `file:line` を記録、取れなかったものは description から**削除**して対応表にその旨を書く。
+      Q4 = `field_def.name`「フォーマット定義ファイルのフィールド名と照合する」／
+      Q5 = `field_def.length`「`"0"` はダミーフィールド」／Q6 = `max-record-length`「（バイト数）」
+- [ ] E. 構造の差分が Q1・Q2 に対応する箇所**だけ**であることを `git diff` で確認する
+- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑（320件＋新規テスト）・
+      `git status --short` 空・push
+- [ ] G. #48 と併せて1回で報告・停止する。報告は「§5 で是正した行の一覧」「Q1〜Q6 の実施結果
+      （Q4〜Q6 は実測の根拠 or 削除）」の2部構成
+
+**Completion criteria**:
+
+- Q1・Q2 は〈先に落ちるテスト → 落ちることを確認 → 変更 → 緑〉の順で行われ、報告にテスト名と
+  「変更前に落ちた」事実がある
+- 構造の差分が Q1・Q2 に対応する箇所だけであることを `git diff` で確認して報告に書いてある
+- `mvn clean test` 全件緑（320件＋新規テスト）・`git status --short` 空・push 済み
+- #48 と併せて1回で報告・停止している
+
+**やらないこと**: 解説書を変更しない。`nablarch-testing`・`nablarch-testing-converter` を変更しない。
+ソースに解説書への参照（`file:line`・節名）を書かない。force push・`--amend` をしない。
+レビューは回さない（指示書 §6 末尾。検証はディレクターが実物で行う）。
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-31
-- **Last completed**: #47（スキーマ `description` 全 64 件と解説書 `nablarch-document@ed3de95f` の全件突合）。
-  444 主張（description 由来 356・構造制約 88）を1件ずつ判定し、矛盾 8 件を description の是正で解消。
-  コミット `5543601`、push 済み。報告書は `.rn/ntf-yaml/report-step4-3.md`。**ユーザー承認はまだ受けていない**
-- **Next**: **無し。#47 のユーザー判定（`/rn:ty` または `/rn:gm`）待ち。** 未完了タスクは1件も無い
-- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
-  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`（318件ではなく 320 件が正。#46 で確定済み）。
-  解説書のピンは `nablarch-document@ed3de95f`（#47 で `a6da1f6` から取り直した。Rules の参照点を更新済み）。
-  **判断待ち 6 件**（いずれも変更していない。詳細は報告書 §6）:
-  Q1 = `record_fragment.rows` に `minItems: 1` を足すか（構造制約の矛盾 S1。検証挙動が変わるため指示書 §2 により保留）／
-  Q2 = `$defs.directives` の固定長11キー・可変長9キーの型別限定をスキーマで表現するか／
-  Q3 = `message_data.records` の `MessageParser` というクラス名（YAML 経路の実装は `YamlFileBuilder.java:206`-`:208`）／
-  Q4 = `field_def.name` の「フォーマット定義ファイルのフィールド名と照合する」の根拠が未確認／
-  Q5 = `field_def.length` の「`"0"` はダミーフィールド」の用途の根拠が未確認／
-  Q6 = `max-record-length` の「（バイト数）」の根拠が未確認。
-  `src/` に解説書への参照は無く、以後も書かない。
-  下流 `nablarch-testing-converter`（`d611bec`）の赤は converter 側の課題であり当リポジトリの作業ではない。
-  ユーザー未解決の未追跡パス: なし。
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
