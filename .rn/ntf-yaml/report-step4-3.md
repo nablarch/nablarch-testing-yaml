@@ -86,25 +86,25 @@ description由来: 356 構造制約: 88
 | # | 箇所 | 矛盾の内容 | 解説書の出典 |
 |---|---|---|---|
 | C1 | `properties.messages`（スキーマ `:53`） | `messages` を「MockMessaging 経路の要求/応答電文データ」とした。`setUpMessages`／`expectedMessages` を読むのは本体 `MQSupport`（メッセージング受信テスト）であり、MockMessagingContext／MockMessagingClient は `RESPONSE_*_MESSAGES` しか読まない | `notation.rst:1130` |
-| C2 | `$defs.message_data`（`:196`） | 同上（「MockMessaging 経路の要求/応答電文1メッセージ」） | `notation.rst:1130` |
-| C3 | `$defs.message_data.properties.fw_header`（`:216`） | 「messages（MESSAGE: MockMessaging 経路）でのみ使用する」の経路名部分 | `notation.rst:1130`・`:1260` |
+| C2 | `$defs.message_data`（`:236`） | 同上（「MockMessaging 経路の要求/応答電文1メッセージ」） | `notation.rst:1130` |
+| C3 | `$defs.message_data.properties.fw_header`（`:256`） | 「messages（MESSAGE: MockMessaging 経路）でのみ使用する」の経路名部分 | `notation.rst:1130`・`:1260` |
 | C4 | `properties.response_header_messages`（`:74`） | errorMode が「経路B のみ」で効くとした | `notation.rst:1238` |
 | C5 | `properties.response_body_messages`（`:81`） | 同上（errorMode「経路B のみ」） | `notation.rst:1238` |
-| C6 | `$defs.group_message_data.properties.records`（`:275`） | 「RequestTestingSendSyncSupport 経路では errorMode は無視される」 | `notation.rst:1238` |
+| C6 | `$defs.group_message_data.properties.records`（`:315`） | 「RequestTestingSendSyncSupport 経路では errorMode は無視される」 | `notation.rst:1238` |
 | C7 | `properties.response_body_messages`（`:81`） | 長さの一致条件を「電文レコード全体のバイト長」とした（解説書は「各データエントリの文字列長」） | `notation.rst:1186`・`:1209` |
-| C8 | `$defs.record_fragment.properties.rows`（`:380`） | 「rows が0件でも有効」 | `notation.rst:838`・`:861` |
+| C8 | `$defs.record_fragment.properties.rows`（`:460`） | 「rows が0件でも有効」 | `notation.rst:838`・`:861` |
 
-構造制約の矛盾（**変更していない**。指示書 §2 により報告して止まる）:
-
-| # | 箇所 | 内容 | 解説書の出典 |
-|---|---|---|---|
-| S1 | `$defs.record_fragment.properties.rows`（`:378`-`:390`） | `minItems` が無く 0 件を通す。解説書はデータを「1件以上」と定める。C8 の description は是正したが、検証挙動が変わるためスキーマ制約は変更していない | `notation.rst:838` |
-
-構造制約が解説書より緩い箇所（矛盾ではないが未表現。参考）:
+構造制約の矛盾（**第2ラウンド（2026-08-31）で処置済み**。第1ラウンドでは指示書 §2 により報告して止まっていた）:
 
 | # | 箇所 | 内容 | 解説書の出典 |
 |---|---|---|---|
-| L1 | `$defs.directives`（`:282`-`:356`） | 固定長11キー・可変長9キーの和集合17キーを、`type` によらず一律に許す。型別の限定はスキーマで表現していない | `notation.rst:884`・`:911` |
+| S1 | `$defs.record_fragment.properties.rows`（`:457`-`:470`） | `minItems` が無く 0 件を通していた。解説書はデータを「1件以上」と定める。**処置済み**: `minItems: 1` を追加した（スキーマ `:459`）。`rows: []` は検証エラーになる | `notation.rst:838` |
+
+構造制約が解説書より緩かった箇所（**第2ラウンド（2026-08-31）で表現した**。ただし電文側は表現していない）:
+
+| # | 箇所 | 内容 | 解説書の出典 |
+|---|---|---|---|
+| L1 | `$defs.directives`（`:322`-`:397`） | 和集合17キーを `type` によらず一律に許していた。**処置済み（ファイルデータのみ）**: `$defs.directives_fixed`（`:398`-`:417`。固定長11キー）・`$defs.directives_variable`（`:418`-`:435`。可変長9キー）を追加し、`type` を持つ `$defs.file_data` 側の `allOf`／`if`-`then`（`:188`-`:227`）で切り替える。**未表現**: 電文の3つの `$defs`（`message_data`・`expected_request_message_data`・`group_message_data`）は `type` キーを持たず、解説書にも電文用の有効ディレクティブキーの一覧が無いため、静的に表現できない（`$defs.directives` の `$comment`（`:326`）に理由を残した） | `notation.rst:884`・`:911` |
 
 ## 3. 対応表（全件）
 
@@ -442,7 +442,7 @@ description由来: 356 構造制約: 88
 | 24-4 | expected_files では出力ファイルが空であることを検証する | 一致 | `notation.rst:861`＋`:880` |
 | 24-構造1 | `type: array`／`minItems: 0` | 一致 | `notation.rst:1122` |
 
-### D25 `/$defs/message_data` — スキーマ `:196`
+### D25 `/$defs/message_data` — スキーマ `:236`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -453,9 +453,9 @@ description由来: 356 構造制約: 88
 | 25-5 | records で電文本文フィールド（型・長さつき）を定義する | 一致 | `notation.rst:1260`・`:1271`-`:1277` |
 | 25-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1132`（識別子は固定値）＋`:1134`（メッセージボディはファイルデータと同じ構成） |
 | 25-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`「`records:` に記述するレコードレイアウトは1つである。2つ以上記述するとエラーになる」＋`:1134` |
-| 25-構造3 | `additionalProperties: false`（`id`・`directives`・`records`・`fw_header` 以外は検証エラー） | 記述なし | スキーマ `:195`。所見: `group_id` を持たない点（`:1246` の `MESSAGE=setUpMessages` にグループID書式が無いこと）と対応する。解説書にあってよい |
+| 25-構造3 | `additionalProperties: false`（`id`・`directives`・`records`・`fw_header` 以外は検証エラー） | 記述なし | スキーマ `:235`。所見: `group_id` を持たない点（`:1246` の `MESSAGE=setUpMessages` にグループID書式が無いこと）と対応する。解説書にあってよい |
 
-### D26 `/$defs/message_data/properties/id` — スキーマ `:200`
+### D26 `/$defs/message_data/properties/id` — スキーマ `:240`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -467,7 +467,7 @@ description由来: 356 構造制約: 88
 | 26-6 | ファイル内で重複した場合は先着1件のみ有効 | 一致 | `notation.rst:158`・`:246` |
 | 26-構造1 | `type: string` | 一致 | `notation.rst:1265`（`- id: setUpMessages`） |
 
-### D27 `/$defs/message_data/properties/records` — スキーマ `:209`
+### D27 `/$defs/message_data/properties/records` — スキーマ `:249`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -477,10 +477,10 @@ description由来: 356 構造制約: 88
 | 27-4 | FW 制御ヘッダは fw_header に記述するため records には含めない | 一致 | `notation.rst:1260` |
 | 27-5 | 旧形式の `record_type: FW_HEADER` は廃止された | 一致 | `notation.rst:1287`「旧版ではフレームワーク制御ヘッダを `record_type: FW_HEADER` のレコードとして表していたが、現在の仕様では…`record_type` に特別な予約値はない」 |
 | 27-6 | この records の record_type は内部で常に `"default"` に置換される | 一致 | `notation.rst:1144`「`MESSAGE`（`setUpMessages`・`expectedMessages`）では、記載した値は使われず、デフォルトのレコード種別（`"default"`）になる」 |
-| 27-7 | その置換を行うのは `MessageParser` である | 記述なし | 解説書にクラス名は無い。**所見: YAML 経路で置換するのは `YamlFileBuilder.java:206`-`:208`（`keepRecordType=false`）であり、`MessageParser` は Excel 経路（本体）の実装である。YAML のスキーマ description にこのクラス名を書くのは誤解を招く。指示書 §1 の「矛盾」（解説書との食い違い）には当たらないため今回は変更していない。ユーザー判断を仰ぐ** |
+| 27-7 | その置換を行うのは `MessageParser` である | 記述なし | 解説書にクラス名は無い。`MessageParser` は Excel 経路（本体）の実装であり、YAML 経路で置換するのは `YamlFileBuilder.java:206`-`:208`（`keepRecordType=false`）である。**処置済み（第2ラウンド。Q3）: クラス名を落とし、経路に依存しない記述「この records の record_type は、記載した値が使われず内部で常に \"default\" になる」に改めた（スキーマ `:249`）。挙動そのものは 27-6 として `notation.rst:1144` に一致する** |
 | 27-構造1 | `type: array`／`minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283` |
 
-### D28 `/$defs/message_data/properties/fw_header` — スキーマ `:216`
+### D28 `/$defs/message_data/properties/fw_header` — スキーマ `:256`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -491,15 +491,15 @@ description由来: 356 構造制約: 88
 | 28-5 | それ以外のキーがあるとエラーになる | 一致 | `notation.rst:1279`「それ以外のキーがあるとエラーになる」 |
 | 28-6 | キー名の検査は、そのエントリの電文を読み出したときに行われる | 記述なし | `YamlMessageBuilder.java:118`-`:135`（`buildMessageContent` が id 一致時にだけ `convertFwHeader` を呼ぶ）・`:298`-`:328`。所見: 検査の契機は利用者の体験（どのエントリで落ちるか）に直結するので解説書にあってよい |
 | 28-7 | 誤記のあるエントリを読み出したときだけエラーになり、同一ファイル内の他のエントリの読み出しは巻き添えにならない | 記述なし | `YamlMessageBuilder.java:36`-`:44`・`:118`-`:135`。28-6 と同じ |
-| 28-8 | 値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `"0000000001"`） | 記述なし | スキーマ `:430`-`:432`（`$defs.fw_header` の `additionalProperties: {"type":"string"}`）。所見: 解説書 `:1385` のクォート必須は `rows:` 内の値に限った記述であり、`fw_header:` の値には触れていない（`:1268`-`:1270` の例はクォートなしの文字列）。あるべき内容と考える |
-| 28-9 | 値の型はキー名と違ってこのスキーマ自身が課す制約である | 記述なし | スキーマ `:430`-`:432`＋`:434`（`$comment`）。28-8 と同じ |
+| 28-8 | 値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `"0000000001"`） | 記述なし | スキーマ `:510`-`:512`（`$defs.fw_header` の `additionalProperties: {"type":"string"}`）。所見: 解説書 `:1385` のクォート必須は `rows:` 内の値に限った記述であり、`fw_header:` の値には触れていない（`:1268`-`:1270` の例はクォートなしの文字列）。あるべき内容と考える |
+| 28-9 | 値の型はキー名と違ってこのスキーマ自身が課す制約である | 記述なし | スキーマ `:510`-`:512`＋`:514`（`$comment`）。28-8 と同じ |
 | 28-10 | クォートなしの数値・真偽値を1つでも書くとロード時にファイル全体がエラーになり、他のエントリも読み出せなくなる | 記述なし | `YamlLoader.java:154`-`:157`（ロード時に全体をスキーマ検証）。28-8 と同じ |
 | 28-11 | バックスラッシュと `r` の2文字（`"\\r"`）を含む値はエラーになる | 一致 | `notation.rst:1429` |
 | 28-12 | バックスラッシュと `r` の2文字を含む**キー名**もエラーになる | 記述なし | `YamlMessageBuilder.java:311`-`:317`（許可キー判定より前に `rejectLiteralCr(key, source)`）。所見: 解説書 `:1429` は「値」だけを対象にしている。Excel 形式ではキーも値も同じセルで `interpret` を通る（`YamlSection.java:388`-`:392`）ため、同旨を解説書に書いてよい |
 | 28-13 | Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値は仕様上存在しない | 一致 | `notation.rst:1429` |
 | 28-構造1 | `$ref: "#/$defs/fw_header"`（マッピング） | 一致 | `notation.rst:1260`・`:1268`-`:1270` |
 
-### D29 `/$defs/expected_request_message_data` — スキーマ `:224`
+### D29 `/$defs/expected_request_message_data` — スキーマ `:264`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -509,19 +509,19 @@ description由来: 356 構造制約: 88
 | 29-4 | requestId 等のヘッダフィールドも含め records の fields/rows にフィールド単位で定義する | 一致 | `notation.rst:1260`「`requestId` などのヘッダフィールドも含めて `records` の `fields:`・`rows:` にフィールド単位で記載する」 |
 | 29-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1161`-`:1166`（設定値=リクエストID）＋`:1134` |
 | 29-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`・`:1134` |
-| 29-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:223`。25-構造3 と同じ所見 |
+| 29-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:263`。25-構造3 と同じ所見 |
 
-### D30 `/$defs/expected_request_message_data/properties/group_id` — スキーマ `:230`
+### D30 `/$defs/expected_request_message_data/properties/group_id` — スキーマ `:270`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 30-1 | データブロックの収集単位である | 一致 | `notation.rst:232`・`:248`-`:250` |
 | 30-2 | testShots の expectedMessage カラムで指定した値と一致するブロックが全件収集される | 一致 | `notation.rst:420`-`:421`（`expectedMessage` = 期待する要求電文のグループID）＋`:525`-`:526`＋`:161`・`:163` |
 | 30-3 | 省略時は id 直接指定（先着1件）で動作する | 一致 | `notation.rst:161`・`:163`「グループID指定時は全件収集、ID直接指定時は最初の1件」 |
-| 30-4 | 空文字 `""` は誤マッチを引き起こすため `minLength: 1` で禁止される | 記述なし | スキーマ `:229`／`YamlSection.java:448`-`:451`。14-7 と同じ |
+| 30-4 | 空文字 `""` は誤マッチを引き起こすため `minLength: 1` で禁止される | 記述なし | スキーマ `:269`／`YamlSection.java:448`-`:451`。14-7 と同じ |
 | 30-構造1 | `type: string`／`minLength: 1` | 記述なし | 30-4 と同じ |
 
-### D31 `/$defs/expected_request_message_data/properties/id` — スキーマ `:234`
+### D31 `/$defs/expected_request_message_data/properties/id` — スキーマ `:274`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -530,7 +530,7 @@ description由来: 356 構造制約: 88
 | 31-3 | group_id を指定した全件収集モードでも id は必須である | 一致 | `notation.rst:1188`「同一グループIDを持つ複数のメッセージプールを収集する場合、識別子の値をリクエストIDとして使用する」＋`:1246`（`EXPECTED_REQUEST_BODY_MESSAGES[グループID]=リクエストID`） |
 | 31-構造1 | `type: string` | 一致 | `notation.rst:1161`-`:1166`（設定値はリクエストID）＋`testdata_examples.rst:1969`「`id:` にはリクエスト ID を記述する」 |
 
-### D32 `/$defs/expected_request_message_data/properties/records` — スキーマ `:243`
+### D32 `/$defs/expected_request_message_data/properties/records` — スキーマ `:283`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -540,7 +540,7 @@ description由来: 356 構造制約: 88
 | 32-4 | requestId 等の FW 制御ヘッダフィールドも含め、すべてのフィールドをここに定義する（fw_header は使用しない） | 一致 | `notation.rst:1260` |
 | 32-構造1 | `type: array`／`minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283` |
 
-### D33 `/$defs/group_message_data` — スキーマ `:257`
+### D33 `/$defs/group_message_data` — スキーマ `:297`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -551,19 +551,19 @@ description由来: 356 構造制約: 88
 | 33-5 | group_id を省略した場合は経路 B として動作する | 一致 | `notation.rst:1207`・`:1254` |
 | 33-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1167`-`:1172`（設定値=リクエストID）＋`:1134` |
 | 33-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`・`:1134` |
-| 33-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:256`。25-構造3 と同じ所見 |
+| 33-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:296`。25-構造3 と同じ所見 |
 
-### D34 `/$defs/group_message_data/properties/group_id` — スキーマ `:262`
+### D34 `/$defs/group_message_data/properties/group_id` — スキーマ `:302`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 34-1 | データブロックの収集単位である | 一致 | `notation.rst:232`・`:248`-`:250` |
 | 34-2 | RequestTestingSendSyncSupport 経路でフィルタリングに使用される | 一致（挙動）／記述なし（クラス名） | 挙動: `notation.rst:167`・`:169`＋`:420`-`:421` |
 | 34-3 | MockMessagingContext / MockMessagingClient 経路では参照されないため省略可 | 一致（挙動）／記述なし（クラス名） | 挙動: `notation.rst:1207`・`:1254` |
-| 34-4 | 空文字 `""` は誤マッチを引き起こすため `minLength: 1` で禁止される | 記述なし | スキーマ `:261`／`YamlSection.java:448`-`:451`。14-7 と同じ |
+| 34-4 | 空文字 `""` は誤マッチを引き起こすため `minLength: 1` で禁止される | 記述なし | スキーマ `:301`／`YamlSection.java:448`-`:451`。14-7 と同じ |
 | 34-構造1 | `type: string`／`minLength: 1` | 記述なし | 34-4 と同じ |
 
-### D35 `/$defs/group_message_data/properties/id` — スキーマ `:266`
+### D35 `/$defs/group_message_data/properties/id` — スキーマ `:306`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -572,7 +572,7 @@ description由来: 356 構造制約: 88
 | 35-3 | RequestTestingSendSyncSupport 経路では group_id でのフィルタリング後に識別子として扱われる | 一致（挙動）／記述なし（クラス名） | 挙動: `notation.rst:1188`「同一グループIDを持つ複数のメッセージプールを収集する場合、識別子の値をリクエストIDとして使用する」 |
 | 35-構造1 | `type: string` | 一致 | `testdata_examples.rst:1969` |
 
-### D36 `/$defs/group_message_data/properties/records` — スキーマ `:275`
+### D36 `/$defs/group_message_data/properties/records` — スキーマ `:315`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -583,18 +583,18 @@ description由来: 356 構造制約: 88
 | 36-5 | **（是正前）RequestTestingSendSyncSupport 経路では errorMode は無視される** | **矛盾（C6）** | `notation.rst:1238`。根拠は 11-6 と同じ（本体 `RequestTestingMessagePool.java:78`-`:84`／`RequestTestingMessagingProvider.java:203`・`:205`／`RequestTestingMessagingClient.java:228`・`:231`） |
 | 36-構造1 | `type: array`／`minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283` |
 
-### D37 `/$defs/directives` — スキーマ `:285`
+### D37 `/$defs/directives` — スキーマ `:325`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 37-1 | ファイルディレクティブである | 一致 | `notation.rst:882`「ディレクティブは、ファイル・電文のフォーマットに関する属性を、キー名と値の2要素で記述するものである」 |
 | 37-2 | NTF のフォーマット定義に渡すファイル属性を指定する | 一致 | `notation.rst:882` |
 | 37-3 | 固定長（type=fixed）と可変長（type=variable）で有効なキーが異なる | 一致 | `notation.rst:884`「固定長ファイルで有効なディレクティブキーは、以下の11個に限定される」＋`:911`「可変長ファイルで有効なディレクティブキーは、以下の9個に限定される」 |
-| 37-構造1 | 列挙する17キーは、固定長11キーと可変長9キーの和集合である（共通3キー: `file-type`・`text-encoding`・`record-separator`） | 一致 | `notation.rst:886`-`:936`（11 + 9 − 3 = 17。スキーマ `:287`-`:354` の17キーと一致） |
+| 37-構造1 | 列挙する17キーは、固定長11キーと可変長9キーの和集合である（共通3キー: `file-type`・`text-encoding`・`record-separator`） | 一致 | `notation.rst:886`-`:936`（11 + 9 − 3 = 17。スキーマ `:328`-`:395` の17キーと一致） |
 | 37-構造2 | `additionalProperties: false`（17キー以外は検証エラー） | 一致 | `notation.rst:884`・`:911`「限定される」 |
-| 37-構造3 | 型別（fixed/variable）の限定はスキーマで表現していない | 一致（description の主張）／未表現（L1） | `notation.rst:884`・`:911` は型別に限定しているが、スキーマは17キーを一律に許す。**description は「有効なキーが異なる」と正しく述べており矛盾しない。構造制約が緩い点は L1 として報告する（変更しない）** |
+| 37-構造3 | 型別（fixed/variable）の限定は、ファイルデータでは `type` に応じて11キー・9キーに限定される。電文では限定されない | 一致 | `notation.rst:884`「固定長ファイルで有効なディレクティブキーは、以下の11個に限定される」・`:911`「可変長ファイルで有効なディレクティブキーは、以下の9個に限定される」。**処置済み（第2ラウンド。Q2）: `$defs.directives_fixed`（`:398`-`:417`）・`$defs.directives_variable`（`:418`-`:435`）を追加し、`$defs.file_data` の `allOf`／`if`-`then`（`:188`-`:227`）で `type` により切り替える。電文の3つの `$defs` は `type` キーを持たず解説書にも電文用の有効キー一覧が無いため未表現とし、`$comment`（`:326`）に理由を残した（L1 を参照）** |
 
-### D38 `/$defs/directives/properties/text-encoding` — スキーマ `:289`
+### D38 `/$defs/directives/properties/text-encoding` — スキーマ `:330`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -603,7 +603,7 @@ description由来: 356 構造制約: 88
 | 38-3 | 例として UTF-8・MS932 を挙げる | 一致（MS932）／記述なし（UTF-8） | `notation.rst:1107`（`text-encoding: MS932`）。UTF-8 は解説書の例に無い（`:1091`・`:1267` は `Windows-31J`）。所見: 例示であり挙動の主張ではない |
 | 38-構造1 | `type: string` | 一致 | `notation.rst:1107` |
 
-### D39 `/$defs/directives/properties/record-separator` — スキーマ `:293`
+### D39 `/$defs/directives/properties/record-separator` — スキーマ `:334`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -617,7 +617,7 @@ description由来: 356 構造制約: 88
 | 39-8 | NTF が値を trim する際に除去されて区切りが空文字になる（エラーにならないため注意） | 記述なし | 本体 `DataFile.java:304`（`3c4bd2a`。`convertDirectiveValue(directive, stringValue.trim())`）。所見: 気づきにくい落とし穴で、解説書の YAML 形式の節にあってよい |
 | 39-構造1 | `type: string` | 一致 | `notation.rst:899` |
 
-### D40 `/$defs/directives/properties/file-type` — スキーマ `:297`
+### D40 `/$defs/directives/properties/file-type` — スキーマ `:338`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -627,7 +627,7 @@ description由来: 356 構造制約: 88
 | 40-4 | 明示した場合は自動設定値を上書きする | 記述なし | 本体 `DataFile.java:89`-`:92`（コンストラクタが `setDirective("file-type", getFileType())` を先に実行）＋`YamlFileBuilder.java:282`-`:290`（`applyDirectives` は生成後に呼ぶため上書きになる）。解説書 `:1190`・`:1205` は電文について `file-type` を明示設定する運用を述べているが、ファイルの自動設定値を上書きする旨は書いていない。所見: 解説書にあってよい |
 | 40-構造1 | `type: string` | 一致 | `notation.rst:893`・`:920` |
 
-### D41 `/$defs/directives/properties/record-length` — スキーマ `:301`
+### D41 `/$defs/directives/properties/record-length` — スキーマ `:342`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -635,26 +635,26 @@ description由来: 356 構造制約: 88
 | 41-2 | レコード長（バイト数）である | 一致 | `notation.rst:896`「レコード長」＋`:854`-`:855`（フィールド長はバイト長） |
 | 41-3 | 全フィールド長の合計から自動計算されるため通常は記述不要である | 一致 | `notation.rst:897`「フィールド長合計から自動計算される。通常は記述不要」＋`:1174` |
 | 41-4 | 明示した場合は自動計算値を上書きする | 記述なし | 本体 `DataFile.java:304`（`setDirective` は後勝ち）。40-4 と同じ所見 |
-| 41-構造1 | `type: integer` | 記述なし | スキーマ `:300`。所見: `field_def.length` は integer と string の両方を許す（`:414`-`:423`）のに対し非対称。解説書 `:1118` は `length` についてのみ両表記可と述べており、`record-length` の表記は述べていない |
+| 41-構造1 | `type: integer` | 記述なし | スキーマ `:341`。所見: `field_def.length` は integer と string の両方を許す（`:494`-`:503`）のに対し非対称。解説書 `:1118` は `length` についてのみ両表記可と述べており、`record-length` の表記は述べていない |
 
-### D42〜D45 ゾーン／パック符号ニブル — スキーマ `:305`・`:309`・`:313`・`:317`
+### D42〜D45 ゾーン／パック符号ニブル — スキーマ `:346`・`:350`・`:354`・`:358`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 42-1 | `positive-zone-sign-nibble` は固定長専用である | 一致 | `notation.rst:900`-`:901`（固定長の表にのみ存在） |
 | 42-2 | ゾーン数値の正符号ニブルである | 一致 | `notation.rst:901`「ゾーン10進数の正符号・負符号ニブル」 |
-| 42-構造1 | `type: string` | 記述なし | スキーマ `:304`。解説書は値の型を書いていない |
+| 42-構造1 | `type: string` | 記述なし | スキーマ `:345`。解説書は値の型を書いていない |
 | 43-1 | `negative-zone-sign-nibble` は固定長専用である | 一致 | `notation.rst:900`-`:901` |
 | 43-2 | ゾーン数値の負符号ニブルである | 一致 | `notation.rst:901` |
-| 43-構造1 | `type: string` | 記述なし | スキーマ `:308` |
+| 43-構造1 | `type: string` | 記述なし | スキーマ `:349` |
 | 44-1 | `positive-pack-sign-nibble` は固定長専用である | 一致 | `notation.rst:902`-`:903` |
 | 44-2 | パック数値の正符号ニブルである | 一致 | `notation.rst:903`「パック10進数の正符号・負符号ニブル」 |
-| 44-構造1 | `type: string` | 記述なし | スキーマ `:312` |
+| 44-構造1 | `type: string` | 記述なし | スキーマ `:353` |
 | 45-1 | `negative-pack-sign-nibble` は固定長専用である | 一致 | `notation.rst:902`-`:903` |
 | 45-2 | パック数値の負符号ニブルである | 一致 | `notation.rst:903` |
-| 45-構造1 | `type: string` | 記述なし | スキーマ `:316` |
+| 45-構造1 | `type: string` | 記述なし | スキーマ `:357` |
 
-### D46〜D48 固定長の真偽値ディレクティブ — スキーマ `:321`・`:325`・`:329`
+### D46〜D48 固定長の真偽値ディレクティブ — スキーマ `:362`・`:366`・`:370`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -668,7 +668,7 @@ description由来: 356 構造制約: 88
 | 48-2 | 正符号出力の要否である | 一致 | `notation.rst:909`「正符号を出力するか（`true`/`false`）」 |
 | 48-構造1 | `type: boolean` | 一致 | `notation.rst:909` |
 
-### D49 `/$defs/directives/properties/field-separator` — スキーマ `:333`
+### D49 `/$defs/directives/properties/field-separator` — スキーマ `:374`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -680,7 +680,7 @@ description由来: 356 構造制約: 88
 | 49-6 | YAML の `"\t"` は実際のタブ文字に展開され、NTF が値を trim する際に除去されて0文字になりエラーとなる | 記述なし | 本体 `DataFile.java:304`（`stringValue.trim()`）。39-8 と同じ所見 |
 | 49-構造1 | `type: string` | 一致 | `notation.rst:926` |
 
-### D50〜D54 可変長の残りのディレクティブ — スキーマ `:337`・`:341`・`:345`・`:349`・`:353`
+### D50〜D54 可変長の残りのディレクティブ — スキーマ `:378`・`:382`・`:386`・`:390`・`:394`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -689,19 +689,19 @@ description由来: 356 構造制約: 88
 | 50-構造1 | `type: string` | 一致 | `notation.rst:928` |
 | 51-1 | `ignore-blank-lines` は可変長専用である | 一致 | `notation.rst:929`-`:930` |
 | 51-2 | 空行を無視するか否かである | 一致 | `notation.rst:930`「空行を無視するか」 |
-| 51-構造1 | `type: boolean` | 記述なし | スキーマ `:340`。解説書は値の型を書いていない（`required-*` と違い `（true/false）` の注記が無い） |
+| 51-構造1 | `type: boolean` | 記述なし | スキーマ `:381`。解説書は値の型を書いていない（`required-*` と違い `（true/false）` の注記が無い） |
 | 52-1 | `requires-title` は可変長専用である | 一致 | `notation.rst:931`-`:932` |
 | 52-2 | タイトル行の要否である | 一致 | `notation.rst:932`「タイトル行の有無」 |
-| 52-構造1 | `type: boolean` | 記述なし | スキーマ `:344`。51-構造1 と同じ |
+| 52-構造1 | `type: boolean` | 記述なし | スキーマ `:385`。51-構造1 と同じ |
 | 53-1 | `max-record-length` は可変長専用である | 一致 | `notation.rst:933`-`:934` |
 | 53-2 | 最大レコード長である | 一致 | `notation.rst:934`「レコードの最大長」 |
-| 53-3 | 単位はバイト数である | 記述なし | 解説書 `:934` は単位を書いていない。実装上の根拠も本モジュールには無い（本体 `DataFile#setDirective` へ素通し）。**未確認** |
-| 53-構造1 | `type: integer` | 記述なし | スキーマ `:348` |
+| 53-3 | 単位はバイト数である | 記述なし | 解説書 `:934` は「レコードの最大長」までで単位を書いていない。実測（第2ラウンド。Q6）: 本体 `3c4bd2a` の `src/` に `max-record-length`／`MAX_RECORD_LENGTH` の出現は 0 件（`git grep -n 'max-record-length\\|MAX_RECORD_LENGTH' 3c4bd2a` のヒットは `docs/` のみ）。本モジュールの `src/` にも 0 件。NTF は値を型変換して `LayoutDefinition` のディレクティブへ素通しするだけで（本体 `DataFile.java:294`-`:306`・`:325`-`:334`・`:275`-`:284`）、単位の解釈をしない。**バイト数である根拠は取れなかったため「（バイト数）」を削除し、解説書 `:934` の逐語に合わせて「最大レコード長」とした（スキーマ `:390`）**。所見: 依存先の `nablarch-core-dataformat` の `VariableLengthDataRecordFormatter` は `BufferedReader#read()` で数える文字数として扱う（同 2.0.3 sources の `:139`-`:140`・`:882`-`:888`。実際に使う 6-NEXT-SNAPSHOT でも `javap`／`strings` で同じ構造とメッセージ `the number of the read characters exceeded the upper limit.` を確認）。本モジュールから観測できる挙動ではないため description には書いていない |
+| 53-構造1 | `type: integer` | 記述なし | スキーマ `:389` |
 | 54-1 | `title-record-type-name` は可変長専用である | 一致 | `notation.rst:935`-`:936` |
 | 54-2 | タイトルレコード種別名である | 一致 | `notation.rst:936`「タイトルレコードの種別名」 |
 | 54-構造1 | `type: string` | 一致 | `notation.rst:936` |
 
-### D55 `/$defs/record_fragment` — スキーマ `:364`
+### D55 `/$defs/record_fragment` — スキーマ `:443`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -709,10 +709,10 @@ description由来: 356 構造制約: 88
 | 55-2 | 1つのレコードレイアウト（フィールド定義 + データ行）を表す | 一致 | `notation.rst:834`-`:838`（レコード種別＋フィールド名称 → データ型 → フィールド長 → データ）＋`:1108`-`:1114` |
 | 55-3 | record_fragment の rows は配列の配列である | 一致 | `notation.rst:1119`「`rows:` の各行は配列形式で、`fields:` と同じ順序・同じ件数で値を並べる」 |
 | 55-4 | テーブル系（table_data / list_map_data）の rows はオブジェクト配列である | 一致 | `notation.rst:788`「`rows:` 配列に、各行をオブジェクトとして記述する」 |
-| 55-構造1 | `fields`・`rows` は必須 | 記述なし | スキーマ `:359`-`:362`。解説書 `:1122` は `path`・`type`・`records` の必須だけを明示し、レコード種別ブロック内の必須キーは述べていない。所見: `:834`-`:838` の構成から導けるが、明示があってよい |
-| 55-構造2 | `additionalProperties: false`（`record_type`・`fields`・`rows` 以外は検証エラー） | 記述なし | スキーマ `:363`。20-構造2 と同じ所見 |
+| 55-構造1 | `fields`・`rows` は必須 | 記述なし | スキーマ `:438`-`:441`。解説書 `:1122` は `path`・`type`・`records` の必須だけを明示し、レコード種別ブロック内の必須キーは述べていない。所見: `:834`-`:838` の構成から導けるが、明示があってよい |
+| 55-構造2 | `additionalProperties: false`（`record_type`・`fields`・`rows` 以外は検証エラー） | 記述なし | スキーマ `:442`。20-構造2 と同じ所見 |
 
-### D56 `/$defs/record_fragment/properties/record_type` — スキーマ `:368`
+### D56 `/$defs/record_fragment/properties/record_type` — スキーマ `:447`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -723,9 +723,9 @@ description由来: 356 構造制約: 88
 | 56-5 | 可読性のために任意の名前を記述してよい | 記述なし | `YamlFileBuilder.java:206`-`:208`（`keepRecordType=false` のとき記載値を捨てて `"default"` にする）。所見: `:1144` から導ける運用上の助言。解説書に書いてもよい |
 | 56-6 | 同期応答メッセージ送信で使う4セクションでは、記載した値がそのままレコード種別になる | 一致 | `notation.rst:1144`「同期応答メッセージ送信で使う4つのデータタイプ…と取引単体テストのモックアップクラスの電文では、記載した値がそのままレコード種別になる」 |
 | 56-7 | いずれのセクションでも FW_HEADER のような予約値はない | 一致 | `notation.rst:1287`「`record_type` に特別な予約値はない」 |
-| 56-構造1 | `type: string`（`required` に含めない＝省略可） | 記述なし | スキーマ `:359`-`:362`・`:366`-`:368`。解説書 `:1272` の例は `record_type: default` を書いており、省略可否には触れていない。実装 `YamlFileBuilder.java:206`-`:208` は未指定なら `"default"` |
+| 56-構造1 | `type: string`（`required` に含めない＝省略可） | 記述なし | スキーマ `:438`-`:441`・`:445`-`:447`。解説書 `:1272` の例は `record_type: default` を書いており、省略可否には触れていない。実装 `YamlFileBuilder.java:206`-`:208` は未指定なら `"default"` |
 
-### D57 `/$defs/record_fragment/properties/fields` — スキーマ `:373`
+### D57 `/$defs/record_fragment/properties/fields` — スキーマ `:452`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -734,7 +734,7 @@ description由来: 356 構造制約: 88
 | 57-3 | 同一レコード種別内のフィールド名は重複不可（重複時はエラー） | 一致 | `notation.rst:1046`「1つのレコード種別において、フィールド名称に重複した名称は許容されない」＋`:1140`。本体 `DataFileFragment.java:190`-`:193`・`:354`-`:358`（`3c4bd2a`）も同じ |
 | 57-構造1 | `type: array`／`minItems: 1` | 一致 | `notation.rst:834`-`:838`（レコード種別にはフィールド名称が続く）＋`:1036`「フィールドの数だけ記載する」。本体 `DataFileFragment.java:191`（`assertNotNullOrEmpty(names, "names")`）も 0 件を拒否する |
 
-### D58 `/$defs/record_fragment/properties/rows` — スキーマ `:380`
+### D58 `/$defs/record_fragment/properties/rows` — スキーマ `:460`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -750,18 +750,18 @@ description由来: 356 構造制約: 88
 | 58-10 | **（是正前）rows が0件でも有効である** | **矛盾（C8）** | `notation.rst:838`「データ（1件以上）」＋`:861`「0バイトの空ファイルは、レコード定義を持たないファイルデータブロックとして表現する」（＝レコード定義を持つならデータは1件以上） |
 | 58-11 | バックスラッシュと `r` の2文字（`"\\r"`）を含む値はエラーになる | 一致 | `notation.rst:1429` |
 | 58-12 | Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値は仕様上存在しない | 一致 | `notation.rst:1429` |
-| 58-構造1 | `type: array`（`minItems` なし） | **矛盾（S1。変更せず報告）** | `notation.rst:838`「データ（1件以上）」。description は C8 として是正したが、`minItems: 1` の追加は検証挙動が変わるため指示書 §2 により行っていない |
+| 58-構造1 | `type: array`／`minItems: 1` | **矛盾（S1。処置済み）** | `notation.rst:838`「データ（1件以上）」。第1ラウンドでは `minItems` が無く 0 件を通していた。**処置済み（第2ラウンド。Q1）: `minItems: 1` を追加した（スキーマ `:459`）。`rows: []` は検証エラーになる（`YamlLoaderTest#load_emptyRowsIsSchemaViolation`）** |
 | 58-構造2 | `items.type: array` | 一致 | `notation.rst:1119` |
 | 58-構造3 | `items.items.type: ["string","null"]` | 一致 | `notation.rst:1120`「`rows:` 内の値はダブルクォートで囲む」＋`:870`（`null` と記述できる） |
 
-### D59 `/$defs/record_fragment/properties/rows/items` — スキーマ `:389`
+### D59 `/$defs/record_fragment/properties/rows/items` — スキーマ `:469`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 59-1 | フィールド値のリストである | 一致 | `notation.rst:1119` |
 | 59-2 | 数値・真偽値も必ず文字列（クォート付き）で記述すること | 一致 | `notation.rst:1120`「`rows:` 内の値はダブルクォートで囲む」＋`:1385`・`:1406`-`:1411` |
 
-### D60 `/$defs/field_def` — スキーマ `:401`
+### D60 `/$defs/field_def` — スキーマ `:481`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -770,18 +770,18 @@ description由来: 356 構造制約: 88
 | 60-3 | 固定長ファイル（type=fixed）では length が実質必須である | 一致 | `notation.rst:837`「フィールド長（固定長のみ）」＋`:854`-`:855`「各フィールドのバイト長（固定長ファイルのみ存在）」＋`:1052`「固定長との違いは、可変長ファイルの場合はフィールド長行を記載しない点のみである」 |
 | 60-4 | 省略すると NTF パーサが record-length を計算できない | 一致 | `notation.rst:897`「フィールド長合計から自動計算される」 |
 | 60-構造1 | `name`・`type` は必須、`length` は任意 | 一致 | `notation.rst:1116`＋`:1052`（可変長はフィールド長を書かない） |
-| 60-構造2 | `additionalProperties: false`（`name`・`type`・`length` 以外は検証エラー） | 記述なし | スキーマ `:400`。所見: `:1116` が3要素と定めているので閉じているのは自然だが、明示は無い |
+| 60-構造2 | `additionalProperties: false`（`name`・`type`・`length` 以外は検証エラー） | 記述なし | スキーマ `:480`。所見: `:1116` が3要素と定めているので閉じているのは自然だが、明示は無い |
 
-### D61 `/$defs/field_def/properties/name` — スキーマ `:405`
+### D61 `/$defs/field_def/properties/name` — スキーマ `:485`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
 | 61-1 | フィールド名である | 一致 | `notation.rst:850`-`:851`「フィールド名称: 各フィールドの名称」＋`:1116` |
-| 61-2 | NTF がフォーマット定義ファイルのフィールド名と照合するために使用する | 記述なし | 解説書にフォーマット定義ファイルとの「照合」の記述は無い（`:1188` はフォーマット定義ファイルの命名規則のみ）。本体 `DataFileFragment.java:58`・`:105`-`:106`（`3c4bd2a`）はフィールド名から `FieldDefinition` を組み立てて使うが、フォーマット定義ファイル側の名前と突き合わせる処理は確認できていない。**この一文の根拠は未確認**。所見: 根拠が取れないなら削るか「レコード定義のフィールド名になる」に改めるのが安全。ユーザー判断を仰ぐ |
+| 61-2 | NTF はこの名前でレコードのフィールドを定義し、レコードの値を取り出すキーとして使用する | 記述なし | 解説書は「各フィールドの名称」（`:850`-`:851`）までで、名前の用途を述べていない。実測（第2ラウンド。Q4）: **「フォーマット定義ファイルのフィールド名と照合する」という挙動は実在しない**。NTF はテストデータの `name` から `FieldDefinition` を生成してレイアウト定義を毎回組み立てる（本体 `3c4bd2a` の `FixedLengthFileFragment.java:98`（`.setName(name)`）・`VariableLengthFileFragment.java:53`・`DataFileFragment.java:519`-`:529`・`DataFile.java:275`-`:284`）。期待値ファイルの読み込みも同じ生成レイアウトを使うため（`DataFile.java:198`-`:224`・本体 `FileSupport.java:159`-`:177`）、名前の一致を検査する経路は無い。`name` は `DataRecord` の Map キー（`DataFileFragment.java:104`-`:115`）と重複検査（`:190`-`:194`）にも使われる。**処置済み: 「照合するために使用する」を削除し、実測どおりの記述に改めた（スキーマ `:485`）** |
 | 61-3 | 同一レコード種別内で重複不可である | 一致 | `notation.rst:1046`・`:1140`。本体 `DataFileFragment.java:192`・`:354`-`:358` |
 | 61-構造1 | `type: string` | 一致 | `notation.rst:1111`-`:1112`（`{name: USER_ID, ...}`） |
 
-### D62 `/$defs/field_def/properties/type` — スキーマ `:410`
+### D62 `/$defs/field_def/properties/type` — スキーマ `:490`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -791,10 +791,10 @@ description由来: 356 構造制約: 88
 | 62-4 | NTF が内部の型記号へ変換する | 一致 | `notation.rst:944`-`:976`（型名称→型記号の対応表） |
 | 62-5 | その変換は `BasicDataTypeMapping` が行う | 記述なし | 本体 `BasicDataTypeMapping.java:16`（`3c4bd2a`。`implements DataTypeMapping`）。解説書にクラス名は無い。所見: 27-7 と同じくクラス名を description に書く必要は薄い |
 | 62-6 | プロジェクト独自の型名称（`dataTypeMapping` で登録したもの）も許容する | 記述なし | 本体 `DataFileFragment.java:40`（`private static final String DATATYPE_MAPPING = "dataTypeMapping";`）。解説書は `:978` で `TEST_{型記号}` の登録には触れるが、`dataTypeMapping` による独自型名称の登録には触れていない。所見: 解説書にあってよい |
-| 62-7 | そのため過度なパターン制約は設けない | 記述なし | スキーマ `:407`-`:409`（`type: string`／`minLength: 1` のみ）。62-6 と同じ |
+| 62-7 | そのため過度なパターン制約は設けない | 記述なし | スキーマ `:487`-`:489`（`type: string`／`minLength: 1` のみ）。62-6 と同じ |
 | 62-構造1 | `type: string`／`minLength: 1`（`enum` にしない） | 記述なし | 62-6・62-7 と同じ。所見: 解説書 `:938`-`:976` は型名称を列挙しているが、`:978` の `TEST_{型記号}` と `dataTypeMapping` による拡張があるため `enum` にしない選択は妥当 |
 
-### D63 `/$defs/field_def/properties/length` — スキーマ `:413`
+### D63 `/$defs/field_def/properties/length` — スキーマ `:493`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -802,14 +802,14 @@ description由来: 356 構造制約: 88
 | 63-2 | 固定長ファイルでは実質必須である | 一致 | `notation.rst:837`・`:1052` |
 | 63-3 | 省略すると NTF が record-length を計算できない | 一致 | `notation.rst:897` |
 | 63-4 | 可変長ファイルでは不要（省略可）である | 一致 | `notation.rst:1052`「可変長ファイルの場合はフィールド長行を記載しない」 |
-| 63-5 | `"0"` はダミーフィールド（意味のある長さを持たないプレースホルダー）に使用可である | 記述なし | スキーマ `:414`-`:423`（`minimum: 0` と `^([0-9]+|-)$` が `0` を許す）。解説書はフィールド長 `0` の用途を述べていない。**用途（ダミーフィールド）の根拠は未確認**。所見: 用途を書くなら根拠が要る |
+| 63-5 | ~~`"0"` はダミーフィールド（意味のある長さを持たないプレースホルダー）に使用可である~~（**削除済み**） | 記述なし | 長さ `0` を書けること自体はスキーマ `:494`-`:503`（`minimum: 0` と `^([0-9]+|-)$`）が許す。実測（第2ラウンド。Q5）: 「ダミーフィールド」「プレースホルダ」の語は解説書 `ed3de95f` の `testdata_notation.rst`・`testdata_examples.rst` に 0 件（`grep -n 'ダミー\\|プレースホルダ\\|placeholder'`）、本体 `3c4bd2a` の `src/` にも 0 件（`git grep -n 'ダミーフィールド\\|プレースホルダ' 3c4bd2a -- src`）。長さ `0` を特別扱いする実装の分岐も無い（`FixedLengthFileFragment.java:95`-`:101` は `0` をそのまま長さとして扱い、`DataFileFragment.java:311`-`:317` はレコード長に `0` を加算する）。**根拠が実装にも解説書にも無いため、この一文を description から削除した（スキーマ `:493`）**。所見: 本体のテストリソース `RequestTestingMessagingClientTest.xls`（`3c4bd2a`）の電文セクションには長さ `0`・フィールド名「ダミー」の記述が 25 箇所あるが、ファイルデータ（`SETUP_FIXED` 等）には 0 件であり、現行の description は用途を過度に一般化していた。用途を書き戻すなら、電文に限る旨と根拠が要る |
 | 63-6 | `"-"` はオンデマンド計算で、そのフィールドに追加された全レコード値の最大バイト長に自動拡張される | 一致 | `notation.rst:1040`「`"-"` を指定すると、追加した全レコードの最大バイト長に自動拡張される」＋`:1205` |
 | 63-7 | `"-"` フィールドの値は NTF が格納時に、値に含まれる改行とその前後の空白を除去する | 一致 | `notation.rst:1040`「この場合、値に含まれる改行と、その前後の空白は取り除かれる」 |
 | 63-8 | 改行を含まない値の前後の空白は除去されない | 記述なし | 解説書 `:1040` は「値に含まれる改行と、その前後の空白」とだけ述べる。所見: `:1040` の読み違えを防ぐ補足であり、解説書にあってよい |
 | 63-9 | integer 記法（10）も文字列記法（"10"）もどちらも有効である | 一致 | `notation.rst:1118`「`length` は整数（`length: 10`）または文字列（`length: "10"`）のどちらでも有効であり、変換ツールが生成した YAML は文字列形式になる」 |
 | 63-構造1 | `anyOf`: `{type: integer, minimum: 0}` または `{type: string, pattern: "^([0-9]+|-)$"}` | 一致 | `notation.rst:1118`（両表記可）＋`:1040`（`"-"` 指定） |
 
-### D64 `/$defs/fw_header` — スキーマ `:433`
+### D64 `/$defs/fw_header` — スキーマ `:513`
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
@@ -821,14 +821,14 @@ description由来: 356 構造制約: 88
 | 64-6 | 省略時は requestId, userId, resendFlag, resultCode である | 一致 | `notation.rst:1150`「デフォルト値は `requestId`・`userId`・`resendFlag`・`resultCode` の4種だが固定ではなく、`SystemRepository` の `reader.fwHeaderfields` キーでプロジェクトが任意の名前に変更できる」＋`:1279` |
 | 64-7 | それ以外のキーがあるとエラーになる | 一致 | `notation.rst:1279`「それ以外のキーがあるとエラーになる」 |
 | 64-8 | このキー名の検査は、そのエントリの電文を読み出したときに行われる | 記述なし | `YamlMessageBuilder.java:118`-`:135`・`:298`-`:328`。28-6 と同じ |
-| 64-9 | 値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `"0000000001"`） | 記述なし | スキーマ `:430`-`:432`。28-8 と同じ |
-| 64-10 | 値の型はキー名と違ってこのスキーマ自身が課す制約である | 記述なし | スキーマ `:430`-`:432`・`:434`。28-9 と同じ |
+| 64-9 | 値は数値・真偽値も必ず文字列（クォート付き）で記述すること（例: requestId: `"0000000001"`） | 記述なし | スキーマ `:510`-`:512`。28-8 と同じ |
+| 64-10 | 値の型はキー名と違ってこのスキーマ自身が課す制約である | 記述なし | スキーマ `:510`-`:512`・`:514`。28-9 と同じ |
 | 64-11 | クォートなしの数値・真偽値を1つでも書くとロード時にファイル全体がエラーになる | 記述なし | `YamlLoader.java:154`-`:157`。28-10 と同じ |
 | 64-12 | バックスラッシュと `r` の2文字を含む値はエラーになる | 一致 | `notation.rst:1429` |
 | 64-13 | バックスラッシュと `r` の2文字を含む**キー名**もエラーになる | 記述なし | `YamlMessageBuilder.java:311`-`:317`。28-12 と同じ |
 | 64-14 | Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値は仕様上存在しない | 一致 | `notation.rst:1429` |
-| 64-構造1 | `type: object`／`minProperties: 0`（空マップも許す） | 記述なし | スキーマ `:428`-`:429`。所見: 解説書はヘッダを持たない電文について述べていない |
-| 64-構造2 | `additionalProperties: {"type":"string"}`（キー名は列挙せず値の型だけ検査する） | 一致 | `notation.rst:1150`「デフォルト値は…4種だが固定ではなく、`reader.fwHeaderfields` キーでプロジェクトが任意の名前に変更できる」（設定依存のためスキーマでキーを列挙できない）＋スキーマ `:434` の `$comment` |
+| 64-構造1 | `type: object`／`minProperties: 0`（空マップも許す） | 記述なし | スキーマ `:508`-`:509`。所見: 解説書はヘッダを持たない電文について述べていない |
+| 64-構造2 | `additionalProperties: {"type":"string"}`（キー名は列挙せず値の型だけ検査する） | 一致 | `notation.rst:1150`「デフォルト値は…4種だが固定ではなく、`reader.fwHeaderfields` キーでプロジェクトが任意の名前に変更できる」（設定依存のためスキーマでキーを列挙できない）＋スキーマ `:514` の `$comment` |
 
 ## 4. 是正の差分
 
@@ -935,20 +935,70 @@ C4〜C6（errorMode がどの経路で効くか）:
 **0 件。** 「矛盾」と判定した 8 件（C1〜C8）は、いずれも本体（`3c4bd2a`）の実装で解説書が正しいことを確認できた。
 解説書を直すべき箇所は見つからなかった。
 
-## 6. 判断を仰ぎたい事項（変更していない）
+## 6. 判断を仰ぎたい事項（第2ラウンドで決着済み）
 
 | # | 箇所 | 内容 |
 |---|---|---|
-| Q1 | `$defs.record_fragment.properties.rows`（`:378`-`:390`） | S1。`minItems: 1` を足すか。足すと検証挙動が変わる（現在 0 件を通す）。指示書 §2 により変更していない |
-| Q2 | `$defs.directives`（`:282`-`:356`） | L1。固定長11キー・可変長9キーの型別限定を `allOf`/`if-then` で表現するか。現状は和集合17キーを一律に許す |
-| Q3 | `$defs.message_data.properties.records`（`:209`。27-7） | 「`MessageParser` はこの records の record_type を内部で常に "default" に置換する」の `MessageParser` は Excel 経路（本体）のクラス名で、YAML 経路の実装は `YamlFileBuilder.java:206`-`:208` である。クラス名を落として `notation.rst:1144` の逐語に寄せるか |
-| Q4 | `$defs.field_def.properties.name`（`:405`。61-2） | 「NTF がフォーマット定義ファイルのフィールド名と照合するために使用する」の根拠が取れていない（解説書にも本体にも確認できず）。削るか書き換えるか |
-| Q5 | `$defs.field_def.properties.length`（`:413`。63-5） | 「`"0"` はダミーフィールドに使用可」の用途の根拠が取れていない |
-| Q6 | `$defs.directives.properties.max-record-length`（`:349`。53-3） | 「（バイト数）」の根拠が取れていない |
+| Q1 | `$defs.record_fragment.properties.rows`（`:457`-`:470`） | S1。`minItems: 1` を足すか。足すと検証挙動が変わる（現在 0 件を通す）。指示書 §2 により変更していない |
+| Q2 | `$defs.directives`（`:322`-`:397`） | L1。固定長11キー・可変長9キーの型別限定を `allOf`/`if-then` で表現するか。現状は和集合17キーを一律に許す |
+| Q3 | `$defs.message_data.properties.records`（`:249`。27-7） | 「`MessageParser` はこの records の record_type を内部で常に "default" に置換する」の `MessageParser` は Excel 経路（本体）のクラス名で、YAML 経路の実装は `YamlFileBuilder.java:206`-`:208` である。クラス名を落として `notation.rst:1144` の逐語に寄せるか |
+| Q4 | `$defs.field_def.properties.name`（`:485`。61-2） | 「NTF がフォーマット定義ファイルのフィールド名と照合するために使用する」の根拠が取れていない（解説書にも本体にも確認できず）。削るか書き換えるか |
+| Q5 | `$defs.field_def.properties.length`（`:493`。63-5） | 「`"0"` はダミーフィールドに使用可」の用途の根拠が取れていない |
+| Q6 | `$defs.directives.properties.max-record-length`（`:390`。53-3） | 「（バイト数）」の根拠が取れていない |
 
-Q3〜Q6 はいずれも解説書との「矛盾」ではないため、指示書 §1 の是正対象に当たらず今回は変更していない。
+（上の表は第1ラウンド時点の記述である。以下が決着。）
+
+### 決着（2026-08-31）
+
+判断基準（指示書 §6 の逐語）: description は利用者が YAML テストデータを書くときに読む仕様文であり、
+SSoT の適用範囲（2026-08-25 user 確定）。根拠を示せない記述は仕様文に置かない。yaml は未リリースで
+`src/main` を変更してよい。
+
+| # | 誰の判断 | 何をしたか |
+|---|---|---|
+| Q1 | user 確定（2026-08-31） | `$defs.record_fragment.properties.rows` に `minItems: 1` を追加した（スキーマ `:459`）。先に `YamlLoaderTest#load_emptyRowsIsSchemaViolation` を書き、変更前に落ちること（`AssertionError: YamlSchemaValidationException が期待される`）を確認してから追加した。S1 は処置済み（§2） |
+| Q2 | user 確定（2026-08-31） | ファイルデータ側で型別限定を表現した。`$defs.directives_fixed`（`:398`-`:417`。固定長11キー）・`$defs.directives_variable`（`:418`-`:435`。可変長9キー）を追加し、`$defs.file_data` の `allOf`／`if`-`then`（`:188`-`:227`）で `type` により切り替える。先に `load_fixedFileWithVariableOnlyDirectiveIsSchemaViolation`・`load_variableFileWithFixedOnlyDirectiveIsSchemaViolation` を書き、変更前に落ちることを確認した。**電文側（`type` キーを持たない3つの `$defs`）は表現していない**（下記の根拠を参照）。L1 は処置済み（§2） |
+| Q3 | ディレクター方針（指示書 §6） | `MessageParser` のクラス名を落とし、経路に依存しない記述に改めた（スキーマ `:249`）。27-7 を参照 |
+| Q4 | ディレクター方針（指示書 §6。実測して判断） | 「照合する」挙動は実在しないと実測できたため削除し、実測どおりの記述に改めた（スキーマ `:485`）。61-2 に `file:line` を記録 |
+| Q5 | ディレクター方針（指示書 §6。実測して判断） | 「ダミーフィールド」の根拠が実装にも解説書にも取れなかったため削除した（スキーマ `:493`）。63-5 に走査範囲を記録 |
+| Q6 | ディレクター方針（指示書 §6。実測して判断） | 「（バイト数）」の根拠が取れなかったため削除し、解説書 `:934` の逐語に合わせて「最大レコード長」とした（スキーマ `:390`）。53-3 に走査範囲を記録 |
+
+### Q2 で電文側を表現していない根拠
+
+1. スキーマ上、`type` プロパティを持つ `$defs` は `file_data` だけである（`message_data`・
+   `expected_request_message_data`・`group_message_data` は `id`・`directives`・`records`（＋`fw_header`）
+   のみ）。切り替えの条件になるキーが電文側に無い。
+2. 解説書 `ed3de95f` の `testdata_notation.rst` で有効なディレクティブキーを列挙しているのは
+   `:884`（固定長ファイルの11個）と `:911`（可変長ファイルの9個）の2箇所だけで、どちらも
+   「ファイル」についての規定である。電文についての記述は `:1174`「ディレクティブには、`file-type`
+   （テスティングフレームワークが固定長のみに対応するため）と `record-length`（フィールド長から
+   自動計算されるため）を記載する必要はない」と `:1190`「応答電文のアサート方式は、ディレクティブの
+   `file-type` の値、または `SystemRepository` の `messaging.assertAsMapFileType` キーの設定によって
+   切り替わる」の2箇所で、いずれも「書かなくてよい」「値で挙動が変わる」であって**有効キーの一覧では
+   ない**。走査は `git show ed3de95f:<path> | grep -n 'ディレクティブ'` の全ヒット（18行。`:830`・`:834`・`:876`・`:882`・`:884`・`:890`・`:911`・`:917`・`:986`・`:996`・`:1031`・`:1032`・`:1056`・`:1085`・`:1132`・`:1174`・`:1190`・`:1248`）を読んだ結果である。
+3. したがって電文側は、限定する対象の集合が定まらないため静的に表現できない。理由は
+   `$defs.directives` の `$comment`（`:326`）に残した（`$defs.fw_header` の `$comment` と同じ慣習）。
+   対照として `YamlLoaderTest#load_messageDirectivesAreNotTypeRestricted` を置いた。
+
+### 検証ライブラリのサポート確認
+
+`if`／`then` と `propertyNames` を実際に評価していることは、先に書いた落ちるテストが
+**スキーマ変更前に落ち・変更後に緑**になったことで確認した（素通りしていれば変更後も落ち続ける）。
+検証実装は `com.networknt:json-schema-validator:1.5.9`（`pom.xml:37`-`:39`）。
+
+### 型別限定の設計選択
+
+型別の `$defs`（`directives_fixed`・`directives_variable`）を作り、`file_data` 側の `allOf`／`if`-`then`
+で切り替える方式を採った。`$defs.directives` に `if`／`then`＋`not: {required: [...]}` を書く方式は
+採っていない。理由は2つ。(a) `$defs.directives` は電文3箇所からも `$ref` されており、`type` を知らない。
+`directives` 自身に型別分岐を書くと電文側にも波及する。(b) 型別の `$defs` にキーごとの `type` と
+`description` を再掲すると17キー分の二重管理になるため、キー名の集合だけを `propertyNames.enum` で
+限定し、キーの意味は `$defs.directives` 側で一元管理した（各 `$defs` の `$comment` に明記）。
 
 ## 7. 完了条件の自己判定
+
+以下は第1ラウンド（#47）時点の自己判定である（`description` は 64 件・テストは 320 件）。
+第2ラウンド（Q1〜Q6）の結果は本節の「第2ラウンド」を参照（`description` 66 件・テスト 324 件）。
 
 | 指示書 §3 の条件 | 結果 |
 |---|---|
@@ -965,6 +1015,70 @@ Q3〜Q6 はいずれも解説書との「矛盾」ではないため、指示書
 33-構造1・36-1、判定基準の非対称 18-4・19-12・19-15、および §2 冒頭の件数である。判定を変えた 5 行
 （16-6・16-7・18-4・19-12・19-15）に伴い、§1 の判定内訳を一致 344・併記 15・記述なし 76・矛盾 9 に
 更新した（合計 444 と対応表の行 ID は変わっていない）。
+
+### 第2ラウンドの完了条件（指示書 §6-1）
+
+| 指示書 §6-1 の条件 | 結果 |
+|---|---|
+| 1. Q1・Q2 は〈先に落ちるテスト → 落ちることを確認 → 変更 → 緑〉の順。報告にテスト名と「変更前に落ちた」事実を書く | OK（§6 の決着表。3件とも変更前に `AssertionError: YamlSchemaValidationException が期待される` で落ちた） |
+| 2. §3-3「description のみの変更」は上書き。構造の差分が Q1・Q2 に対応する箇所だけであることを確認 | OK（本節の「第2ラウンド」。`description`／`$comment` を除いた JSON の機械比較で確認） |
+| 3. `mvn clean test` 全件緑・`git status --short` 空・push | OK（`Tests run: 324, Failures: 0, Errors: 0, Skipped: 0`） |
+| 4. §5 の是正と併せて1回で報告・停止 | OK |
+
+### 第2ラウンド（Q1〜Q6 の実施。2026-08-31）
+
+指示書 §6 の方針とユーザー判断（Q1・Q2）にもとづき、スキーマ本体（`src/main`）を変更した。
+
+`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json`:
+
+| # | 変更 | 場所（変更後） |
+|---|---|---|
+| Q1 | `$defs.record_fragment.properties.rows` に `minItems: 1` を追加 | `:459` |
+| Q2 | `$defs.directives_fixed`（固定長11キー）を追加 | `:398`-`:417` |
+| Q2 | `$defs.directives_variable`（可変長9キー）を追加 | `:418`-`:435` |
+| Q2 | `$defs.file_data` に `allOf`／`if`-`then` を追加し `type` で切り替え | `:188`-`:227` |
+| Q2 | `$defs.directives` の description に型別限定の適用範囲を追記、`$comment` に電文側を表現しない理由を追記 | `:325`・`:326` |
+| Q3 | `$defs.message_data.properties.records` から `MessageParser` を落とす | `:249` |
+| Q4 | `$defs.field_def.properties.name` の「照合するために使用する」を実測どおりの記述に置換 | `:485` |
+| Q5 | `$defs.field_def.properties.length` から「`"0"` はダミーフィールド…に使用可」を削除 | `:493` |
+| Q6 | `$defs.directives.properties.max-record-length` から「（バイト数）」を削除 | `:390` |
+
+構造の差分は Q1・Q2 に対応する箇所だけである（description・`$comment` を除いて JSON を機械比較した結果、
+差分は `record_fragment.properties.rows.minItems` の追加と、`$defs.directives_fixed`・
+`$defs.directives_variable`・`file_data.allOf` の新設のみ）。
+
+テスト（`src/test`）:
+
+- 追加（先に落ちるテストとして書いた）: `YamlLoaderTest#load_emptyRowsIsSchemaViolation`（Q1）、
+  `#load_fixedFileWithVariableOnlyDirectiveIsSchemaViolation`・
+  `#load_variableFileWithFixedOnlyDirectiveIsSchemaViolation`（Q2）
+- 追加（対照）: `YamlLoaderTest#load_fileDirectivesOfMatchingTypeAreAllowed`（型別限定が過剰でないこと）、
+  `#load_messageDirectivesAreNotTypeRestricted`（電文側は限定されないこと）
+- 削除: `YamlFileBuilderTest#buildFileList_noRowsBecomesZeroDataRecords` と、そのフィクスチャ
+  `YamlFileBuilderTest/fileData.yaml` の `noRows` グループ。C8 で是正した「rows が0件でも有効」を
+  担保するテストであり、Q1 の `minItems: 1` により `rows: []` が検証を通らなくなったため、
+  スキーマ検証を通過しうる入力に対する挙動ではなくなった（2026-08-24 ユーザー裁定の判定基準）
+- 件数: 320 件 → 324 件（新規5件・削除1件）。全件緑
+
+本報告書の更新:
+
+- §2 の S1・L1 を処置済みに書き換えた
+- §3 の 27-7（Q3）・37-構造3（Q2）・53-3（Q6）・58-構造1（Q1）・61-2（Q4）・63-5（Q5）を書き換えた
+- §6 に決着・電文側を表現しない根拠・設計選択の理由を追記した
+- スキーマの行番号が変わったため、対応表と §2・§6 が引くスキーマ行番号（`:NN`）を全件確認して直した。
+  方法は、変更前（`6175639`）と変更後の JSON をそれぞれ走査して「`description` を持つノードの
+  JSON パス → その `description` 行の行番号」の対応表を作り、加えて `difflib` で旧行→新行の
+  写像を作って、報告書中のスキーマ参照だけを機械的に置換した（`notation.rst:NN`・`*.java:NN` は
+  参照元を判定して除外）。置換は 40 箇所（見出し）＋ 58 箇所（本文）。うち `$defs.directives` の
+  範囲末尾 2 箇所（`:356`）は、`difflib` が `$defs.directives_variable` の閉じ括弧に対応付けたため
+  手で `:397` に直した。置換後、報告書中のスキーマ参照を再走査したところ 138 箇所が抽出され、
+  そのうち 2 箇所（`:1246`・`:1116`）は「所見:」以降の解説書参照の誤検出、残る 136 箇所が
+  スキーマ参照で、すべてスキーマの行数（`:517` まで）の範囲内であることを確認した
+- 判定の内訳（§1）は変えていない。37-構造3 の判定を「一致（description の主張）／未表現（L1）」から
+  「一致」に整理したが、これは第1ラウンドでも一致の側に数えていたため件数は動かない
+  （一致 344・併記 15・記述なし 76・矛盾 9・合計 444。行 ID も 444 のまま）。
+  Q2 で `$defs.file_data` に加えた構造制約は、母集合の行数を動かさないよう新しい行を起こさず
+  37-構造3 に記録した
 
 ### 320件と318件について
 
