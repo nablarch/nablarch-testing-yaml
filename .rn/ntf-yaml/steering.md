@@ -1719,7 +1719,7 @@ force push・`--amend` をしない。レビューは回さない。
 
 ---
 
-### #49: 指示書 `ntf-step4-13` §6 — Q1〜Q6 への回答の実施
+### ~~#49: 指示書 `ntf-step4-13` §6 — Q1〜Q6 への回答の実施~~
 
 **Purpose**: `#47` で判断待ちとして残した6件にユーザー判断とディレクターの方針が出た。`description` は
 利用者が YAML テストデータを書くときに読む仕様文であり SSoT の適用範囲（2026-08-25 user 確定）なので、
@@ -1733,22 +1733,22 @@ force push・`--amend` をしない。レビューは回さない。
 
 **Steps**:
 
-- [ ] A. **Q1（S1）**: `record_fragment.rows` に `minItems: 1` を追加する（user 確定 2026-08-31）。
+- [x] A. **Q1（S1）**: `record_fragment.rows` に `minItems: 1` を追加する（user 確定 2026-08-31）。
       先に落ちるテスト（`rows: []` が検証エラーになること）を書き、**変更前に落ちることを確認してから**追加する
-- [ ] B. **Q2（L1）**: `$defs.directives` の型別限定を表現する（user 確定 2026-08-31）。`type: fixed` /
+- [x] B. **Q2（L1）**: `$defs.directives` の型別限定を表現する（user 確定 2026-08-31）。`type: fixed` /
       `variable` に応じて有効キーを解説書の11キー・9キー（`notation.rst:884`・`:911`）に限定し、型違いのキーが
       検証で落ちることを先に落ちるテストで確認する。type キーが無い文脈（電文側）等で表現できない箇所が
       あれば、**その箇所だけ根拠を付けて報告して止まる**
-- [ ] C. **Q3**: `message_data.records` の description から `MessageParser` のクラス名を落とし、
+- [x] C. **Q3**: `message_data.records` の description から `MessageParser` のクラス名を落とし、
       経路に依存しない挙動の記述に改める
-- [ ] D. **Q4〜Q6**: 各主張を実装（本体 `3c4bd2a`・ty）で実測する。根拠が取れたものは残して対応表に実装の
+- [x] D. **Q4〜Q6**: 各主張を実装（本体 `3c4bd2a`・ty）で実測する。根拠が取れたものは残して対応表に実装の
       `file:line` を記録、取れなかったものは description から**削除**して対応表にその旨を書く。
       Q4 = `field_def.name`「フォーマット定義ファイルのフィールド名と照合する」／
       Q5 = `field_def.length`「`"0"` はダミーフィールド」／Q6 = `max-record-length`「（バイト数）」
-- [ ] E. 構造の差分が Q1・Q2 に対応する箇所**だけ**であることを `git diff` で確認する
-- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑（320件＋新規テスト）・
+- [x] E. 構造の差分が Q1・Q2 に対応する箇所**だけ**であることを `git diff` で確認する
+- [x] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑（320件＋新規テスト）・
       `git status --short` 空・push
-- [ ] G. #48 と併せて1回で報告・停止する。報告は「§5 で是正した行の一覧」「Q1〜Q6 の実施結果
+- [x] G. #48 と併せて1回で報告・停止する。報告は「§5 で是正した行の一覧」「Q1〜Q6 の実施結果
       （Q4〜Q6 は実測の根拠 or 削除）」の2部構成
 
 **Completion criteria**:
