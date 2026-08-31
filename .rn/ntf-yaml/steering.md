@@ -66,7 +66,7 @@ nablarch-testing-yaml リポジトリへ切り出し、`mvn test` 全 PASS の�
 **Step 4 第2回（#36〜#44）に適用する Rules**（出典: 指示書 `nablarch-document@origin/ntf-yaml-support` の
 `.rn/20260724-ntf-yaml-support/ntf-step4-06-nablarch-testing-yaml-2.md`）
 
-- **参照点（ピン）** — 解説書 `nablarch-document`: `a6da1f6`（`#45` で `afa4f9e` から取り直した。`git show a6da1f6:<path>` で読む。**作業ツリーの HEAD を読まない**。`afa4f9e` との差は `ja/` の3行のみで `implementation/testdata_notation.rst:889`・`:1502` と `tools/testdata_converter.rst:63`、行番号は変わらない。パスは `ja/development_tools/testing_framework/…`）／本モジュール: `3ee39c9`（作業ツリーで作業してよい）／`nablarch-testing`: `3c4bd2a`（変更しない）／`nablarch-testing-converter`: `d611bec`（変更しない）
+- **参照点（ピン）** — 解説書 `nablarch-document`: `ed3de95f`（`#47` で `a6da1f6` から取り直した。出典は指示書 `ntf-step4-13` §1。`git show ed3de95f:<path>` で読む。**作業ツリーの HEAD を読まない**。パスは `ja/development_tools/testing_framework/…`）／本モジュール: `8b56776`（作業ツリーで作業してよい）／`nablarch-testing`: `3c4bd2a`（変更しない）／`nablarch-testing-converter`: `d611bec`（変更しない）
 - **判断の軸**（2026-08-28 ユーザー確定）— 中間モデル＝NTF 仕様＝現行 Excel 実装が定める意味。「YAML で表せて Excel で表せない意味」は存在しない。YAML の記法がこの意味集合からはみ出す場合、**対応する意味があれば写す（末尾 `null` → `""`）、無ければ弾く（エラー）**。静的に決まるものはスキーマで、設定に依存するもの（`fw_header:` のキー）は実装で検査する
 - **第2節の7件は直す。範囲の判断を持たない**（指示書 §1・渡し文面）。解説書が正であり、実装が追いついていない
 - **既存テストが落ちたら、期待値を解説書に合わせて直す**（指示書 §1）。「変えた／変えなかった」を件数つきで報告する（完了条件4）
@@ -1637,28 +1637,52 @@ converter の作業完了後に別途送付される（同 §5）。
 
 ---
 
+### #47: スキーマ `description` と解説書（SSoT）の全件突合
+
+**Purpose**: スキーマの `description` は SSoT の適用範囲である（user 確定 2026-08-25）。`#45` では点検で
+見つかった3件だけを直しており、全 `description` を解説書と突き合わせた網羅的な確認は未実施。`#54` で
+解説書側の SSoT 内部矛盾が1件見つかったため、残りにズレが無いことを全件で確認する。
+
+**出典**: 指示書 `nablarch-document@origin/ntf-yaml-support` の
+`.rn/20260724-ntf-yaml-support/ntf-step4-13-yaml-schema-consistency.md`。
+解説書の参照点は `nablarch-document@ed3de95f`（`git show ed3de95f:<path>`。作業ツリーを読まない）。
+
+**Prerequisites**: #46
+
+**Steps**:
+
+- [ ] A. 母集合を機械抽出で固定する。`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` の
+      全 `description`（`$defs` 10件とトップレベル・全プロパティ）を抽出コマンドつきで件数確定し、
+      各 description を文単位の主張へ分解して主張の件数も出す
+- [ ] B. 全主張を1件ずつ「一致 / 解説書に記述なし / 矛盾」で判定する。「一致」は解説書の `file:line`、
+      「解説書に記述なし」は実装の `file:line` ＋ 解説書にあるべきかの所見1行、「矛盾」は根拠を対応表に書く。
+      description 単位で「概ね一致」とまとめない
+- [ ] C. 構造制約（`type`・`required`・`pattern`・`maxItems` 等）も対応する解説書の記述と突き合わせる
+- [ ] D. 「矛盾」のうちスキーマ側が誤っているものは、解説書の逐語に合わせて `description` を是正する。
+      解説書側が誤っている疑いのあるものは直さず、根拠を添えて報告する。構造制約の変更は行わず矛盾として報告して止まる
+- [ ] E. `git diff` が `description` のみの変更であること（構造制約に差分なし）を確認する
+- [ ] F. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑・`git status --short` 空・push
+- [ ] G. 報告を ①結論（矛盾の件数と内訳）②対応表（全件）③是正の差分 ④解説書側の疑い の順で出して停止する
+
+**Completion criteria**:
+
+- 母集合（description 件数・主張件数）が機械抽出コマンドつきで報告にあり、**全主張**が対応表に載っている（サンプリングしない）
+- 「矛盾」の全件に処置（是正コミット or 解説書側の疑いとしての報告）が付いている
+- `git diff` が `description` のみの変更である。是正した description は解説書の該当記述と突き合わせた逐語根拠つき
+- `mvn clean test` 全件緑・`git status --short` 空・push 済み
+- 報告して停止
+
+**やらないこと**: 解説書を変更しない。ソースに解説書への参照（`file:line`・節名）を書かない。
+force push・`--amend` をしない。レビューは回さない。
+
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-31
-- **Last completed**: #46（`YamlLoader.java:57`-`:58` に到達不能分岐の理由コメントを追記）。
-  成果物コミット `0910b5e`、締めコミット `8773796`、いずれも push 済み。
-  **2026-08-31 ユーザー承認済み**（ディレクターの独立再測定が一致）
-- **Next**: **無し。次の指示書 `ntf-step4-13`（スキーマ `description` 全件突合）の送付待ち。**
-  送付は `nablarch-testing-converter` 側の作業完了後（出典: 指示書
-  `nablarch-document@origin/ntf-yaml-support` の
-  `.rn/20260724-ntf-yaml-support/ntf-step4-10-yaml-coverage.md` §5）。未完了タスクは1件も無い
-- **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
-  カバレッジは C0 1809/1822（missed 13）・C1 174/176（missed 2）、未達は `YamlFileBuilder.java:246`-`:247` と
-  `YamlLoader.java:62`・`:63`・`:67`・`:68`（static 初期化子）の2箇所のみで、いずれもユーザー承認済み・理由コメント済み。
-  `mvn -o clean test` は `Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`。
-  **判断待ちは解消済み**: 指示書 §3-3 の「318件」は更新しない。320件が正（`#45` の T6/L6 追加による差）。
-  解説書のピンは `nablarch-document@a6da1f6`。`src/` に解説書への参照は無く、以後も書かない。
-  下流 `nablarch-testing-converter`（`d611bec`）は本モジュールを install すると
-  `Tests run: 656, Failures: 3, Errors: 1` のままだが、converter 側の第2回指示書で直すことが決まっており
-  当リポジトリの作業ではない。
-  ユーザー未解決の未追跡パス: なし。
+- **Status**: not suspended
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
