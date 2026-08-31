@@ -1,0 +1,10 @@
+setup_files:
+  - path: dummy/test.dat
+    type: fixed
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows: []             # minItems: 1 違反（レコード定義を持つならデータは1件以上）

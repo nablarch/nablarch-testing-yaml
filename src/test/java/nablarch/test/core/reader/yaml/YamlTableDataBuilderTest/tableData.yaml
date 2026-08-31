@@ -1,0 +1,435 @@
+setup_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000001"
+        PK_COL2: "AB"
+        VARCHAR2_COL: "あいうえお"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.1"
+
+  - group_id: groupA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000002"
+        PK_COL2: "CD"
+        VARCHAR2_COL: "かきくけこ"
+        NUMBER_COL: "2"
+        NUMBER_COL2: "2.2"
+
+  - group_id: emptyRows
+    table: TEST_TABLE
+    rows: []
+
+  - group_id: dupTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000010"
+        PK_COL2: "EF"
+        VARCHAR2_COL: "さしすせそ"
+        NUMBER_COL: "10"
+        NUMBER_COL2: "10.1"
+
+  - group_id: dupTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000011"
+        PK_COL2: "GH"
+        VARCHAR2_COL: "たちつてと"
+        NUMBER_COL: "11"
+        NUMBER_COL2: "11.1"
+
+  - group_id: missingTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000099"
+        PK_COL2: "XX"
+
+  - group_id: markerColInTable
+    table: TEST_TABLE
+    rows:
+      - "[NO]": "1"
+        PK_COL1: "0000000001"
+        PK_COL2: "AB"
+        VARCHAR2_COL: "test"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.1"
+
+  - group_id: allEmptyRows
+    table: TEST_TABLE
+    rows:
+      - {}
+      - {}
+
+  - group_id: emptyRowMixed
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000020"
+        PK_COL2: "AA"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "20"
+        NUMBER_COL2: "20.0"
+      - {}
+      - PK_COL1: "0000000021"
+        PK_COL2: "BB"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "21"
+        NUMBER_COL2: "21.0"
+
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
+  - group_id: leadingEmptyRow
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000030"
+        PK_COL2: "CC"
+        VARCHAR2_COL: "second"
+        NUMBER_COL: "30"
+        NUMBER_COL2: "30.0"
+      - PK_COL1: "0000000031"
+        PK_COL2: "DD"
+        VARCHAR2_COL: "third"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（先頭に置いた場合）。
+  # 列名解決の基準になることを固定するため、この行のキー集合を後続行と変えてある。
+  - group_id: blankValueRowLeading
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: ""
+      - PK_COL1: "0000000050"
+        PK_COL2: "GG"
+        VARCHAR2_COL: "leading"
+        NUMBER_COL: "50"
+        NUMBER_COL2: "50.0"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（中間に置いた場合）。
+  - group_id: blankValueRowMiddle
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000051"
+        PK_COL2: "HH"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "51"
+        NUMBER_COL2: "51.0"
+      - PK_COL1: ""
+        PK_COL2: ""
+        VARCHAR2_COL: ""
+        NUMBER_COL: ""
+        NUMBER_COL2: ""
+      - PK_COL1: "0000000052"
+        PK_COL2: "II"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "52"
+        NUMBER_COL2: "52.0"
+
+  # 空文字・null はいずれも値であり、どちらの行も保持される。
+  - group_id: partiallyBlankValueRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000053"
+        PK_COL2: "JJ"
+        VARCHAR2_COL: ""
+        NUMBER_COL: null
+        NUMBER_COL2: ""
+      - PK_COL1: ""
+        PK_COL2: ""
+        VARCHAR2_COL: ""
+        NUMBER_COL: ""
+        NUMBER_COL2: ""
+
+  # 空行判定はキーの有無だけを見るため、値加工（interpret）を通して全ての値が空文字になる行も
+  # 行として保持される。値を必ず空文字にするインタープリタ（テスト内で組み立てる）を通して確認する。
+  # なお、空行除去は値加工より前に走り、この行の生値（"to_be_blanked"）は非空であるため、
+  # 判定を値ベース（全ての値が空文字なら行なし）へ戻してもこの行は消えない（実測済み）。
+  - group_id: interpretedToBlankRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000054"
+        PK_COL2: "PP"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: "to_be_blanked"
+        PK_COL2: "to_be_blanked"
+        VARCHAR2_COL: "to_be_blanked"
+
+  # 値が全て Java null の行も値を持つ行であり、行として保持される。
+  # クォートなしの null と、キーだけ書いて値を省略した COL: の両方をロード時点の Java null として置く。
+  - group_id: nullValueOnlyRow
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000055"
+        PK_COL2: "QQ"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: null
+        PK_COL2:
+        VARCHAR2_COL: null
+
+
+  # グループIDは完全一致で突合される（前方一致は発生しない）。
+  # case01 を指定したとき、前方一致する case010 のエントリは収集されない。
+  - group_id: case01
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000070"
+        PK_COL2: "RA"
+        VARCHAR2_COL: "exactMatch"
+        NUMBER_COL: "70"
+        NUMBER_COL2: "70.0"
+
+  - group_id: case010
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000071"
+        PK_COL2: "RB"
+        VARCHAR2_COL: "prefixMatch"
+        NUMBER_COL: "71"
+        NUMBER_COL2: "71.0"
+
+  # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
+  #      この2文字を含む値は YAML 形式では書けず、エラーになる。
+  - group_id: literalCrInTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000080"
+        PK_COL2: "LR"
+        VARCHAR2_COL: "\\r"
+        NUMBER_COL: "80"
+        NUMBER_COL2: "80.0"
+
+
+list_maps:
+  - id: testListMap
+    rows:
+      - KEY1: "val1"
+        KEY2: "val2"
+      - KEY1: "val3"
+        KEY2: "val4"
+
+  - id: markerColTest
+    rows:
+      - "[NO]": "1"
+        KEY1: "val1"
+        KEY2: "val2"
+
+  - id: dupIdFirst
+    rows:
+      - KEY1: "first"
+
+  - id: dupIdFirst
+    rows:
+      - KEY1: "second"
+
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "ケース1"
+        expectedStatusCode: "200"
+        setUpTable: ""
+        expectedTable: ""
+      - no: "2"
+        description: "ケース2"
+        expectedStatusCode: "400"
+        setUpTable: "case2"
+        expectedTable: "case2"
+
+  - id: nonMapRowTest
+    rows:
+      - KEY1: "valid"
+      - KEY1: "also_valid"
+
+  - id: partialBracketColTest
+    rows:
+      - "[OPEN": "ignored_val"
+        KEY1: "real_val"
+
+  - id: emptyRowListMap
+    rows:
+      - KEY1: "before"
+      - {}
+      - KEY1: "after"
+
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
+  - id: leadingEmptyRowListMap
+    rows:
+      - {}
+      - KEY1: "second"
+        KEY2: "val2"
+      - KEY1: "third"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（先頭に置いた場合）。
+  # 列名解決の基準になることを固定するため、この行のキー集合を後続行と変えてある。
+  - id: blankValueRowLeadingListMap
+    rows:
+      - KEY9: ""
+        KEY8: ""
+      - KEY1: "second"
+        KEY2: "val2"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（中間に置いた場合）。
+  - id: blankValueRowMiddleListMap
+    rows:
+      - KEY1: "before"
+        KEY2: "val1"
+      - KEY1: ""
+        KEY2: ""
+      - KEY1: "after"
+        KEY2: "val2"
+
+  # 空文字・null はいずれも値であり、どちらの行も保持される。
+  - id: partiallyBlankValueRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: ""
+        KEY3: null
+      - KEY1: ""
+        KEY2: ""
+        KEY3: ""
+
+  # 空行判定はキーの有無だけを見るため、値加工（interpret）を通して全ての値が空文字になる行も
+  # 行として保持される（setup_tables 側の interpretedToBlankRow と同じ事実を list_maps 経路で記録する）。
+  - id: interpretedToBlankRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: "val"
+      - KEY1: "to_be_blanked"
+        KEY2: "to_be_blanked"
+
+  # 値が全て Java null の行も値を持つ行であり、行として保持される（list_maps 経路）。
+  # クォートなしの null と、キーだけ書いて値を省略した KEY2: の両方を置く。
+  - id: nullValueOnlyRowListMap
+    rows:
+      - KEY1: "kept"
+        KEY2: "val"
+      - KEY1: null
+        KEY2:
+
+  # 全行が行として存在しないもの（空マッピング）の場合、残る行が 0 件になり列名も決まらない。
+  # setup_tables 側の allEmptyRows と同じ趣旨で list_maps 経路を固定する。
+  - id: allBlankRowsListMap
+    rows:
+      - {}
+      - {}
+      - {}
+
+  # 空行判定はマーカーカラム（[NO]）を除外する前に行うため、マーカーカラムだけが値を持つ行も
+  # 行としては残る。ただし DB 操作対象の列が 1 つも無いので
+  # list_maps の結果は空 Map になる（依存先 nablarch-testing の ListMapParser と同じ挙動）。
+  - id: markerOnlyRowListMap
+    rows:
+      - "[NO]": "1"
+
+
+  # args[n] 形式のカラム（バッチ起動時のコマンドライン引数）は、"[" で始まらないため
+  # マーカーカラム（[COL]）ではなく、キーが文字列 "args[0]" のまま Map に残る。
+  - id: argsColumnTest
+    rows:
+      - no: "1"
+        args[0]: "arg0Value"
+        args[1]: "arg1Value"
+
+
+expected_tables:
+  - group_id: markerColInTable
+    table: TEST_TABLE
+    rows:
+      - "[NO]": "1"
+        PK_COL1: "0000000001"
+        PK_COL2: "AB"
+        VARCHAR2_COL: "test"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.1"
+
+  - group_id: newGroup_emptyExpected
+    table: TEST_TABLE
+    rows: []
+
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
+  - group_id: leadingEmptyRowExpected
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000040"
+        PK_COL2: "EE"
+        VARCHAR2_COL: "expected"
+        NUMBER_COL: "40"
+        NUMBER_COL2: "40.0"
+      - PK_COL1: "0000000041"
+        PK_COL2: "FF"
+        VARCHAR2_COL: "expected2"
+
+  # 空マッピング（{}）の行は中間に置いても行として存在しないものとして扱われる。
+  - group_id: emptyRowMixedExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000060"
+        PK_COL2: "KK"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "60"
+        NUMBER_COL2: "60.0"
+      - {}
+      - PK_COL1: "0000000061"
+        PK_COL2: "LL"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "61"
+        NUMBER_COL2: "61.0"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（先頭に置いた場合）。
+  # 列名解決の基準になることを固定するため、この行のキー集合を後続行と変えてある。
+  - group_id: blankValueRowLeadingExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: ""
+      - PK_COL1: "0000000062"
+        PK_COL2: "MM"
+        VARCHAR2_COL: "leading"
+        NUMBER_COL: "62"
+        NUMBER_COL2: "62.0"
+
+  # 全ての値が空文字の行は値を持つ行であり、行として残る（中間に置いた場合）。
+  - group_id: blankValueRowMiddleExpected
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000063"
+        PK_COL2: "NN"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "63"
+        NUMBER_COL2: "63.0"
+      - PK_COL1: ""
+        PK_COL2: ""
+        VARCHAR2_COL: ""
+        NUMBER_COL: ""
+        NUMBER_COL2: ""
+      - PK_COL1: "0000000064"
+        PK_COL2: "OO"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "64"
+        NUMBER_COL2: "64.0"
+
+  # トップレベルのキーごとに独立して読み込むため、同じ group_id のエントリが別の group_id を
+  # 挟んで並んでいても、途中で収集が打ち切られることはない（Excel 形式のような1件打ち切りが無い）。
+  - group_id: interleavedA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000080"
+        PK_COL2: "SA"
+        VARCHAR2_COL: "firstA"
+        NUMBER_COL: "80"
+        NUMBER_COL2: "80.0"
+
+  - group_id: interleavedB
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000081"
+        PK_COL2: "SB"
+        VARCHAR2_COL: "middleB"
+        NUMBER_COL: "81"
+        NUMBER_COL2: "81.0"
+
+  - group_id: interleavedA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000082"
+        PK_COL2: "SC"
+        VARCHAR2_COL: "secondA"
+        NUMBER_COL: "82"
+        NUMBER_COL2: "82.0"

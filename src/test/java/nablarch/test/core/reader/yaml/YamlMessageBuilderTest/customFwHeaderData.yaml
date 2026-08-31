@@ -1,0 +1,20 @@
+# プロジェクト独自キーを含む fw_header マップテスト用（T2 手順6）
+# fw_header に記載できるキーは reader.fwHeaderfields の名前
+# （省略時は requestId・userId・resendFlag・resultCode）だけであり、それ以外のキーがあるとエラーになる。
+# reader.fwHeaderfields に customField を設定すれば通り、設定しなければエラーになることを検証する
+
+messages:
+  - id: req001
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      customField: "CUSTOM_VALUE"
+      requestId: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]

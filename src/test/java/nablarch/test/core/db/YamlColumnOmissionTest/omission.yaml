@@ -1,0 +1,242 @@
+# $defs.table_data.properties.rows / properties.expected_tables / properties.expected_complete_tables の
+# description が述べる「カラム省略」の挙動を実経路で固定するためのフィクスチャ。
+# (1) = カラム名決定行に無いカラム / (2) = カラム名決定行にはあるが個々の行で省略したカラム
+
+setup_tables:
+  # (1) 全行で省略
+  - group_id: s1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+
+  # (2) カラム名決定行にあり2行目で省略（NULL 許容カラム）
+  - group_id: s2
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  # (2) が NOT NULL カラム（NUMBER_COL）
+  - group_id: s3
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  # 行の並びだけが違う2グループ（先頭に「空エントリ {}」を置く）
+  - group_id: s4a
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  - group_id: s4b
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+
+  # 全カラム省略（PK のみ）→ 全てデフォルト値で INSERT される
+  - group_id: s0
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+
+  # 1行目 VARCHAR2_COL あり / 2行目 省略。他カラムは全行で省略
+  - group_id: s5
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+
+  # e1 用（VARCHAR2_COL に期待値と違う値を入れておく）
+  - group_id: s6
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "ZZZ"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+
+  # 後続の行にしか無いキー（カラム名決定行に無い）
+  - group_id: s7
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        VARCHAR2_COL: "LATER"
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  # (2) が Boolean 型カラム（BOOL_COL）
+  - group_id: s8
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+        BOOL_COL: "true"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  # (2) と「クォートなしの null を明示した場合」の同値性確認用（s2 の2行目に null を明示した版）
+  - group_id: s9
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        VARCHAR2_COL: null
+        NUMBER_COL: "8"
+        NUMBER_COL2: "2.5"
+        DATE_COL: "2024-01-02"
+        TIMESTAMP_COL: "2024-01-02 02:02:02"
+
+  # Boolean 型カラムにクォートなし小文字 null を明示した場合（省略ではなく明示。「行ごとに省略せず値を
+  # 明示すること」という助言どおりに null を明示しても NPE になることの確認用）
+  - group_id: s10
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+        BOOL_COL: null
+
+  # Boolean 型カラムにクォート付き "null" を明示した場合（NullInterpreter を指定しないため
+  # 文字列のまま扱われ、Java null にならず NullPointerException にもならないことの確認用）
+  - group_id: s11
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        NUMBER_COL2: "1.5"
+        DATE_COL: "2024-01-01"
+        TIMESTAMP_COL: "2024-01-01 01:01:01"
+        BOOL_COL: "null"
+
+expected_tables:
+  # (1) 全行で省略したカラムは比較対象に入らない
+  - group_id: e1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+
+  # (2) 個々の行で省略したカラムは null として比較される
+  - group_id: e2
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+
+  # e1 と同じだが VARCHAR2_COL を明示（比較対象に入るので失敗するはず）
+  - group_id: e1b
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "7"
+        VARCHAR2_COL: "WRONG"
+
+expected_complete_tables:
+  # (1) 全行で省略 → デフォルト値補完のうえ全カラム比較
+  - group_id: c1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+
+  # (2) 個々の行で省略 → null のまま（補完されない）
+  - group_id: c2
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        VARCHAR2_COL: "AAA"
+      - PK_COL1: "00002"
+        PK_COL2: "2"

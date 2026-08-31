@@ -1,0 +1,42 @@
+setup_files:
+  - path: dummy/fixed.dat
+    type: fixed
+    directives:
+      file-type: Fixed
+      text-encoding: Windows-31J
+      record-separator: CRLF
+      record-length: 10
+      positive-zone-sign-nibble: "C"
+      negative-zone-sign-nibble: "D"
+      positive-pack-sign-nibble: "C"
+      negative-pack-sign-nibble: "D"
+      required-decimal-point: false
+      fixed-sign-position: false
+      required-plus-sign: false
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]
+  - path: dummy/variable.csv
+    type: variable
+    directives:
+      file-type: Variable
+      text-encoding: UTF-8
+      record-separator: LF
+      field-separator: ","
+      quoting-delimiter: "\""
+      ignore-blank-lines: true
+      requires-title: false
+      max-record-length: 1024
+      title-record-type-name: TITLE
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+        rows:
+          - ["value1"]

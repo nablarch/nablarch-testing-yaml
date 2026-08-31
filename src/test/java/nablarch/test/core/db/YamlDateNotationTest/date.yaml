@@ -1,0 +1,27 @@
+# 3-5: 日付の記述形式を実経路で固定するフィクスチャ。
+# 時刻のミリ秒または全部を後置0埋めの形で省略できることを、TIMESTAMP_COL への INSERT で確認する。
+# DATE_COL は NOT NULL カラムなので値が要るが、こちらは JDBC タイムスタンプエスケープ形式で書き、
+# 検証対象（yyyyMMddHHmmssSSS の後置0埋め省略）と混ざらないようにしてある。
+
+setup_tables:
+  # 時刻のミリ秒を省略した形（yyyyMMddHHmmss）
+  - group_id: omitMillis
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "1"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.0"
+        DATE_COL: "2021-01-23"
+        TIMESTAMP_COL: "20210123123456"
+
+  # 時刻を全部省略した形（yyyyMMdd）
+  - group_id: omitTime
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "00002"
+        PK_COL2: "2"
+        NUMBER_COL: "2"
+        NUMBER_COL2: "2.0"
+        DATE_COL: "2021-01-23"
+        TIMESTAMP_COL: "20210123"
