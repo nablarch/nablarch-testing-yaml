@@ -72,15 +72,15 @@ description由来: 356 構造制約: 88
 
 | 判定 | 件数 |
 |---|---|
-| 一致 | 349 |
-| 一致（挙動）＋記述なし（クラス名等）の併記 | 11 |
-| 記述なし | 75 |
+| 一致 | 344 |
+| 一致（挙動）＋記述なし（クラス名等）の併記 | 15 |
+| 記述なし | 76 |
 | 矛盾 | 9（description 8 = C1〜C8、構造制約 1 = S1） |
 | 合計 | 444 |
 
 ## 2. 結論
 
-**矛盾は 7 件**（すべて description。スキーマ側を解説書の逐語に合わせて是正した）。
+**矛盾は 8 件**（すべて description。C1〜C8。スキーマ側を解説書の逐語に合わせて是正した。是正は 7 箇所。C5 と C7 は同じ description（`properties.response_body_messages`。スキーマ `:81`）に対する指摘である）。
 **構造制約の矛盾（変更せず報告のみ）は 1 件**。**解説書側が誤っている疑いは 0 件**。
 
 | # | 箇所 | 矛盾の内容 | 解説書の出典 |
@@ -205,7 +205,7 @@ description由来: 356 構造制約: 88
 | 8-1 | **（是正前）MockMessaging 経路の要求/応答電文データである** | **矛盾（C1）** | `notation.rst:1130`「`setUpMessages`（メッセージング受信テストの要求電文 ID、固定値）・`expectedMessages`（同期応答メッセージ受信の応答電文期待値 ID、固定値。応答電文を持たない応答不要メッセージ受信では読み込まれない）」。本体でも `setUpMessages`／`expectedMessages` を読むのは `MQSupport.java:64`・`:74`（`3c4bd2a`。`MessagingRequestTestSupport`／`MessagingReceiveTestSupport` が使う）であり、`MockMessagingContext.java:97`・`:99` と `MockMessagingClient.java:57`・`:70` は `RESPONSE_HEADER_MESSAGES`／`RESPONSE_BODY_MESSAGES` しか読まない |
 | 8-2 | id で完全一致検索され先着1件のみ有効（2件目以降は無視） | 一致 | `notation.rst:156`-`:158`（`MESSAGE` = 最初の1件のみ有効）＋`:246` |
 | 8-3 | fw_header で FW 制御ヘッダを指定する | 一致 | `notation.rst:1260`「フレームワーク制御ヘッダを `fw_header:` マップ（キー: 値）で記述する」 |
-| 8-4 | records で電文本文フィールドを定義する | 一致 | `notation.rst:1260`「メッセージボディ側のフィールドは、従来どおり `records:` の `fields:`・`rows:` に記載する」 |
+| 8-4 | records で電文本文フィールドを定義する | 一致 | `notation.rst:1279`「メッセージボディ側のフィールドは、従来どおり `records:` の `fields:`・`rows:` に記載する」 |
 | 8-5 | id はデータタイプ MESSAGE の識別子である | 一致 | `notation.rst:1132`「データタイプ `MESSAGE` の識別子として `setUpMessages`（要求電文）・`expectedMessages`（応答電文）を指定し」 |
 | 8-6 | `setUpMessages`（要求電文）・`expectedMessages`（応答電文）という固定値を指定する | 一致 | `notation.rst:1132`「これらの識別子は固定である」 |
 | 8-7 | `sendSyncTestData` は、取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータのベースディレクトリに付けるコンポーネント設定のキーである | 一致 | `notation.rst:1132`「取引単体テストのモックアップクラスが読む同期応答メッセージ送信のテストデータは、コンポーネント設定ファイルで `sendSyncTestData` というキーに設定したベースディレクトリの配下に置く」＋`setup/common.rst:168` |
@@ -298,8 +298,8 @@ description由来: 356 構造制約: 88
 | 16-3 | record_fragment の rows は配列の配列である | 一致 | `notation.rst:1119`「`rows:` の各行は配列形式で、`fields:` と同じ順序・同じ件数で値を並べる」 |
 | 16-4 | 数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: "30"、FLAG: "true"） | 一致 | `notation.rst:1385`「`rows:` 内の全てのデータ値を必ずダブルクォートで囲む必要がある（クォートがないと SnakeYAML が数値・真偽値に型変換してしまう）」＋`:1406`-`:1411` |
 | 16-5 | 値を Java null にする書き方はクォートなしの小文字 `null` である | 一致 | `notation.rst:809`-`:810`「null（Java の null）→ アンクォートの `null`」 |
-| 16-6 | 値を Java null にするもう1つの書き方はキーだけ書いて値を省略した `COL:` である | 一致 | `notation.rst:638`・`:799`「後続の行がこのキーの一部を持たない場合、そのカラムは `null` を明示的に指定したのと同じ扱いになる」＋`:1486`「YAML 形式でキーを省略した場合は前述のとおり null」 |
-| 16-7 | いずれもロード時点で null になる | 一致 | `notation.rst:809`-`:810`・`:1486` |
+| 16-6 | 値を Java null にするもう1つの書き方はキーだけ書いて値を省略した `COL:` である | 記述なし | `YamlSection.java:137`-`:138`・`:157`-`:158`（`objectToString` は値が null ならそのまま null を返す）＋`YamlTableDataBuilder.java:225`（行の値を `objectToString(rowMap.get(col))` で取る）。16-8 の実測でも値の省略は Java null になる。解説書の null の記法の規定は `:1385`・`:1397`-`:1398`（アンクォートの `null`）だけで、値を省略した `COL:` には触れていない（`:638`・`:799` は「`rows:` の先頭行のキーの一部を後続の行が持たない場合」、`:1486` は「YAML 形式でキーを省略した場合」で、いずれもキー自体を書かない場合の規定である）。所見: 実際によく使う記法なので解説書にあってよい |
+| 16-7 | いずれもロード時点で null になる | 一致（アンクォートの `null`）／記述なし（値を省略した `COL:`） | アンクォートの `null`: `notation.rst:809`-`:810`・`:1397`-`:1398`。値を省略した `COL:`: 16-6 と同じ（解説書に記述なし。`YamlSection.java:137`-`:138`・`:157`-`:158`） |
 | 16-8 | クォート付きの `"null"` や大文字を含む `NULL` / `Null` は文字列としてロードされ、文字列のまま扱われる | 記述なし | 解説書 `:1400`-`:1401` は「文字列の null → `"null"`（クォートあり）」までで、大文字表記には触れていない。実測（本モジュールの依存 `snakeyaml-engine 3.0.1`）で `null` と値省略のみ Java null、`NULL`・`Null`・`"null"`・`"NULL"`・`~` はいずれも String になることを確認。所見: Excel 形式（`:1346` 大文字小文字不問）との差なので解説書にあってよい |
 | 16-9 | 日付型カラムに `""` を指定すると null 扱いになる | 一致 | `notation.rst:813`-`:814`「日付型カラムの空文字 → `""`（null 扱い）」 |
 | 16-10 | 文字型の `""` は空文字のまま INSERT される | 一致 | `notation.rst:811`-`:812`「空文字 → `""`」 |
@@ -364,7 +364,7 @@ description由来: 356 構造制約: 88
 | 18-1 | 識別IDであり、完全一致で検索される | 一致 | `notation.rst:602`「`LIST_MAP` の ID は完全一致で検索される」 |
 | 18-2 | `testShots` は予約IDである | 一致 | `notation.rst:340`「`testShots` は、テストショット一覧を表す予約 ID である」 |
 | 18-3 | テストケース定義として NTF が自動読み込みし各行を1テストケースとして実行する | 一致 | `notation.rst:340`「フレームワークがこの ID を持つデータブロックを自動的に読み込み、各エントリを1つのテストショットとして実行する」 |
-| 18-4 | 1件以上の rows が必須で0件はエラーになる | 一致 | `notation.rst:340`「テスト実行には `testShots` に1件以上のエントリが必要である」 |
+| 18-4 | 1件以上の rows が必須で0件はエラーになる | 一致（1件以上が必要）／記述なし（エラーになること） | 1件以上: `notation.rst:340`「テスト実行には `testShots` に1件以上のエントリが必要である」。「エラー」は `:340` に無い。0件で例外になる根拠は本体 `AbstractHttpRequestTestTemplate.java:225`-`:228`（`3c4bd2a`。`IllegalStateException`「testShots (LIST_MAP=testShots) must have one or more test shots.」）・`StandaloneTestSupportTemplate.java:134`-`:137`（`3c4bd2a`。`IllegalArgumentException`「no test shot found.」）。所見: 9-5・10-5 と同じく解説書の逐語は「1件以上のエントリが必要である」までなので、エラーになることは解説書に足すのが望ましい |
 | 18-5 | ファイル内で重複した場合は先着1件のみ有効 | 一致 | `notation.rst:602` |
 | 18-構造1 | `type: string`（`minLength` なし） | 記述なし | スキーマ `:131`。所見: 解説書は ID の空文字について述べていない。`group_id` の `minLength: 1` と非対称なので、意図した非対称なら解説書に書くとよい |
 
@@ -383,10 +383,10 @@ description由来: 356 構造制約: 88
 | 19-9 | この判定はマーカーカラム（`[COL]` のようにマップから除外されるキー）を除外する前に行われる | 一致 | `notation.rst:1486`＋`:1468`（マーカーカラムは `list_maps` でも使える） |
 | 19-10 | そのためマーカーカラムだけに値がある行も取り除かれない | 一致 | `notation.rst:1486` |
 | 19-11 | この除去はキーの決定より前に行われる | 記述なし | `YamlTableDataBuilder.java:185`-`:186`（`dropBlankRows` → `resolveColumns`）。16-17 と同じ |
-| 19-12 | キーは残った先頭の行のキーで決まり、後続の行にしか無いキーは無視される | 一致 | `notation.rst:632`（`LIST_MAP` もテーブルデータと「カラム名・データ行」の構成を共有する）＋`:799`（その構成における YAML のカラム名決定規則） |
+| 19-12 | キーは残った先頭の行のキーで決まり、後続の行にしか無いキーは無視される | 一致（先頭の行のキーで決まる・後続の行にしか無いキーは無視される）／記述なし（「残った」＝空エントリ `{}` の除去後であること） | `notation.rst:632`（`LIST_MAP` もテーブルデータと「カラム名・データ行」の構成を共有する）＋`:799`「カラム名は、最初の行（`rows:` の先頭要素）のキーで決まる」「後続の行に最初の行のキーにないものを追加しても、そのキーは読み込まれない」。「残った」は `:799` に無く、`YamlTableDataBuilder.java:185`-`:186`（`dropBlankRows` → `resolveColumns` の順）による。16-29 と同じ |
 | 19-13 | この規則は table_data の rows と共通で、record_fragment の rows には適用されない | 一致 | `notation.rst:1486`（テーブルデータ・`LIST_MAP` が対象）＋`:1468`（マーカーカラムが使える4データタイプ） |
 | 19-14 | 全行が取り除かれると空リストになる | 一致 | `notation.rst:1486`（エントリ自体を無いものとして扱う） |
-| 19-15 | 予約ID `testShots` では、rows を0件書いた場合と同じくエラーになる | 一致 | `notation.rst:340`「テスト実行には `testShots` に1件以上のエントリが必要である」 |
+| 19-15 | 予約ID `testShots` では、rows を0件書いた場合と同じくエラーになる | 一致（1件以上が必要）／記述なし（エラーになること） | 18-4 と同じ（`notation.rst:340`＋本体 `AbstractHttpRequestTestTemplate.java:225`-`:228`・`StandaloneTestSupportTemplate.java:134`-`:137`） |
 | 19-16 | バックスラッシュと `r` の2文字（`"\\r"`）を含む値はエラーになる | 一致 | `notation.rst:1429` |
 | 19-17 | Excel 形式ではこの2文字が必ず CR に変換されるため、この2文字を含む値は仕様上存在しない | 一致 | `notation.rst:1429` |
 | 19-構造1 | `type: array`（件数制約なし） | 一致 | `notation.rst:340`（`testShots` は1件以上。一般の `LIST_MAP` に件数制約は解説書に無い） |
@@ -428,9 +428,9 @@ description由来: 356 構造制約: 88
 |---|---|---|---|
 | 23-1 | ファイル種別である | 一致 | `notation.rst:1105`（`type: fixed`）＋`:1122` |
 | 23-2 | fixed = 固定長（SETUP_FIXED / EXPECTED_FIXED） | 一致 | `notation.rst:202`・`:204`＋`:144`-`:149` |
-| 23-3 | variable = 可変長（SETUP_VARIABLE / EXPECTED_VARIABLE） | 一致 | `notation.rst:202`・`:204`＋`:150`-`:155` |
+| 23-3 | variable = 可変長（SETUP_VARIABLE / EXPECTED_VARIABLE） | 一致 | `testdata_examples.rst:1251`「`type: variable` を指定し」＋`:1257`（`type: variable` の記述例）。データタイプとの対応は `notation.rst:202`・`:204`＋`:150`-`:155`（小文字リテラル `variable` は `notation.rst` に無い） |
 | 23-4 | NTF はこの値に応じてパーサ・フォーマッタを切り替える | 一致 | `notation.rst:878`「固定長か可変長かは、データブロック内の記述で区別される」。実装 `YamlFileBuilder.java:85`-`:87`（`FixedLengthFile`／`VariableLengthFile` の切り替え） |
-| 23-構造1 | `enum: ["fixed","variable"]` | 一致 | `notation.rst:1105`・`:202`-`:205`（2種のみ） |
+| 23-構造1 | `enum: ["fixed","variable"]` | 一致 | `notation.rst:1105`（`type: fixed`）＋`testdata_examples.rst:1257`（`type: variable`）。2種のみであることは `notation.rst:202`-`:205`（小文字リテラル `variable` は `notation.rst` に無い） |
 
 ### D24 `/$defs/file_data/properties/records` — スキーマ `:182`
 
@@ -451,7 +451,7 @@ description由来: 356 構造制約: 88
 | 25-3 | id で完全一致検索され先着1件のみ有効 | 一致 | `notation.rst:246`・`:158` |
 | 25-4 | fw_header で FW 制御ヘッダを指定する | 一致 | `notation.rst:1260` |
 | 25-5 | records で電文本文フィールド（型・長さつき）を定義する | 一致 | `notation.rst:1260`・`:1271`-`:1277` |
-| 25-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1132`（識別子は固定値）＋`:1133`（メッセージボディはファイルデータと同じ構成） |
+| 25-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1132`（識別子は固定値）＋`:1134`（メッセージボディはファイルデータと同じ構成） |
 | 25-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`「`records:` に記述するレコードレイアウトは1つである。2つ以上記述するとエラーになる」＋`:1134` |
 | 25-構造3 | `additionalProperties: false`（`id`・`directives`・`records`・`fw_header` 以外は検証エラー） | 記述なし | スキーマ `:195`。所見: `group_id` を持たない点（`:1246` の `MESSAGE=setUpMessages` にグループID書式が無いこと）と対応する。解説書にあってよい |
 
@@ -471,7 +471,7 @@ description由来: 356 構造制約: 88
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
-| 27-1 | 電文本文のレコード定義である | 一致 | `notation.rst:1133`「フレームワーク制御ヘッダ以降のメッセージボディは、フィールド名称・データ型・フィールド長・データという、前述のファイルデータと同じ構成を持つ」＋`:1260` |
+| 27-1 | 電文本文のレコード定義である | 一致 | `notation.rst:1134`「フレームワーク制御ヘッダ以降のメッセージボディは、フィールド名称・データ型・フィールド長・データという、前述のファイルデータと同じ構成を持つ」＋`:1260` |
 | 27-2 | records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる | 一致 | `notation.rst:1283` |
 | 27-3 | 電文はファイルデータのように複数のレコードレイアウトを持たない | 一致 | `notation.rst:1134`「ただし、電文のレコードレイアウトは1つであり、ファイルデータのように複数のレコードレイアウトを持たない」 |
 | 27-4 | FW 制御ヘッダは fw_header に記述するため records には含めない | 一致 | `notation.rst:1260` |
@@ -507,7 +507,7 @@ description由来: 356 構造制約: 88
 | 29-2 | 要求電文の期待値を表す | 一致 | `notation.rst:1161`-`:1166` |
 | 29-3 | fw_header は使用しない | 一致 | `notation.rst:1260`「`EXPECTED_REQUEST_HEADER_MESSAGES`・`EXPECTED_REQUEST_BODY_MESSAGES`・`RESPONSE_HEADER_MESSAGES`・`RESPONSE_BODY_MESSAGES` の4種では使わず」 |
 | 29-4 | requestId 等のヘッダフィールドも含め records の fields/rows にフィールド単位で定義する | 一致 | `notation.rst:1260`「`requestId` などのヘッダフィールドも含めて `records` の `fields:`・`rows:` にフィールド単位で記載する」 |
-| 29-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1161`-`:1166`（設定値=リクエストID）＋`:1133` |
+| 29-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1161`-`:1166`（設定値=リクエストID）＋`:1134` |
 | 29-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`・`:1134` |
 | 29-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:223`。25-構造3 と同じ所見 |
 
@@ -534,7 +534,7 @@ description由来: 356 構造制約: 88
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
-| 32-1 | 電文フィールドのレコード定義である | 一致 | `notation.rst:1260`・`:1133` |
+| 32-1 | 電文フィールドのレコード定義である | 一致 | `notation.rst:1260`・`:1134` |
 | 32-2 | records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる | 一致 | `notation.rst:1283` |
 | 32-3 | 電文はファイルデータのように複数のレコードレイアウトを持たない | 一致 | `notation.rst:1134` |
 | 32-4 | requestId 等の FW 制御ヘッダフィールドも含め、すべてのフィールドをここに定義する（fw_header は使用しない） | 一致 | `notation.rst:1260` |
@@ -549,7 +549,7 @@ description由来: 356 構造制約: 88
 | 33-3 | この経路で使う場合は group_id が必須である | 一致 | `notation.rst:1246`「グループID付きの書式例は `EXPECTED_REQUEST_BODY_MESSAGES[グループID]=リクエストID` である」＋`:420`-`:421`（`responseMessage` カラムにグループIDを指定）＋`:1254`（取引単体テスト側は「識別子はグループIDを持たず」） |
 | 33-4 | (B) MockMessagingContext / MockMessagingClient 経路では id で照合して先着1件収集する（group_id 不要） | 一致（挙動）／記述なし（クラス名） | 挙動: `notation.rst:1207`「識別子の書式がグループIDを持たない点が同期応答メッセージ送信のテストと異なり」＋`:1254`「識別子はグループIDを持たず、`EXPECTED_REQUEST_HEADER_MESSAGES=リクエストID` のように記載する」 |
 | 33-5 | group_id を省略した場合は経路 B として動作する | 一致 | `notation.rst:1207`・`:1254` |
-| 33-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1167`-`:1172`（設定値=リクエストID）＋`:1133` |
+| 33-構造1 | `id`・`records` は必須 | 一致 | `notation.rst:1167`-`:1172`（設定値=リクエストID）＋`:1134` |
 | 33-構造2 | `records` は `minItems: 1`／`maxItems: 1` | 一致 | `notation.rst:1283`・`:1134` |
 | 33-構造3 | `additionalProperties: false` | 記述なし | スキーマ `:256`。25-構造3 と同じ所見 |
 
@@ -576,7 +576,7 @@ description由来: 356 構造制約: 88
 
 | # | 主張 | 判定 | 出典・根拠 |
 |---|---|---|---|
-| 36-1 | 電文フィールドのレコード定義である | 一致 | `notation.rst:1260`・`:1133` |
+| 36-1 | 電文フィールドのレコード定義である | 一致 | `notation.rst:1260`・`:1134` |
 | 36-2 | records に記述するレコードレイアウトは1つであり、2つ以上記述するとエラーになる | 一致 | `notation.rst:1283` |
 | 36-3 | 電文はファイルデータのように複数のレコードレイアウトを持たない | 一致 | `notation.rst:1134` |
 | 36-4 | 先頭値が `errorMode:timeout` または `errorMode:msgException` の行を含めると送受信エラーをシミュレートできる | 一致 | `notation.rst:1220`・`:1229`-`:1234` |
@@ -957,6 +957,14 @@ Q3〜Q6 はいずれも解説書との「矛盾」ではないため、指示書
 | 3. `git diff` が description のみの変更で、是正は解説書の逐語根拠つき | OK（§4・§4.1。構造同一を機械確認） |
 | 4. `mvn clean test` 全件緑・`git status --short` 空・push | OK（`Tests run: 320, Failures: 0, Errors: 0, Skipped: 0`） |
 | 5. 報告して停止 | OK |
+
+### 第1ラウンド是正について（2026-08-31）
+
+指示書 §5（ディレクターの独立検証）の指摘にもとづき、本報告書の記述だけを是正した（`src/` は変更していない）。
+是正したのは、判定の誤り 16-6・16-7、出典の不備 8-4・23-3・23-構造1・25-構造1・27-1・29-構造1・32-1・
+33-構造1・36-1、判定基準の非対称 18-4・19-12・19-15、および §2 冒頭の件数である。判定を変えた 5 行
+（16-6・16-7・18-4・19-12・19-15）に伴い、§1 の判定内訳を一致 344・併記 15・記述なし 76・矛盾 9 に
+更新した（合計 444 と対応表の行 ID は変わっていない）。
 
 ### 320件と318件について
 
