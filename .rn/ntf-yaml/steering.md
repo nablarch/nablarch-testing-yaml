@@ -1837,28 +1837,23 @@ session is suspended — the signal /rn:up and /rn:dn search for — and resets 
 so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
-- **Date**: 2026-08-31
-- **Last completed**: #50（YAML テストデータの 3MB 上限の撤廃。指示書 `ntf-step4-14` §2）。
-  作業コミットは `e984103`（push 済み）。`mvn -o clean test` は `Tests run: 325`。
-  **converter 担当 CC への引継ぎ: 取り込むコミットは `e984103`。**
-  ひとつ前は #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**#48・#49 とも 2026-08-31 に
-  ユーザー承認（`/rn:ty`）済みで、成果は最終として確定。** 承認の記録は `b67e106`。
-  作業コミットは `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`。すべて push 済み。
-  報告書は `.rn/ntf-yaml/report-step4-3.md`
-- **Next**: 無し。#50 は報告・停止済み（ユーザー承認は未了）。#49 までは承認済み。
-  次の指示書が来るまで着手する作業は無い
+- **Date**: 2026-09-07
+- **Last completed**: #50（YAML テストデータの 3MB 上限の撤廃。指示書
+  `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-14-yaml-code-point-limit.md` §2）。
+  作業コミット `e984103`・State 記録 `c8180f2`。ともに push 済み。報告・停止済みでユーザー承認は未了。
+  #49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済みで確定（承認の記録は `b67e106`）
+- **Next**: 無し。次の指示書が来るまで着手する作業は無い。#50 の承認が出たら `/rn:ty` で確定させる
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
-  `mvn -o clean test` は `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`（#50 で新規1件を追加）。
-  カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致。
-  解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（変更しない）。
-  承認により確定した判断3件（詳細は `.rn/ntf-yaml/checks/task-49.md` と報告書 §7）:
-  (1) §5 の指定外だが §1 の判定内訳を更新した（一致 344・併記 15・記述なし 76。合計 444 と行ID は不変）／
-  (2) description が変わり `$defs` が 64→66 になったが母集合 444 を据え置いた（Q2 の構造制約は
-  新規行を起こさず 37-構造3 に記録）／
-  (3) 既存テスト `YamlFileBuilderTest#buildFileList_noRowsBecomesZeroDataRecords` を削除した
-  （Q1 の `minItems: 1` で入力がスキーマ検証を通らなくなったため）。
-  **電文側のディレクティブ型別限定は未表現**（指示書 §6 Q2 が認めた「その箇所だけ報告」。理由は
-  `$defs.directives` の `$comment`）。
-  `src/` に解説書への参照は無く、以後も書かない。
-  下流 `nablarch-testing-converter`（`d611bec`）の赤は converter 側の課題であり当リポジトリの作業ではない。
+  `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` は
+  `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`。
+  カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致（#50 では再計測していない）。
+  解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（どちらも変更しない）。
+  `src/` に解説書への参照は書かない。
+  **#50 の引継ぎ**: `nablarch-testing-converter` 担当 CC が §3 で取り込むコミットは `e984103`
+  （`YamlLoader.loadSettings()` を追加。converter 側はこれを使い、残る 2 箇所の 3MB 上限を外す）。
+  下流 converter の赤は converter 側の課題であり当リポジトリの作業ではない。
+  未決事項: **電文側のディレクティブ型別限定は未表現**（指示書 §6 Q2 が認めた「その箇所だけ報告」。
+  理由は `$defs.directives` の `$comment`）。
+  #49 の承認で確定した判断3件の詳細は `.rn/ntf-yaml/checks/task-49.md` と
+  報告書 `.rn/ntf-yaml/report-step4-3.md` §7 にある。
   ユーザー未解決の未追跡パス: なし。
