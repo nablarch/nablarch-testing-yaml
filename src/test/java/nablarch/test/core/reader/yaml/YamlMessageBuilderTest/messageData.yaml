@@ -128,6 +128,17 @@ expected_request_header_messages:
         rows:
           - ["0000000001", "testUser01", "0", "0000"]
 
+  # rows: [] （レコード定義はあるがデータ行が 0 件）。
+  # その requestId で電文が 1 通も送られないことの検証に使う形。
+  - id: noSend001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+        rows: []
+
 expected_request_body_messages:
   - id: req001
     records:

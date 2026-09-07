@@ -312,6 +312,35 @@ public class YamlMessageBuilderTest {
     }
 
     /**
+     * [YamlMessageBuilder] buildMessagePool: 期待要求電文の rows が 0 件のとき、
+     * 期待電文リストが 0 件になること。
+     *
+     * <p>
+     * 何を担保するか: {@code rows: []} と書いた期待要求電文が、
+     * 「その requestId で電文は 1 通も送られない」ことの検証に使える形になること。
+     * 本体はこのリストの件数と実送信件数を突き合わせるため、
+     * 0 件のリストが返らなければ「1 通も送られない」ことを表せない。<br>
+     * Given: expected_request_header_messages にレコード定義 1 件・{@code rows: []} の noSend001 エントリ<br>
+     * When:  buildMessagePool(yaml, "expected_request_header_messages", "noSend001", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が返り、getExpectedMessageList() が 0 件であること
+     * </p>
+     */
+    @Test
+    public void buildMessagePool_emptyRowsBecomesEmptyExpectedMessageList() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = buildMessagePool(yaml, "expected_request_header_messages", "noSend001", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat(result, instanceOf(RequestTestingMessagePool.class));
+        assertThat("期待電文リストが 0 件であること",
+                ((RequestTestingMessagePool) result).getExpectedMessageList().size(), is(0));
+    }
+
+    /**
      * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること。
      *
      * <p>

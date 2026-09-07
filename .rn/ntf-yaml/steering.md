@@ -1836,7 +1836,7 @@ force push・`--amend` をしない。上限値の設定項目を増やさない
 
 ---
 
-### #51: YAML スキーマの Excel との対称性の是正（`rows: []` とディレクティブ値の文字列表記）
+### ~~#51: YAML スキーマの Excel との対称性の是正（`rows: []` とディレクティブ値の文字列表記）~~
 
 **Purpose**: YAML スキーマの拒否制約を「同じ入力を Excel で書いたら本体は受け付けて意味を与えるか」で
 監査した結果、Excel で書けて意味を持つのに YAML で書けないものが 2 種類あった。原則
@@ -1851,13 +1851,46 @@ force push・`--amend` をしない。上限値の設定項目を増やさない
 
 **Steps**:
 
-- [ ] A. 着手前の全件基準を測る（`mvn clean test`）
-- [ ] B. 先に落ちるテストを書き、RED を確認する
-- [ ] C. スキーマを 1-A（`rows` の `minItems: 1` 削除）・1-B（ディレクティブ 7 キーの型に string を許す）のとおり変える
-- [ ] D. `mvn clean test` 全件緑
-- [ ] E. 変更前後のスキーマを `description`／`$comment` を除いて機械比較し、構造差分が 8 箇所だけであることを確認する
-- [ ] F. 差分限定で 2 観点（B 整合・D 検証の妥当性）のレビューを回し、指摘の件数と採否を記録する
-- [ ] G. `git status --short` 空・push・報告
+- [x] A. 着手前の全件基準を測る（`mvn clean test`）
+- [x] B. 先に落ちるテストを書き、RED を確認する
+- [x] C. スキーマを 1-A（`rows` の `minItems: 1` 削除）・1-B（ディレクティブ 7 キーの型に string を許す）のとおり変える
+- [x] D. `mvn clean test` 全件緑
+- [x] E. 変更前後のスキーマを `description`／`$comment` を除いて機械比較し、構造差分が 8 箇所だけであることを確認する
+- [x] F. 差分限定で 2 観点（B 整合・D 検証の妥当性）のレビューを回し、指摘の件数と採否を記録する
+- [x] G. `git status --short` 空・push・報告
+
+**`#49` A の上書き**: `#49` A（`f3620fc` の `minItems: 1` 追加。user 確定 2026-08-31）を
+**user 判断 2026-09-07 で上書き**した。当時の根拠は解説書の「データ（1件以上）」
+（`testdata_notation.rst:907`@a0ca03f7）で、この記述自体が誤りだった（v6 にも実装にも根拠が無い。
+同日ディレクターが訂正する）。これに伴い `YamlLoaderTest#load_emptyRowsIsSchemaViolation` と
+フィクスチャ `schemaViolation_emptyRows.yaml` を削除した（担保すべき挙動が反転したため。
+削除で失った担保は無い。詳細は `checks/task-51.md`）。
+
+**変更**: 構造 8 箇所（`record_fragment.properties.rows.minItems` の削除 1 件と、ディレクティブ 7 キーの
+`type` を `["integer","string"]`／`["boolean","string"]` へ広げる 7 件）。`description` は `rows` の 1 文の
+差し替えと 7 キーへの一文追記。`src/main/java` は変更していない。
+
+**検証**:
+
+- 着手前の全件基準: `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`（指示書の期待と一致）
+- RED: スキーマ変更前に、追加・復元した 4 件が `YamlSchemaValidationException` で落ちることを確認
+  （`load_emptyRowsIsAllowed`・`load_directiveValuesCanBeQuotedStrings`・
+  `buildFileList_noRowsBecomesZeroDataRecords`・`buildMessagePool_emptyRowsBecomesEmptyExpectedMessageList`）
+- 変更後: `mvn -o clean test` が `Tests run: 328, Failures: 0, Errors: 0, Skipped: 0`（325 − 削除 1 ＋ 追加 4）
+- 構造差分の機械比較（`description`／`$comment` 除去）: 変更前のみ 8 パス・変更後のみ 14 パス
+  （7 キーの `type[0]`・`type[1]`）・値の変わったパス 0。1-A の 1 箇所と 1-B の 7 箇所だけである
+- 変異確認: `buildMessagePool_emptyRowsBecomesEmptyExpectedMessageList` の対象を
+  データ行 1 件のエントリへ差し替えると落ちることを実行で確認
+
+**レビュー（指示書 §2-6・差分限定 2 観点）**: 指摘 2 件・採用 1 件・不採用 0 件・報告のみ 1 件。
+
+- 観点 B（整合）: 指示書 §1 の根拠 `file:line` 10 件を実物で突き合わせ、全件一致
+  （44 ブロックの内訳のみ未検証。xls をパースしていない）。
+  **B-1（報告のみ）**: 1-B の description 追記文が逐語指定のため、boolean の 5 キーにも例 `"10"` が、
+  integer の 2 キーにも例 `"true"` が載る。型ごとに例を出し分けた方が読みやすいが、
+  逐語指定を勝手に変えないため実施せず、ディレクターの判断を仰ぐ
+- 観点 D（検証の妥当性）: **D-1（採用）**: 指示書 §2-2 の挙げる 2 キーだけでは変更した 7 キーのうち
+  5 キーが無検証になるため、文字列版フィクスチャを 7 キーすべてを含む形にした
 
 **Completion criteria**:
 
@@ -1876,24 +1909,24 @@ force push・`--amend` をしない。上限値の設定項目を増やさない
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
+- **Status**: not suspended（#51 完了・報告済み。ユーザー承認は未了）
 - **Date**: 2026-09-07
-- **Last completed**: #50（YAML テストデータの 3MB 上限の撤廃。指示書
-  `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-14-yaml-code-point-limit.md` §2）。
-  作業コミット `e984103`・State 記録 `c8180f2`。ともに push 済み。報告・停止済みでユーザー承認は未了。
-  #49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済みで確定（承認の記録は `b67e106`）
-- **Next**: 無し。次の指示書が来るまで着手する作業は無い。#50 の承認が出たら `/rn:ty` で確定させる
+- **Last completed**: #51（YAML スキーマの Excel との対称性の是正。指示書
+  `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-18-schema-excel-parity.md` §1・§2）。
+  台帳コミット `fc5acce`（#50 承認記録・#51 起票）と作業コミット（下記 Notes）。push 済み。
+  #50 は 2026-09-07 承認済み、#49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済み
+- **Next**: 無し。#51 の承認が出たら `/rn:ty` で確定させる。converter（`#57`）・Example ウェブ（task #7）・
+  integration（`#26`）への追随はディレクターが合図してから各担当が行う（当リポジトリの作業ではない）
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
   `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` は
-  `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`。
-  カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致（#50 では再計測していない）。
-  解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（どちらも変更しない）。
+  `Tests run: 328, Failures: 0, Errors: 0, Skipped: 0`。
+  カバレッジは #51 では再計測していない（#46 基準 C0 1809/1822・C1 174/176 のまま）。
+  参照点は本体 `nablarch-testing@ae989ec`・解説書 `nablarch-document@a0ca03f7`・
+  変換ツール `nablarch-testing-converter@878ef9a`（いずれも変更しない）。
   `src/` に解説書への参照は書かない。
-  **#50 の引継ぎ**: `nablarch-testing-converter` 担当 CC が §3 で取り込むコミットは `e984103`
-  （`YamlLoader.loadSettings()` を追加。converter 側はこれを使い、残る 2 箇所の 3MB 上限を外す）。
-  下流 converter の赤は converter 側の課題であり当リポジトリの作業ではない。
-  未決事項: **電文側のディレクティブ型別限定は未表現**（指示書 §6 Q2 が認めた「その箇所だけ報告」。
-  理由は `$defs.directives` の `$comment`）。
-  #49 の承認で確定した判断3件の詳細は `.rn/ntf-yaml/checks/task-49.md` と
-  報告書 `.rn/ntf-yaml/report-step4-3.md` §7 にある。
+  **#51 の引継ぎ**: 下流（converter `#57`・Example ウェブ task #7・integration `#26`）が取り込むのは
+  スキーマから `record_fragment.rows` の `minItems` が消え、ディレクティブ 7 キーが文字列も受けるコミット。
+  ディレクターへ返答待ちの判断が 1 件ある（1-B の description 追記文の例を型ごとに出し分けるか。
+  `checks/task-51.md` の指摘 B-1）。
+  未決事項: **電文側のディレクティブ型別限定は未表現**（`#49` から継続。理由は `$defs.directives` の `$comment`）。
   ユーザー未解決の未追跡パス: なし。

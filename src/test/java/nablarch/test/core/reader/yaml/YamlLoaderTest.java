@@ -734,40 +734,102 @@ public class YamlLoaderTest {
     }
 
     // ========================================================================
-    // load: レコード定義を持つブロックのデータ行は1件以上であること（minItems: 1）
+    // load: レコード定義を持つブロックのデータ行は 0 件でもよいこと
     // ========================================================================
 
     /**
-     * [YamlLoader] load: レコード定義の rows を空配列にした YAML をロードした場合は
-     * YamlSchemaValidationException がスローされること。
+     * [YamlLoader] load: レコード定義の rows を空配列にした YAML がロードできること。
      *
      * <p>
-     * 何を担保するか: レコード定義（fields）を持つブロックのデータ行は1件以上であること。
-     * 0バイトの空ファイルは、レコード定義を持たないブロックとして {@code records: []} で表すため、
-     * {@code rows: []} は誤りである。<br>
-     * Given: setup_files の1レコード定義が rows: [] を持つ YAML ファイル<br>
+     * 何を担保するか: {@code rows: []} は「レコード定義はあるがデータ行が 0 件」を表す正規の記述であり、
+     * ファイルデータでも期待要求電文でも検証エラーにならないこと。
+     * レコード定義そのものを持たない 0 バイトの空ファイル（{@code records: []}）とは別物である。<br>
+     * Given: setup_files と expected_request_header_messages のレコード定義が {@code rows: []} を持つ YAML ファイル<br>
      * When:  load を呼ぶ<br>
-     * Then:  YamlSchemaValidationException がスローされ、違反の種別が minItems で、
-     *        メッセージにファイルパスと出所（rows のパス）が含まれること
+     * Then:  例外は発生せず、どちらの rows も空リストとしてロードできること
      * </p>
      */
     @Test
-    public void load_emptyRowsIsSchemaViolation() {
+    public void load_emptyRowsIsAllowed() {
         // When
-        try {
-            YamlLoader.load(DIR, "YamlLoaderTest/schemaViolation_emptyRows");
-            fail("YamlSchemaValidationException が期待される");
-        } catch (YamlSchemaValidationException e) {
-            // Then
-            assertThat("エラーメッセージにファイルパスが含まれること",
-                    e.getMessage(), containsString("YamlLoaderTest/schemaViolation_emptyRows"));
-            assertThat("エラーメッセージに出所（setup_files のレコード定義の rows）が含まれること",
-                    e.getMessage(), containsString("setup_files[0].records[0].rows"));
-            List<ValidationMessage> errors = e.getErrors();
-            assertThat("違反が 1 件報告されること", errors.size(), is(1));
-            assertThat("データ行が0件であることとして弾かれること（minItems 違反）: " + errors.get(0),
-                    errors.get(0).getType(), is("minItems"));
-        }
+        Map<String, Object> loaded = YamlLoader.load(DIR, "YamlLoaderTest/emptyRows");
+
+        // Then
+        assertThat("ファイルデータの rows が 0 件でロードできること",
+                rowsOfFirstRecord(loaded, "setup_files").size(), is(0));
+        assertThat("期待要求電文の rows が 0 件でロードできること",
+                rowsOfFirstRecord(loaded, "expected_request_header_messages").size(), is(0));
+    }
+
+    /**
+     * セクションの先頭エントリの先頭レコードレイアウトから {@code rows} を取り出す。
+     *
+     * @param loaded     ロード済みのトップレベル Map
+     * @param sectionKey セクションキー
+     * @return {@code rows} のリスト
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Object> rowsOfFirstRecord(Map<String, Object> loaded, String sectionKey) {
+        List<Map<String, Object>> entries = (List<Map<String, Object>>) loaded.get(sectionKey);
+        List<Map<String, Object>> records = (List<Map<String, Object>>) entries.get(0).get("records");
+        return (List<Object>) records.get(0).get("rows");
+    }
+
+    // ========================================================================
+    // load: integer / boolean のディレクティブ値は文字列でも記述できること
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: integer / boolean のディレクティブ値をクォート付きの文字列で書いた
+     * YAML がロードできること。
+     *
+     * <p>
+     * 何を担保するか: 型が integer / boolean のディレクティブ 7 キーは、
+     * {@code record-length: "10"} のように文字列で書いても検証エラーにならないこと。
+     * 変換ツールはディレクティブの値を必ず文字列で出力するため、この形が読めないと変換結果を読めない。<br>
+     * Given: 固定長側に record-length・required-decimal-point・fixed-sign-position・required-plus-sign、
+     *        可変長側に ignore-blank-lines・requires-title・max-record-length を
+     *        いずれも文字列で書いた YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  例外は発生せず、7 キーとも書いたとおりの文字列としてロードできること
+     * </p>
+     */
+    @Test
+    public void load_directiveValuesCanBeQuotedStrings() {
+        // When
+        Map<String, Object> loaded = YamlLoader.load(DIR, "YamlLoaderTest/directiveValuesAsStrings");
+
+        // Then
+        Map<String, Object> fixed = directivesOfEntry(loaded, "setup_files", 0);
+        assertThat("record-length が文字列で読めること", fixed.get("record-length"), is((Object) "10"));
+        assertThat("required-decimal-point が文字列で読めること",
+                fixed.get("required-decimal-point"), is((Object) "false"));
+        assertThat("fixed-sign-position が文字列で読めること",
+                fixed.get("fixed-sign-position"), is((Object) "false"));
+        assertThat("required-plus-sign が文字列で読めること",
+                fixed.get("required-plus-sign"), is((Object) "false"));
+
+        Map<String, Object> variable = directivesOfEntry(loaded, "setup_files", 1);
+        assertThat("ignore-blank-lines が文字列で読めること",
+                variable.get("ignore-blank-lines"), is((Object) "true"));
+        assertThat("requires-title が文字列で読めること", variable.get("requires-title"), is((Object) "true"));
+        assertThat("max-record-length が文字列で読めること",
+                variable.get("max-record-length"), is((Object) "1024"));
+    }
+
+    /**
+     * セクションの指定エントリから {@code directives} を取り出す。
+     *
+     * @param loaded     ロード済みのトップレベル Map
+     * @param sectionKey セクションキー
+     * @param index      エントリの位置
+     * @return {@code directives} の Map
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> directivesOfEntry(Map<String, Object> loaded, String sectionKey,
+                                                         int index) {
+        List<Map<String, Object>> entries = (List<Map<String, Object>>) loaded.get(sectionKey);
+        return (Map<String, Object>) entries.get(index).get("directives");
     }
 
     // ========================================================================
