@@ -1892,11 +1892,24 @@ force push・`--amend` をしない。上限値の設定項目を増やさない
 - 観点 D（検証の妥当性）: **D-1（採用）**: 指示書 §2-2 の挙げる 2 キーだけでは変更した 7 キーのうち
   5 キーが無検証になるため、文字列版フィクスチャを 7 キーすべてを含む形にした
 
+**追記（B-1 の採用。ディレクター指示 2026-09-07）**: B-1 は採用となり、1-B の description の例を
+型ごとに出し分けた。integer の 2 キー（`record-length`・`max-record-length`）は
+「クォート付きの文字列（例 `"10"`）でも記述できる。変換ツールは文字列で出力する」、
+boolean の 5 キー（`required-decimal-point`・`fixed-sign-position`・`required-plus-sign`・
+`ignore-blank-lines`・`requires-title`）は「クォート付きの文字列（例 `"true"`）でも記述できる。
+変換ツールは文字列で出力する」。`description` のみの変更で、
+`description`／`$comment` を除いた機械比較の構造差分は 0（変更前のみ・変更後のみ・値が変わったパスとも 0 件）。
+`mvn -o clean test` は `Tests run: 328, Failures: 0, Errors: 0, Skipped: 0`。
+
 **Completion criteria**:
 
 - 追加テストが変更前に落ち、変更後に通る
 - `mvn clean test` 全件緑・`git status --short` 空・push 済み
 - 構造差分が 1-A の 1 箇所と 1-B の 7 箇所だけであることを機械比較で確認済み
+
+**判定**: 2026-09-07 承認。ディレクターが scratchpad の clone で構造差分 8 箇所・328 件緑・
+旧スキーマでは新テスト 4 件が落ちることを確認したうえでの承認。
+併せて B-1（description の例の出し分け）の採用が指示され、上記「追記」のとおり実施した。
 
 **やらないこと**: 本体 `nablarch-testing`・変換ツール・解説書を変更しない。`src/main/java` を変えない。
 ソース・テスト・フィクスチャに解説書への参照（行番号・節見出し・逐語引用）を書かない。
@@ -1909,14 +1922,17 @@ force push・`--amend` をしない。上限値の設定項目を増やさない
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended（#51 完了・報告済み。ユーザー承認は未了）
+- **Status**: not suspended（#51 承認済み・未完了タスク 0 件）
 - **Date**: 2026-09-07
 - **Last completed**: #51（YAML スキーマの Excel との対称性の是正。指示書
   `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-18-schema-excel-parity.md` §1・§2）。
-  台帳コミット `fc5acce`（#50 承認記録・#51 起票）と作業コミット（下記 Notes）。push 済み。
-  #50 は 2026-09-07 承認済み、#49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済み
-- **Next**: 無し。#51 の承認が出たら `/rn:ty` で確定させる。converter（`#57`）・Example ウェブ（task #7）・
-  integration（`#26`）への追随はディレクターが合図してから各担当が行う（当リポジトリの作業ではない）
+  台帳コミット `fc5acce`（#50 承認記録・#51 起票）・作業コミット `f9373ee`・
+  description 出し分けコミット（B-1 の採用）。すべて push 済み。
+  **2026-09-07 に #51 の承認を受領し、成果は最終として確定。**
+  #50 も同日承認済み、#49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済み
+- **Next**: 無し。全 51 タスク完了・承認済み。次の作業はディレクター指示書の到着待ち。
+  converter（`#57`）・Example ウェブ（task #7）・integration（`#26`）への追随はディレクターが
+  合図してから各担当が行う（当リポジトリの作業ではない）
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
   `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o clean test` は
   `Tests run: 328, Failures: 0, Errors: 0, Skipped: 0`。
@@ -1926,7 +1942,5 @@ so only a genuinely suspended session reads `paused`.)
   `src/` に解説書への参照は書かない。
   **#51 の引継ぎ**: 下流（converter `#57`・Example ウェブ task #7・integration `#26`）が取り込むのは
   スキーマから `record_fragment.rows` の `minItems` が消え、ディレクティブ 7 キーが文字列も受けるコミット。
-  ディレクターへ返答待ちの判断が 1 件ある（1-B の description 追記文の例を型ごとに出し分けるか。
-  `checks/task-51.md` の指摘 B-1）。
   未決事項: **電文側のディレクティブ型別限定は未表現**（`#49` から継続。理由は `$defs.directives` の `$comment`）。
   ユーザー未解決の未追跡パス: なし。
