@@ -1829,6 +1829,46 @@ NTF がサイズ上限を掛ける理由が無い。上限値は設定可能に�
 **やらないこと**: 本体 `nablarch-testing` を変更しない。解説書を変更しない。
 force push・`--amend` をしない。上限値の設定項目を増やさない。
 
+**判定**: 2026-09-07 承認。ディレクターが当リポジトリを clone し、`mvn clean test` 325 件緑と、
+`YamlLoader.loadSettings()` の `setCodePointLimit` 行を外すと新テストが落ちることを確認したうえでの承認
+（出典: 指示書 `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-18-schema-excel-parity.md` §2 冒頭）。
+成果は最終として確定。
+
+---
+
+### #51: YAML スキーマの Excel との対称性の是正（`rows: []` とディレクティブ値の文字列表記）
+
+**Purpose**: YAML スキーマの拒否制約を「同じ入力を Excel で書いたら本体は受け付けて意味を与えるか」で
+監査した結果、Excel で書けて意味を持つのに YAML で書けないものが 2 種類あった。原則
+「Excel で書けたテストデータは YAML でも書ける」に従い、これを直す。
+
+**出典**: 指示書
+`/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-18-schema-excel-parity.md` §1・§2。
+参照点は本体 `nablarch-testing@ae989ec`（変更しない）・解説書 `nablarch-document@a0ca03f7`（変更しない）・
+変換ツール `nablarch-testing-converter@878ef9a`（変更しない）。
+
+**Prerequisites**: #50
+
+**Steps**:
+
+- [ ] A. 着手前の全件基準を測る（`mvn clean test`）
+- [ ] B. 先に落ちるテストを書き、RED を確認する
+- [ ] C. スキーマを 1-A（`rows` の `minItems: 1` 削除）・1-B（ディレクティブ 7 キーの型に string を許す）のとおり変える
+- [ ] D. `mvn clean test` 全件緑
+- [ ] E. 変更前後のスキーマを `description`／`$comment` を除いて機械比較し、構造差分が 8 箇所だけであることを確認する
+- [ ] F. 差分限定で 2 観点（B 整合・D 検証の妥当性）のレビューを回し、指摘の件数と採否を記録する
+- [ ] G. `git status --short` 空・push・報告
+
+**Completion criteria**:
+
+- 追加テストが変更前に落ち、変更後に通る
+- `mvn clean test` 全件緑・`git status --short` 空・push 済み
+- 構造差分が 1-A の 1 箇所と 1-B の 7 箇所だけであることを機械比較で確認済み
+
+**やらないこと**: 本体 `nablarch-testing`・変換ツール・解説書を変更しない。`src/main/java` を変えない。
+ソース・テスト・フィクスチャに解説書への参照（行番号・節見出し・逐語引用）を書かない。
+`~/.m2` へ install しない。force push・`--amend` をしない。
+
 
 # State
 
