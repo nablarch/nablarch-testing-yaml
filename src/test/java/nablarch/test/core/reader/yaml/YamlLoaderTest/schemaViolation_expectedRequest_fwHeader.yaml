@@ -1,0 +1,11 @@
+expected_request_header_messages:
+  - fw_header:         # additionalProperties: false 違反（expected_request_message_data に fw_header は存在しない）
+      requestId: "001"
+    id: "REQ001"
+    records:
+      - fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]

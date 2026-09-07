@@ -1,0 +1,20 @@
+# 対照: ファイルデータ（file_data）は複数のレコードレイアウトを持てるため
+# records を2つ書いてもスキーマ違反にならない
+setup_files:
+  - path: "tmp/multiRecord.txt"
+    type: fixed
+    records:
+      - record_type: header
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]
+      - record_type: data
+        fields:
+          - name: field2
+            type: 半角
+            length: 10
+        rows:
+          - ["value2    "]

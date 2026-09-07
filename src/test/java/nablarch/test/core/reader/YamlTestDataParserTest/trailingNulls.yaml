@@ -1,0 +1,19 @@
+# RS-06: 末尾の空要素（YAML ネイティブ null または省略）は Java null として返す
+
+list_maps:
+  - id: trailingNullTest
+    rows:
+      - COL1: "val1"
+        COL2: "val2"
+        COL3: null
+      - COL1: "val4"
+        COL2: null
+        COL3: null
+
+  - id: trailingKeyOmitTest
+    rows:
+      - COL1: "row1_a"
+        COL2: "row1_b"
+        COL3: "row1_c"
+      - COL1: "row2_a"
+        COL2: "row2_b"

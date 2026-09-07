@@ -1,0 +1,15 @@
+# 囮。<リクエストID>.yaml という配置（Excel 形式の <リクエストID>.xlsx に相当する置き方）は
+# YAML 形式では読み込み単位にならないことを示すために置いている。
+# このファイルが読まれた場合、RESULT_KEY は "FROM_FILE1" になる。
+response_body_messages:
+  - id: RM21AA0101
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["FROM_FILE1"]

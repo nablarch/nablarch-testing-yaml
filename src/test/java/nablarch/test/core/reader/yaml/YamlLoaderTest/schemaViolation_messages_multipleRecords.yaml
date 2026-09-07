@@ -1,0 +1,15 @@
+messages:
+  - id: "MSG001"
+    records:                # maxItems: 1 違反（電文のレコードレイアウトは1つ）
+      - fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]
+      - fields:
+          - name: field2
+            type: 半角
+            length: 10
+        rows:
+          - ["value2    "]

@@ -1,0 +1,36 @@
+# RS-03: YAML null (null は schema 上許可: type: [string, null])
+# RS-04: 文字列 "true"/"false"
+# RS-05: 文字列 "42", "3.14"
+
+list_maps:
+  - id: nativeTypeTest
+    rows:
+      - STR_COL: "hello"
+        NULL_COL: null
+        BOOL_TRUE: "true"
+        BOOL_FALSE: "false"
+        INT_COL: "42"
+        FLOAT_COL: "3.14"
+        FLOAT_SCIENTIFIC: "1.0E10"
+
+  # 3-1: YAML 1.2 Core Schema では yes / no / on / off は真偽値ではなく文字列として扱われる。
+  #      キー・値のいずれもクォートなしで書く。
+  - id: yaml12BooleanWordTest
+    rows:
+      - no: no
+        yes: yes
+        on: on
+        off: off
+
+  # 3-1: testShots のカラム no をクォートなしのキーで書いた形。YAML 1.1 ならキーが真偽値 false になる。
+  - id: unquotedNoKeyTest
+    rows:
+      - no: "1"
+        description: "ファイル入力"
+        expectedStatusCode: "0"
+
+  # 3-6: ${attach:ファイルパス} の記法。
+  #      パスはテスト実行時のカレントディレクトリ（プロジェクトルート）からの相対パス。
+  - id: attachNotationTest
+    rows:
+      - uploadFile: "${attach:src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest/test.bin}"

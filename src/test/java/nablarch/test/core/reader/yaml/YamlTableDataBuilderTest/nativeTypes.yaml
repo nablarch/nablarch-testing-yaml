@@ -1,0 +1,134 @@
+list_maps:
+  - id: nativeTypeTest
+    rows:
+      - STR_COL: "hello"
+        NULL_COL: null
+        BOOL_TRUE: "true"
+        BOOL_FALSE: "false"
+        INT_COL: "42"
+        FLOAT_COL: "3.14"
+
+  - id: interpreterTest
+    rows:
+      - QUOTED_NULL: "null"
+        BARE_NULL: null
+        SPACE_COL: " "
+        YAML_CR_COL: "\r"
+
+  # 2-5: バックスラッシュと r の2文字（"\\r"）を含む値。
+  #      この2文字を含む値は YAML 形式では書けず、エラーになる。
+  #      ロード（YamlLoader.load）は成功する。エラーになるのはこのエントリを組み立てたとき
+  #      （buildListMapRows(yaml, "literalCrTest", ...)）である。他のエントリの組み立てを
+  #      巻き添えにしないよう単独のエントリにしてある。
+  - id: literalCrTest
+    rows:
+      - LITERAL_CR_COL: "\\r"
+
+  # 2-5: 2文字が長い値の途中にある場合（部分一致で拒否されること）。
+  - id: literalCrInsideTest
+    rows:
+      - LONG_COL: "AB\\rCD"
+
+  # 2-5（境界）: バックスラッシュ2つと r の3文字。YAML では "\\\\r" と書く。
+  #      値としては \ \ r の3文字になり、後ろ2文字が一致するため拒否される
+  #      （バックスラッシュ自体をエスケープしたつもりの記述も書けない）。
+  - id: escapedBackslashCrTest
+    rows:
+      - ESCAPED_COL: "\\\\r"
+
+  # 2-5（境界）: 大文字の R は対象外。本体 LineSeparatorInterpreter の DEFAULT_PATTERN が
+  #      小文字の r だけを対象にしており、Excel 形式でも CR にならず2文字のまま残るため。
+  - id: upperCaseRTest
+    rows:
+      - UPPER_R_COL: "\\R"
+
+  # 2-5（対象外）: マーカーカラム（[COL]）の値は interpret を通らないため検査されない。
+  #      マーカーカラムの値は捨てられるので対象外でよい、という設計判断を固定する。
+  - id: markerLiteralCrTest
+    rows:
+      - "[MARKER_COL]": "\\r"
+        DATA_COL: "ok"
+
+  # 2-5: バックスラッシュと n の2文字（"\\n"）は Excel 形式と同じく2文字のまま残る（エラーにならない）。
+  - id: literalLfTest
+    rows:
+      - LITERAL_LF_COL: "\\n"
+
+  - id: dateTimeTest
+    rows:
+      - EXACT_COL: "${systemTime}"
+        PARTIAL_COL: "prefix_${systemTime}"
+
+  - id: binaryFileTest
+    rows:
+      - BIN_COL: "${binaryFile:YamlTableDataBuilderTest/test.bin}"
+
+  - id: charGenTest
+    rows:
+      - ALPHA_COL: "${半角英字,10}"
+        NUM_COL: "${半角数字,5}"
+
+  - id: quotationTest
+    rows:
+      - DQ_COL: "\""
+        UPDATE_COL: "${updateTime}"
+        SET_UP_TIME_COL: "${setUpTime}"
+
+  - id: singleQuoteNotationTest
+    rows:
+      - DQ_COL: '"'
+
+  # 3-4: 改行文字 "\n"（LF）。
+  - id: lineFeedTest
+    rows:
+      - YAML_LF_COL: "\n"
+
+  # 3-2: ${文字種,文字数} で使用できる14文字種。
+  #      どの文字種で落ちたかが分かるよう、文字種ごとに別エントリにしてある。
+  - id: charTypeTest_半角英字
+    rows:
+      - GEN_COL: "${半角英字,3}"
+  - id: charTypeTest_半角数字
+    rows:
+      - GEN_COL: "${半角数字,3}"
+  - id: charTypeTest_半角記号
+    rows:
+      - GEN_COL: "${半角記号,3}"
+  - id: charTypeTest_半角カナ
+    rows:
+      - GEN_COL: "${半角カナ,3}"
+  - id: charTypeTest_全角英字
+    rows:
+      - GEN_COL: "${全角英字,3}"
+  - id: charTypeTest_全角数字
+    rows:
+      - GEN_COL: "${全角数字,3}"
+  - id: charTypeTest_全角ひらがな
+    rows:
+      - GEN_COL: "${全角ひらがな,3}"
+  - id: charTypeTest_全角カタカナ
+    rows:
+      - GEN_COL: "${全角カタカナ,3}"
+  - id: charTypeTest_全角漢字
+    rows:
+      - GEN_COL: "${全角漢字,3}"
+  - id: charTypeTest_全角記号その他
+    rows:
+      - GEN_COL: "${全角記号その他,3}"
+  - id: charTypeTest_中国語
+    rows:
+      - GEN_COL: "${中国語,3}"
+  - id: charTypeTest_サロゲートペア
+    rows:
+      - GEN_COL: "${サロゲートペア,3}"
+  - id: charTypeTest_改行
+    rows:
+      - GEN_COL: "${改行,3}"
+  - id: charTypeTest_外字
+    rows:
+      - GEN_COL: "${外字,3}"
+
+  # 3-3: 組み合わせ記法。
+  - id: charTypeCombinedTest
+    rows:
+      - COMBINED_COL: "${半角数字,2}-${半角数字,4}"
