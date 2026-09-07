@@ -118,6 +118,24 @@ public final class YamlLoader {
     }
 
     /**
+     * テストデータ YAML の読み込み設定を組み立てる。
+     *
+     * <p>
+     * 重複キーを禁止し、ドキュメントのサイズ上限を設けない。
+     * テストデータはプロジェクトが自分で書くローカルの信頼できる入力であるため、
+     * パーサ既定のサイズ上限（3,145,728 code points）を掛ける理由が無い。
+     * </p>
+     *
+     * @return YAML 読み込み設定
+     */
+    public static LoadSettings loadSettings() {
+        return LoadSettings.builder()
+                .setAllowDuplicateKeys(false)
+                .setCodePointLimit(Integer.MAX_VALUE)
+                .build();
+    }
+
+    /**
      * 指定した YAML ファイルをロードし、トップレベルの Map を返す。
      * 同一ファイルパスは LRU キャッシュから返す。
      *
@@ -133,10 +151,7 @@ public final class YamlLoader {
         if (cached != null) {
             return cached;
         }
-        LoadSettings settings = LoadSettings.builder()
-                .setAllowDuplicateKeys(false)
-                .build();
-        Load loader = new Load(settings);
+        Load loader = new Load(loadSettings());
         try (FileInputStream in = new FileInputStream(new File(filePath))) {
             Object loaded = loader.loadFromInputStream(in);
             if (loaded == null) {

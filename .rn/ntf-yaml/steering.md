@@ -1769,6 +1769,67 @@ force push・`--amend` をしない。レビューは回さない。
 判断待ち3件（判定内訳の更新／母集合 444 据え置き／既存テスト1件の削除）と、電文側ディレクティブ
 型別限定の未表現も、承認に含めて確定。
 
+---
+
+### ~~#50: YAML テストデータの 3MB 上限を撤廃する~~
+
+**Purpose**: 3.5MB／10 万行の `testShots` YAML が
+`The incoming YAML document exceeds the limit: 3145728 code points` で読めない（ユーザー報告 2026-09-07）。
+原因は snakeyaml-engine の既定値をそのまま使っていること
+（`LoadSettingsBuilder.java` の `this.codePointLimit = 3 * 1024 * 1024; // 3 MB`。
+SnakeYAML 1.32 で入った安全策）。テストデータはプロジェクトが自分で書くローカルファイルであり、
+NTF がサイズ上限を掛ける理由が無い。上限値は設定可能にしない（user 判断 2026-09-07）。
+
+**出典**: 指示書
+`/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-14-yaml-code-point-limit.md` §2。
+上限が掛かる箇所は 3 つで、うち当リポジトリは `YamlLoader.java:136-138` の 1 箇所
+（残る 2 箇所は `nablarch-testing-converter` の `YamlTestDataValidator`。§3 で別 CC が対応する）。
+
+**Prerequisites**: #49
+
+**Steps**:
+
+- [x] A. 先に落ちるテストを書く。`YamlLoaderTest#load_acceptsDocumentExceedingDefaultCodePointLimit`。
+      一時ディレクトリに `BigTest/testNormalEnd10.yaml` を生成し（`list_maps` 1 件・`id: testShots`・
+      `no`／`description`／`value` の 3 カラム × 10 万行）、`load` が例外なく返り rows 件数が一致することを検証する
+- [x] B. 修正前に実行して `IllegalStateException`（cause = `YamlEngineException: The incoming YAML
+      document exceeds the limit: 3145728 code points.`）で落ちることを確認する
+- [x] C. `YamlLoader` に `public static LoadSettings loadSettings()` を追加する。中身は
+      `setAllowDuplicateKeys(false)` と `setCodePointLimit(Integer.MAX_VALUE)`。`load` はこれを使う。
+      Javadoc に「テストデータはローカルの信頼できる入力なのでサイズ上限を設けない」旨を書く
+      （解説書への参照・`file:line` は書かない）
+- [x] D. `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn clean test` 全件緑・`git status --short` 空・push
+- [x] E. 指示書 §5 のレビューを差分限定で 2 観点（B 整合・D 検証の妥当性）回し、指摘の件数と採否を記録する
+
+**検証**:
+
+- 修正前: `Tests run: 1, Failures: 0, Errors: 1`。
+  `java.lang.IllegalStateException: Failed to parse YAML file: /tmp/junit…/BigTest/testNormalEnd10.yaml`
+  / `Caused by: org.snakeyaml.engine.v2.exceptions.YamlEngineException: The incoming YAML document
+  exceeds the limit: 3145728 code points.`
+- 修正後: `mvn -o clean test` が `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`（324 ＋ 新規 1）
+- 修正を戻す（`setCodePointLimit` の 1 行を削る）と同じ例外で再び落ちることを実行で確認済み
+- `LoadSettings` の組み立ては `YamlLoader.loadSettings()` の 1 箇所のみ
+  （`grep -rn "LoadSettings" src/` が `import`・宣言・`builder()` の 3 行だけ）
+
+**レビュー（指示書 §5・差分限定 2 観点）**: 指摘 1 件・採用 1 件・不採用 0 件。
+
+- 観点 B（整合）: 指摘なし。`LoadSettings` の組み立ては 1 箇所。networknt への入力は
+  `YamlLoader.load` が元から `OBJECT_MAPPER.valueToTree` の `JsonNode` を渡しており YAML 文字列は通らない
+- 観点 D（検証の妥当性）: 1 件・採用。初版のテストは書き出し時のカウンタで
+  3,145,728 code points 超を表明していた。生成物そのものを測る形に改め、
+  ファイルを読み直して数える `countCodePoints` と `Files.size` の 2 つで表明するようにした
+
+**Completion criteria**:
+
+- 追加テストが修正前に落ち、修正後に通る（両方の実行結果を報告に貼る）
+- `mvn clean test` 全件緑・`git status --short` 空・push 済み
+- converter 担当 CC への引継ぎとして push コミットハッシュを報告の冒頭に書く
+
+**やらないこと**: 本体 `nablarch-testing` を変更しない。解説書を変更しない。
+force push・`--amend` をしない。上限値の設定項目を増やさない。
+
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a

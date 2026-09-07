@@ -1,8 +1,16 @@
 package nablarch.test.core.reader.yaml;
 
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +35,10 @@ public class YamlLoaderTest {
 
     private static final String RESOURCE_ROOT = "src/test/java/";
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
+
+    /** 大きな YAML ファイルを生成するための一時ディレクトリ。 */
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @After
     public void after() {
@@ -881,5 +893,103 @@ public class YamlLoaderTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> directives = (Map<String, Object>) messages.get(0).get("directives");
         assertThat("電文では固定長専用キーと可変長専用キーが共存できること", directives.size(), is(3));
+    }
+
+    // ========================================================================
+    // load: サイズ上限が無いこと
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: snakeyaml-engine の既定のコードポイント上限（3,145,728 code points）を
+     * 超える YAML ファイルをロードできること。
+     *
+     * <p>
+     * 何を担保するか: テストデータはプロジェクトが自分で書くローカルファイルであり、
+     * NTF がサイズ上限を掛ける理由が無い。既定値のままだと
+     * {@code The incoming YAML document exceeds the limit: 3145728 code points} で落ちる。<br>
+     * Given: 3,145,728 code points を確実に超える list_maps(id=testShots) の YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  例外なく返り、rows の件数が生成件数と一致すること
+     * </p>
+     */
+    @Test
+    public void load_acceptsDocumentExceedingDefaultCodePointLimit() throws IOException {
+        // Given
+        int rowCount = 100000;
+        File container = temporaryFolder.newFolder("BigTest");
+        File yamlFile = new File(container, "testNormalEnd10.yaml");
+        writeLargeTestShotsYaml(yamlFile, rowCount);
+        assertThat("生成した YAML が snakeyaml-engine の既定上限 3,145,728 code points を超えていること",
+                countCodePoints(yamlFile), greaterThan(3145728L));
+        assertThat("生成した YAML のファイルサイズ（バイト）",
+                Files.size(yamlFile.toPath()), greaterThan(3145728L));
+
+        // When
+        Map<String, Object> loaded = YamlLoader.load(temporaryFolder.getRoot().getPath(),
+                                                     "BigTest/testNormalEnd10");
+
+        // Then
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> listMaps = (List<Map<String, Object>>) loaded.get("list_maps");
+        assertThat("list_maps が1件ロードされること", listMaps.size(), is(1));
+        assertThat("id が testShots であること", (String) listMaps.get(0).get("id"), is("testShots"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) listMaps.get(0).get("rows");
+        assertThat("生成した件数がそのままロードされること", rows.size(), is(rowCount));
+    }
+
+    /**
+     * list_maps(id=testShots) だけを持つ大きな YAML ファイルを書き出す。
+     *
+     * @param yamlFile 書き出し先ファイル
+     * @param rowCount rows の件数
+     * @throws IOException 書き出しに失敗した場合
+     */
+    private static void writeLargeTestShotsYaml(File yamlFile, int rowCount) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(yamlFile.toPath(), StandardCharsets.UTF_8)) {
+            writer.write("list_maps:\n  - id: testShots\n    rows:\n");
+            for (int i = 1; i <= rowCount; i++) {
+                writer.write("      - no: \"" + i + "\"\n"
+                        + "        description: \"テストケース " + i + " の説明\"\n"
+                        + "        value: \"value-" + i + "\"\n");
+            }
+        }
+    }
+
+    /**
+     * 生成済みファイルを読み直して code point 数を数える。
+     *
+     * <p>
+     * 書き出し時のカウンタではなく、実際に生成されたファイルの内容を数える。
+     * </p>
+     *
+     * @param file 対象ファイル
+     * @return code point 数
+     * @throws IOException 読み込みに失敗した場合
+     */
+    private static long countCodePoints(File file) throws IOException {
+        long codePoints = 0L;
+        try (Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            char[] buffer = new char[8192];
+            int pending = 0;
+            int read;
+            while ((read = reader.read(buffer, pending, buffer.length - pending)) != -1) {
+                int end = pending + read;
+                // 末尾がサロゲートペアの前半なら次の読み込みまで持ち越す
+                boolean carry = Character.isHighSurrogate(buffer[end - 1]);
+                int countEnd = carry ? end - 1 : end;
+                codePoints += Character.codePointCount(buffer, 0, countEnd);
+                if (carry) {
+                    buffer[0] = buffer[end - 1];
+                    pending = 1;
+                } else {
+                    pending = 0;
+                }
+            }
+            if (pending > 0) {
+                codePoints += pending;
+            }
+        }
+        return codePoints;
     }
 }
