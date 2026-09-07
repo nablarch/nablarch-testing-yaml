@@ -1838,13 +1838,17 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-31
-- **Last completed**: #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**#48・#49 とも 2026-08-31 に
+- **Last completed**: #50（YAML テストデータの 3MB 上限の撤廃。指示書 `ntf-step4-14` §2）。
+  作業コミットは `e984103`（push 済み）。`mvn -o clean test` は `Tests run: 325`。
+  **converter 担当 CC への引継ぎ: 取り込むコミットは `e984103`。**
+  ひとつ前は #49（指示書 `ntf-step4-13` §6 の Q1〜Q6）。**#48・#49 とも 2026-08-31 に
   ユーザー承認（`/rn:ty`）済みで、成果は最終として確定。** 承認の記録は `b67e106`。
   作業コミットは `442f335`・`6175639`・`f3620fc`・`69d903a`・`05c2b23`・`a69084e`。すべて push 済み。
   報告書は `.rn/ntf-yaml/report-step4-3.md`
-- **Next**: 無し。全 49 タスク完了・承認済み。次の指示書が来るまで着手する作業は無い
+- **Next**: 無し。#50 は報告・停止済み（ユーザー承認は未了）。#49 までは承認済み。
+  次の指示書が来るまで着手する作業は無い
 - **Notes**: ブランチ `feature/ntf-yaml`（push 済み・`git status --porcelain` 空）。
-  `mvn -o clean test` は `Tests run: 324, Failures: 0, Errors: 0, Skipped: 0`（320 ＋ 新規5 − 削除1）。
+  `mvn -o clean test` は `Tests run: 325, Failures: 0, Errors: 0, Skipped: 0`（#50 で新規1件を追加）。
   カバレッジは C0 1809/1822・C1 174/176 で #46 基準と一致。
   解説書のピンは `nablarch-document@ed3de95f`、本体 `nablarch-testing@3c4bd2a`（変更しない）。
   承認により確定した判断3件（詳細は `.rn/ntf-yaml/checks/task-49.md` と報告書 §7）:
