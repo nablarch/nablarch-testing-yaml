@@ -1922,12 +1922,12 @@ boolean の 5 キー（`required-decimal-point`・`fixed-sign-position`・`requi
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended（#51 承認済み・未完了タスク 0 件）
+- **Status**: paused
 - **Date**: 2026-09-07
 - **Last completed**: #51（YAML スキーマの Excel との対称性の是正。指示書
   `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-18-schema-excel-parity.md` §1・§2）。
   台帳コミット `fc5acce`（#50 承認記録・#51 起票）・作業コミット `f9373ee`・
-  description 出し分けコミット（B-1 の採用）。すべて push 済み。
+  description 出し分けコミット `a404126`（B-1 の採用）。すべて push 済み。
   **2026-09-07 に #51 の承認を受領し、成果は最終として確定。**
   #50 も同日承認済み、#49 までは 2026-08-31 ユーザー承認（`/rn:ty`）済み
 - **Next**: 無し。全 51 タスク完了・承認済み。次の作業はディレクター指示書の到着待ち。
@@ -1941,6 +1941,6 @@ so only a genuinely suspended session reads `paused`.)
   変換ツール `nablarch-testing-converter@878ef9a`（いずれも変更しない）。
   `src/` に解説書への参照は書かない。
   **#51 の引継ぎ**: 下流（converter `#57`・Example ウェブ task #7・integration `#26`）が取り込むのは
-  スキーマから `record_fragment.rows` の `minItems` が消え、ディレクティブ 7 キーが文字列も受けるコミット。
+  `a404126`（スキーマから `record_fragment.rows` の `minItems` が消え、ディレクティブ 7 キーが文字列も受ける）。
   未決事項: **電文側のディレクティブ型別限定は未表現**（`#49` から継続。理由は `$defs.directives` の `$comment`）。
   ユーザー未解決の未追跡パス: なし。
