@@ -1,0 +1,14 @@
+setup_files:
+  - path: dummy/test.dat
+    type: fixed
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","   # 可変長専用キー。固定長ファイルでは無効
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]

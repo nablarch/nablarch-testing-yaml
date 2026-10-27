@@ -1,0 +1,10 @@
+messages:
+  - group_id: case1   # additionalProperties: false 違反（message_data に group_id は存在しない）
+    id: "MSG001"
+    records:
+      - fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]

@@ -1,0 +1,23 @@
+# #16: yamlInterpreters（DateTimeInterpreter・CompositeInterpreter の 2 つだけ）
+# でのクォート値・null 記法の処理テスト。
+# YAML はパーサがダブルクォートと null を構文として処理するため、
+# QuotationTrimmer・NullInterpreter なしで正しく値が取得できることを確認する。
+
+list_maps:
+  - id: quotedValueTest
+    rows:
+      - COL1: "hello"
+        COL2: "world"
+        COL3: ""
+      - COL1: "with space"
+        COL2: "123"
+        COL3: "true"
+
+  # null の記法。クォートなしの null と値を省略した COL: はロード時点で Java null になる。
+  # クォート付きの "null"・"NULL" は文字列のまま（NullInterpreter を指定しないため変換されない）。
+  - id: nullNotationTest
+    rows:
+      - BARE_NULL: null
+        OMITTED_NULL:
+        QUOTED_NULL: "null"
+        UPPER_QUOTED_NULL: "NULL"

@@ -1,0 +1,9 @@
+setup_files:
+  - path: dummy/test.dat
+    type: fixed
+    records:
+      - record_type: DATA
+        fields:
+          - type: 半角    # name が missing
+            length: 10
+        rows: []

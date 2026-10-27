@@ -1,0 +1,13 @@
+setup_files:
+  - path: dummy/test.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      record-length: 10      # 固定長専用キー。可変長ファイルでは無効
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+        rows:
+          - ["value1"]

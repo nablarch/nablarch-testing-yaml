@@ -1,0 +1,41 @@
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000099"
+        PK_COL2: "ZZ"
+
+  - group_id: newGroup_emptyComplete
+    table: TEST_TABLE
+    rows: []
+
+  # 先頭の非空行が列名を決めることを固定するため、2 行目と 3 行目でキー集合を変えてある。
+  - group_id: leadingEmptyRowComplete
+    table: TEST_TABLE
+    rows:
+      - {}
+      - PK_COL1: "0000000098"
+        PK_COL2: "YY"
+        VARCHAR2_COL: "complete"
+      - PK_COL1: "0000000097"
+        PK_COL2: "XY"
+
+  # 全ての値が空文字の行は、fillDefaults=true の経路（expected_complete_tables）でも
+  # 値を持つ行として残る。1 行目を先頭、3 行目を中間（非空行に挟まれた位置）、
+  # 5 行目を末尾に置いてあり、3 位置すべてを 1 グループで担保する。
+  # 列名解決の基準が先頭行であることを固定するため、この行のキー集合を他の行と変えてある。
+  - group_id: blankValueRowComplete
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: ""
+        VARCHAR2_COL: ""
+      - PK_COL1: "0000000096"
+        PK_COL2: "WW"
+        VARCHAR2_COL: "kept"
+      - PK_COL1: ""
+        PK_COL2: ""
+        VARCHAR2_COL: ""
+      - PK_COL1: "0000000095"
+        PK_COL2: "VV"
+        VARCHAR2_COL: "kept2"
+      - PK_COL2: ""
+        VARCHAR2_COL: ""

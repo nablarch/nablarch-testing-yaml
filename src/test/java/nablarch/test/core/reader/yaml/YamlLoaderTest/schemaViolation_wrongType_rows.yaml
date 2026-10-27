@@ -1,0 +1,3 @@
+setup_tables:
+  - table: TEST_TABLE
+    rows: "not_an_array"

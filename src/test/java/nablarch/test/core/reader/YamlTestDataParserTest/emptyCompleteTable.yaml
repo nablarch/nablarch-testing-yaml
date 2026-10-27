@@ -1,0 +1,5 @@
+# expected_complete_tables に rows: [] のテスト（NPE が発生しないこと）
+
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows: []

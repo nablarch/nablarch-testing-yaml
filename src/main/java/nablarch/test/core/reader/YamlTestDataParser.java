@@ -1,0 +1,213 @@
+package nablarch.test.core.reader;
+
+import nablarch.test.core.db.BasicDefaultValues;
+import nablarch.test.core.db.DbInfo;
+import nablarch.test.core.db.DefaultValues;
+import nablarch.test.core.db.TableData;
+import nablarch.test.core.file.DataFile;
+import nablarch.test.core.messaging.MessagePool;
+import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.reader.yaml.InterpreterResolver;
+import nablarch.test.core.reader.yaml.YamlFileBuilder;
+import nablarch.test.core.reader.yaml.YamlLoader;
+import nablarch.test.core.reader.yaml.YamlMessageBuilder;
+import nablarch.test.core.reader.yaml.YamlSection;
+import nablarch.test.core.reader.yaml.YamlTableDataBuilder;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
+
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * YAML 形式のテストデータを読み込むパーサ。
+ *
+ * <p>
+ * {@link BasicTestDataParser} を継承し、各 getter を YAML ファイルから直接構築するようオーバーライドする。
+ * {@link YamlLoader#load} が返す順序保持 Map を、データ種別ごとのビルダ
+ * （{@link YamlTableDataBuilder}／{@link YamlFileBuilder}／{@link YamlMessageBuilder}）が走査し、
+ * 構造の写し取りと値加工（特殊記法の解釈・デフォルト値補完・メッセージ長の {@code -} 注入等）を行って
+ * 本体の器（{@link TableData}／{@link DataFile}／{@link MessagePool}）を直接組み立てる。
+ * </p>
+ * <p>
+ * {@link TestDataReader} は使用しない（{@link #setTestDataReader} は何もしない）。
+ * {@link TestDataReader#readLine()} は 1 行を {@code List<String>} で返す行ベースの抽象であり、
+ * YAML の入れ子構造を表現できないため、行を経由せず器を直接組み立てる。
+ * </p>
+ *
+ * @author kiyotis
+ */
+public class YamlTestDataParser extends BasicTestDataParser {
+
+    private static final Logger LOGGER = LoggerManager.get(YamlTestDataParser.class);
+
+    private DbInfo dbInfo;
+    private DefaultValues defaultValues = new BasicDefaultValues();
+    private List<TestDataInterpreter> interpreters;
+
+    /** データ種別ごとのビルダ（dbInfo・defaultValues・interpreters 設定時に再構築する）。 */
+    private YamlTableDataBuilder tableBuilder;
+    private YamlFileBuilder fileBuilder;
+    private YamlMessageBuilder messageBuilder;
+
+    /** デフォルトコンストラクタ。ビルダをデフォルト設定で初期化する。 */
+    public YamlTestDataParser() {
+        rebuildBuilders();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * {@code YamlTestDataParser} は {@link TestDataReader} を使用しない。
+     * YAML ファイルはファイルシステムから直接ロードするため、このメソッドは何もしない。
+     * Nablarch DI で同名コンポーネントを上書きした場合、親定義の {@code testDataReader} プロパティが
+     * 引き継がれてこのメソッドが呼ばれることがあるが、無視して問題ない。
+     * </p>
+     */
+    @Override
+    public void setTestDataReader(TestDataReader testDataReader) {
+        LOGGER.logInfo("YamlTestDataParser does not use TestDataReader; the injected value is ignored.");
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setDbInfo(DbInfo dbInfo) {
+        this.dbInfo = dbInfo;
+        super.setDbInfo(dbInfo);
+        rebuildBuilders();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setInterpreters(List<TestDataInterpreter> interpretersPrototype) {
+        this.interpreters = interpretersPrototype;
+        super.setInterpreters(interpretersPrototype);
+        rebuildBuilders();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setDefaultValues(DefaultValues defaultValues) {
+        this.defaultValues = defaultValues;
+        super.setDefaultValues(defaultValues);
+        rebuildBuilders();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * 判定単位は入れ物である。YAML 形式の入れ物は {@code <basePath>/<入れ物名>} ディレクトリであり
+     * （Excel 形式の {@code <basePath>/<入れ物名>.xls} に相当する）、
+     * 入れ物内の読み込み単位（{@code <入れ物名>/<読み込み単位名>.yaml}）の有無は見ない。
+     * 入れ物名は resourceName の最後の {@code "/"} より前の部分とし、
+     * resourceName に {@code "/"} が含まれない場合は resourceName 全体を入れ物名として扱う。
+     * </p>
+     */
+    @Override
+    public boolean isResourceExisting(String basePath, String resourceName) {
+        return YamlLoader.isResourceExisting(basePath, resourceName);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * 読み込み単位の YAML ファイル（{@code <path>/<resourceName>.yaml}）が存在しない場合は、
+     * 例外を送出せず空リストを返す（準備データが不要なテストで空ファイルを用意させないため）。
+     * </p>
+     */
+    @Override
+    public List<TableData> getSetupTableData(String path, String resourceName, String... groupId) {
+        if (!YamlLoader.isDataExisting(path, resourceName)) {
+            LOGGER.logDebug("Skipping table data initialization because preparation data is not found. resource=["
+                    + resourceName + "]");
+            return Collections.emptyList();
+        }
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String gid = formatGroupId(groupId);
+        return tableBuilder.buildTableDataList(yaml, YamlSection.KEY_SETUP_TABLES, gid, false, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<TableData> getExpectedTableData(String path, String resourceName, String... groupId) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String gid = formatGroupId(groupId);
+        List<TableData> expected = tableBuilder.buildTableDataList(
+                yaml, YamlSection.KEY_EXPECTED_TABLES, gid, false, path);
+        List<TableData> completed = tableBuilder.buildTableDataList(
+                yaml, YamlSection.KEY_EXPECTED_COMPLETE_TABLES, gid, true, path);
+        expected.addAll(completed);
+        return expected;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<Map<String, String>> getListMap(String path, String resourceName, String id) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        return tableBuilder.buildListMapRows(yaml, id, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<DataFile> getSetupFile(String path, String resourceName, String... groupId) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String gid = formatGroupId(groupId);
+        return fileBuilder.buildDataFileList(yaml, YamlSection.KEY_SETUP_FILES, gid, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<DataFile> getExpectedFile(String path, String resourceName, String... groupId) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String gid = formatGroupId(groupId);
+        return fileBuilder.buildDataFileList(yaml, YamlSection.KEY_EXPECTED_FILES, gid, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MessagePool getMessage(String path, String resourceName, String id) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        return messageBuilder.buildMessagePool(yaml, YamlSection.KEY_MESSAGES, id, true, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MessagePool getMessageWithoutCache(String path, String resourceName, DataType dataType, String id) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
+        boolean useFwHeader = YamlSection.KEY_MESSAGES.equals(sectionKey);
+        return messageBuilder.buildMessagePool(yaml, sectionKey, id, useFwHeader, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<RequestTestingMessagePool> getSendSyncMessage(String path, String resourceName,
+                                                               String id, DataType dataType) {
+        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
+        return messageBuilder.buildSendSyncList(yaml, sectionKey, id, path);
+    }
+
+    /**
+     * テスト専用: YAML ローダのキャッシュをクリアする。
+     * <p>
+     * YAML テスト間で {@link YamlLoader} のキャッシュが持ち越されないよう、{@code @After} 等から呼ぶ。
+     * </p>
+     */
+    public static void clearCacheForTest() {
+        YamlLoader.clearCacheForTest();
+    }
+
+    private void rebuildBuilders() {
+        InterpreterResolver resolver = InterpreterResolver.withBinaryFile(interpreters);
+        tableBuilder = new YamlTableDataBuilder(dbInfo, defaultValues, resolver);
+        fileBuilder = new YamlFileBuilder(resolver);
+        messageBuilder = new YamlMessageBuilder(resolver);
+    }
+}
