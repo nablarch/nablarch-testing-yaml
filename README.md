@@ -107,10 +107,34 @@ YAML ファイルは読み込み時に、jar に同梱した JSON Schema（`nabl
 
 ## 実行方法
 
-このリポジトリのビルドと単体テストは、リポジトリのルートディレクトリ（`pom.xml` のあるディレクトリ）で次を実行します。
+いずれも、リポジトリのルートディレクトリ（`pom.xml` のあるディレクトリ）で実行します。
+
+### 単体テストの実行
 
 ```bash
 mvn test
+```
+
+### jar の作成
+
+```bash
+mvn clean package
+```
+
+`target/` に次の jar が作成されます。テストを省略する場合は `-DskipTests` を付けます。
+
+| ファイル | 内容 |
+|---|---|
+| `nablarch-testing-yaml-<バージョン>.jar` | 本体（クラスと JSON Schema） |
+| `nablarch-testing-yaml-<バージョン>-sources.jar` | ソース |
+| `nablarch-testing-yaml-<バージョン>-javadoc.jar` | Javadoc |
+
+### ローカルリポジトリへのインストール
+
+nablarch-testing-converter など、他のプロジェクトから参照する場合は、ローカルリポジトリ（`~/.m2/repository`）にインストールします。
+
+```bash
+mvn clean install
 ```
 
 ## 依存関係
