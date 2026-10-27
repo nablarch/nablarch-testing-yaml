@@ -47,7 +47,7 @@ YAML ファイルは読み込み時に、jar に同梱した JSON Schema（`nabl
 |---|---|
 | `pom.xml` | `<dependencies>` に `nablarch-testing-yaml` を追加する |
 | `src/test/resources/unit-test.xml`（テスト用のコンポーネント設定ファイル） | `testDataParser` を `YamlTestDataParser` に差し替える |
-| テストショット一覧の `diConfig` に指定したコンポーネント設定ファイル（該当するテストがある場合のみ） | `unit-test.xml` と同じ `testDataParser` を記述する |
+| テストショット一覧の `diConfig` に指定したコンポーネント設定ファイル（Nablarch バッチ・メッセージングのリクエスト単体テストで、テスト対象が同期応答メッセージ送信または HTTP メッセージ送信を行う場合のみ） | `unit-test.xml` と同じ `testDataParser` を記述する |
 
 ### pom.xml：依存関係の追加
 
