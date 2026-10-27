@@ -107,15 +107,12 @@ YAML ファイルは読み込み時に、jar に同梱した JSON Schema（`nabl
 
 ## 実行方法
 
-リポジトリのルートディレクトリ（`pom.xml` のあるディレクトリ）で、目的に応じて次のコマンドを実行します。
+リポジトリのルートディレクトリ（`pom.xml` のあるディレクトリ）で、次のコマンドを実行します。
 
 | 目的 | コマンド |
 |---|---|
-| 単体テストの実行 | `mvn test` |
-| jar の作成（単体テストも実行される） | `mvn clean package` |
-| ローカルリポジトリ（`~/.m2/repository`）へのインストール（nablarch-testing-converter など他のプロジェクトから参照する場合） | `mvn clean install` |
-
-jar の作成・インストールで単体テストを省略する場合は、`-DskipTests` を付けます。
+| テスト | `mvn test` |
+| BUILD | `mvn clean package` |
 
 ## 依存関係
 
