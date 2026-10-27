@@ -41,12 +41,13 @@ YAML ファイルは読み込み時に、jar に同梱した JSON Schema（`nabl
 
 ## 利用方法
 
-利用するプロジェクトで、次の 2 つのファイルに設定を追加します。
+利用するプロジェクトで、次のファイルに設定を追加します。
 
 | ファイル | 設定内容 |
 |---|---|
 | `pom.xml` | `<dependencies>` に `nablarch-testing-yaml` を追加する |
 | `src/test/resources/unit-test.xml`（テスト用のコンポーネント設定ファイル） | `testDataParser` を `YamlTestDataParser` に差し替える |
+| テストショット一覧の `diConfig` に指定したコンポーネント設定ファイル（該当するテストがある場合のみ） | `unit-test.xml` と同じ `testDataParser` を記述する |
 
 ### pom.xml：依存関係の追加
 
@@ -97,10 +98,45 @@ YAML ファイルは読み込み時に、jar に同梱した JSON Schema（`nabl
 | `interpreters` | `nablarch/test/test-data.xml` が定義している `dateTimeInterpreter`・`compositeInterpreter` の 2 つだけを、この順で指定する |
 | `testDataReader` | 指定不要。Excel 形式（`BasicTestDataParser`）では Excel ファイルを読み込むために必須のプロパティ（`nablarch/test/test-data.xml` では `PoiXlsReader` を指定）だが、`YamlTestDataParser` は YAML ファイルを直接読み込むため使用しない |
 
-以下の点に注意してください。
+### diConfig に指定したファイル：testDataParser の追加
+
+次の 2 つの条件をどちらも満たすテストがある場合は、`unit-test.xml` に加えて、**テストショット一覧（`testShots`）の `diConfig` カラムに指定したコンポーネント設定ファイルにも** `testDataParser` を記述します。該当するテストがなければ、この設定は不要です。
+
+- Nablarch バッチアプリケーション、またはメッセージングのリクエスト単体テストである（`diConfig` に指定したファイルでシステムリポジトリを再初期化して実行するテスト）
+- テスト対象が、同期応答メッセージ送信または HTTP メッセージ送信を行う
+
+これらのテストでは、応答電文のテストデータがテスト対象の実行中に読み込まれます。その時点のシステムリポジトリは `diConfig` に指定したファイルから再初期化されているため、`unit-test.xml` に書いた `testDataParser` は使われず、`diConfig` に指定したファイルの `testDataParser` で読み込まれます。
+
+例えば、テストショット一覧に次のように記載している場合は、`diConfig` に記載したファイル（`ss21AC01/B21AC01.xml`）に記述します。
+
+```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "ファイル入力"
+        diConfig: "ss21AC01/B21AC01.xml"
+        # ...
+```
+
+記述する内容は、`unit-test.xml` に記述したものと同じ `testDataParser` の定義です。そのファイルが `nablarch/test/test-data.xml` を import している場合は、その import より後に記述します。
+
+```xml
+<!-- diConfig に指定したファイル（例: ss21AC01/B21AC01.xml）に追加する -->
+<component name="testDataParser" class="nablarch.test.core.reader.YamlTestDataParser">
+  <property name="dbInfo" ref="dbInfo"/>
+  <property name="interpreters">
+    <list>
+      <component-ref name="dateTimeInterpreter"/>
+      <component-ref name="compositeInterpreter"/>
+    </list>
+  </property>
+</component>
+```
+
+### 注意点
 
 - `testDataParser` は 1 つのコンポーネントのため、**1 つのプロジェクトで Excel 形式と YAML 形式を混在させることはできません**。
-- Nablarch バッチ・メッセージングのリクエスト単体テストは、`unit-test.xml` ではなく、テストショット一覧（`testShots`）の `diConfig` カラムに指定したコンポーネント設定ファイルでシステムリポジトリを再初期化して実行します。テスト対象が同期応答メッセージ送信または HTTP メッセージ送信を行う場合は、**`diConfig` に指定したファイルにも**上と同じ `testDataParser` を記述してください。
 - テストデータを `src/test/java` 以外に置く場合は、テスト用の環境設定ファイル（`unit-test.xml` から `config-file` 要素で読み込む `.properties` ファイル）に `nablarch.test.resource-root` を設定します。
 
 記述方法・設定の詳細は、Nablarch 解説書の「テストデータの設定（形式・配置・記述の省略）」「テストデータの書き方」を参照してください。
