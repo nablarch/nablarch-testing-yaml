@@ -116,8 +116,6 @@ list_maps:
 - `testDataParser` は 1 つのコンポーネントのため、**1 つのプロジェクトで Excel 形式と YAML 形式を混在させることはできません**。
 - テストデータを `src/test/java` 以外に置く場合は、テスト用の環境設定ファイル（`unit-test.xml` から `config-file` 要素で読み込む `.properties` ファイル）に `nablarch.test.resource-root` を設定します。
 
-記述方法・設定の詳細は、Nablarch 解説書の「テストデータの設定（形式・配置・記述の省略）」「テストデータの書き方」を参照してください。
-
 ## 実行方法
 
 リポジトリのルートディレクトリ（`pom.xml` のあるディレクトリ）で、次のコマンドを実行します。
