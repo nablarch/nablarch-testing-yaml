@@ -13,7 +13,7 @@
 
   <groupId>com.nablarch.framework</groupId>
   <artifactId>nablarch-testing-yaml</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>6-NEXT-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:git://github.com/nablarch/${project.artifactId}.git</connection>
