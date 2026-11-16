@@ -258,7 +258,7 @@ public class YamlSectionTest {
      * 何を担保するか: {@code interpret} が検査（{@code rejectLiteralCr}）を、インタープリタチェーンが
      * 空かどうかを見る早期 return より<b>前</b>に呼ぶこと。空チェーンは実在する経路であり、
      * {@link InterpreterResolver#raw()} は常に空チェーンを返す。これを使うのが下流の変換ツール
-     * {@code nablarch-testing-converter} の {@code YamlTestCoreAdapter}
+     * {@code nablarch-testing-converter} の {@code YamlBuilderAccessor}
      * （{@code InterpreterResolver.raw()} を使う）である。順序が入れ替わると、変換ツールの YAML 読み取りだけが
      * 黙ってこの 2 文字を受け入れてしまう<br>
      * Given: value に 2 文字（{@code "\\r"}）、interps に空リスト<br>
