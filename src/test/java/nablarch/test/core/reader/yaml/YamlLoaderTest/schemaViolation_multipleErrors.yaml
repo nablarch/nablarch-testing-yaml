@@ -1,0 +1,4 @@
+setup_tables:
+  - rows: "not_array"    # table missing + rows 型違反
+list_maps:
+  - rows: []             # id missing

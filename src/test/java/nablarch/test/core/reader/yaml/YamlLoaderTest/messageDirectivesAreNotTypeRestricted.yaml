@@ -1,0 +1,14 @@
+messages:
+  - id: setUpMessages
+    directives:
+      text-encoding: Windows-31J
+      record-length: 10        # 固定長専用キー
+      field-separator: ","     # 可変長専用キー
+    records:
+      - record_type: BODY
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]

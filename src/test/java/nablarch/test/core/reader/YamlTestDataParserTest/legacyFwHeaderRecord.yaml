@@ -1,0 +1,32 @@
+# 旧形式（FW 制御ヘッダを record_type: FW_HEADER のレコードで表す書き方）が残ったケース。
+# 現仕様では FW 制御ヘッダは fw_header: マップで記述し、電文の records に書けるレコードレイアウトは1つである。
+# 2レコード書いたこのファイルはスキーマ検証（maxItems: 1）で弾かれる。
+# ロード自体が失敗するため、他の読み込み単位を巻き込まないよう独立したファイルに置く。
+messages:
+  - id: legacyFwHeaderRecord001
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+          - name: userId
+            type: 半角
+            length: 10
+          - name: resendFlag
+            type: 半角
+            length: 1
+          - name: resultCode
+            type: 半角
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]

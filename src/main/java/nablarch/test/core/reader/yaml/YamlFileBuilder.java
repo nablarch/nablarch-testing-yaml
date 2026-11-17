@@ -1,0 +1,293 @@
+package nablarch.test.core.reader.yaml;
+
+import nablarch.test.NablarchTestUtils;
+import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.DataFileFragment;
+import nablarch.test.core.file.FixedLengthFile;
+import nablarch.test.core.file.VariableLengthFile;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static nablarch.test.core.reader.yaml.YamlSection.DEFAULT_RECORD_TYPE;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_DIRECTIVES;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FIELDS;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_GROUP_ID;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_LENGTH;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_NAME;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_PATH;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORDS;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORD_TYPE;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TYPE;
+import static nablarch.test.core.reader.yaml.YamlSection.FILE_TYPE_FIXED;
+import static nablarch.test.core.reader.yaml.YamlSection.castMap;
+import static nablarch.test.core.reader.yaml.YamlSection.getList;
+import static nablarch.test.core.reader.yaml.YamlSection.groupMatches;
+import static nablarch.test.core.reader.yaml.YamlSection.interpret;
+import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
+import static nablarch.test.core.reader.yaml.YamlSection.toStr;
+
+/**
+ * YAML のファイル系セクション（{@code setup_files}／{@code expected_files}）から、本体の器
+ * （{@link DataFile}）を直接組み立てるビルダ。
+ *
+ * <p>
+ * YAML トップレベル Map を走査し、ディレクティブ適用・レコードレイアウト／データ行の組み立て・
+ * 特殊記法の解釈・グループ ID 絞り込みを行う。レコードレイアウト組み立て
+ * （{@link #buildFragmentsForFile}、{@link #buildFragmentsForMessage}、{@link #buildFragmentsForSendSync}）と
+ * ディレクティブ写し取り（{@link #mapDirectives}）は
+ * メッセージ系（{@link YamlMessageBuilder}）からも再利用する。
+ * </p>
+ *
+ * @author kiyotis
+ */
+public final class YamlFileBuilder {
+
+    private final InterpreterResolver interpreterResolver;
+
+    /**
+     * コンストラクタ。
+     *
+     * @param interpreterResolver basePath ごとに値加工インタープリタチェーンを解決する戦略
+     */
+    public YamlFileBuilder(InterpreterResolver interpreterResolver) {
+        this.interpreterResolver = interpreterResolver;
+    }
+
+    /**
+     * ファイル系セクションから指定グループの {@link DataFile} 群を組み立てる。
+     *
+     * @param yaml       YAML トップレベル Map
+     * @param sectionKey セクションキー（例: {@code "setup_files"}）
+     * @param groupId    整形済みグループ ID
+     * @param basePath   インタープリタ用ベースパス
+     * @return DataFile リスト
+     */
+    public List<DataFile> buildDataFileList(Map<String, Object> yaml, String sectionKey,
+                                            String groupId, String basePath) {
+        List<DataFile> result = new ArrayList<DataFile>();
+        List<TestDataInterpreter> interps = interpreterResolver.resolve(basePath);
+        for (Object entry : getList(yaml, sectionKey)) {
+            Map<String, Object> map = castMap(entry);
+            if (!groupMatches(toStr(map.get(FIELD_GROUP_ID)), groupId)) {
+                continue;
+            }
+            String path = toStr(map.get(FIELD_PATH));
+            if (path == null) {
+                throw new IllegalStateException(
+                        "Missing required field 'path' in " + sectionKey + " entry. groupId=" + groupId
+                                + ", basePath=" + basePath);
+            }
+            DataFile file = FILE_TYPE_FIXED.equals(toStr(map.get(FIELD_TYPE)))
+                    ? new FixedLengthFile(path)
+                    : new VariableLengthFile(path);
+            String source = YamlSection.entrySource(sectionKey, FIELD_PATH, path);
+            applyDirectives(file, mapDirectives(map), interps, source);
+            buildFragmentsForFile(file, getList(map, FIELD_RECORDS), interps, source);
+            result.add(file);
+        }
+        return result;
+    }
+
+    /**
+     * エントリの {@code directives:} マップを未加工で写し取る（YAML 順保持）。
+     */
+    static Map<String, String> mapDirectives(Map<String, Object> entry) {
+        Map<String, String> directives = new LinkedHashMap<String, String>();
+        Object directivesObj = entry.get(FIELD_DIRECTIVES);
+        if (directivesObj == null) {
+            return directives;
+        }
+        for (Map.Entry<String, Object> e : castMap(directivesObj).entrySet()) {
+            directives.put(e.getKey(), toStr(e.getValue()));
+        }
+        return directives;
+    }
+
+    /**
+     * 通常ファイル用（{@code setup_files}／{@code expected_files}）にレコード群から
+     * {@link DataFileFragment} を組み立てる。
+     *
+     * <p>{@code record_type} は記述された値をそのまま使用する（未指定の場合のみ {@code "default"}）。</p>
+     *
+     * @param file    ファイル
+     * @param records 生のレコードレイアウト Map 群（YAML 順）
+     * @param interps 使用するインタープリタリスト
+     * @param source  値の検査に失敗したときに例外メッセージへ出す出所
+     *                （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
+     */
+    static void buildFragmentsForFile(DataFile file, List<Object> records,
+                                      List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, false, true, false, interps, source);
+    }
+
+    /**
+     * 受信メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
+     *
+     * <p>長さ未指定フィールドを {@code "-"}（動的計算）として扱う。値行に連番は付与しない。
+     * {@code record_type} に特別な予約値はなく、{@code records} の全レコードがフラグメントになる。
+     * {@code record_type} の扱いは呼び出し元のセクションによって異なるため {@code keepRecordType} で指定する
+     * （{@code messages} は {@code false}、同期応答メッセージ送信の 4 セクションは {@code true}）。
+     * FW 制御ヘッダの扱いも呼び出し元のセクションによって異なり、{@code messages} では
+     * {@code fw_header:} マップから取得し、{@code expected_request_header_messages} 等では
+     * {@code fw_header:} を使わずヘッダ項目も {@code records} の {@code fields}／{@code rows} に記述する。
+     * いずれの場合も本メソッドは {@code records} を一様に扱う。</p>
+     *
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     *                       （{@code false} の場合は記載値によらず {@code "default"}）
+     * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
+     */
+    static void buildFragmentsForMessage(DataFile file, List<Object> records, boolean keepRecordType,
+                                         List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, true, keepRecordType, false, interps, source);
+    }
+
+    /**
+     * 送信同期メッセージ用にレコード群から {@link DataFileFragment} を組み立てる。
+     *
+     * <p>長さ未指定フィールドを {@code "-"}（動的計算）として扱う。
+     * {@code record_type} の扱いは呼び出し元のセクションによって異なるため {@code keepRecordType} で指定する
+     * （同期応答メッセージ送信の 4 セクションは {@code true}）。
+     * 各値行に連番（1 始まりの行インデックス）を {@link DataFileFragment#FIRST_FIELD_NO} として付与する。
+     * 送信同期メッセージは本体パーサ（{@code SendSyncMessageParser}）が値行先頭セルの連番を
+     * 値から切り離して {@code FIRST_FIELD_NO} に隔離して保持する。YAML には No 列が存在しないため、
+     * 同じ形の器を作れるよう YAML 経路でも連番を補う。
+     * この連番は電文の照合には使われない。消費側（{@code RequestTestingMessagingProvider}／
+     * {@code RequestTestingMessagingClient}）は突合前に {@code FIRST_FIELD_NO} を
+     * {@code remove()} し、期待電文と実電文はリストの位置（インデックス）で対応付ける。
+     * 取り出した連番は失敗時メッセージ（{@code test no=[...]}）にのみ使われる。</p>
+     *
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param keepRecordType {@code record_type} の記載値をレコード種別として保持するか
+     *                       （{@code false} の場合は記載値によらず {@code "default"}）
+     * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
+     */
+    static void buildFragmentsForSendSync(DataFile file, List<Object> records, boolean keepRecordType,
+                                          List<TestDataInterpreter> interps, String source) {
+        buildFragmentsInternal(file, records, true, keepRecordType, true, interps, source);
+    }
+
+    /**
+     * レコード群から {@link DataFileFragment} を組み立てる共通実装。
+     *
+     * @param file           ファイル
+     * @param records        生のレコードレイアウト Map 群（YAML 順）
+     * @param messaging      true の場合メッセージ系経路として、長さ未指定フィールドを
+     *                       {@code "-"}（動的計算）として扱う
+     * @param keepRecordType true の場合 {@code record_type} の記載値をレコード種別として保持する
+     *                       （未指定の場合のみ {@code "default"}）。false の場合は記載値によらず
+     *                       {@code "default"} になる（{@code messages} 経路）。
+     * @param withId         true の場合、各値行に連番（1 始まりの行インデックス）を
+     *                       {@link DataFileFragment#FIRST_FIELD_NO} として付与する（送信同期メッセージのみ）。
+     *                       {@code withId=true} は {@code messaging=true} のときのみ有効。
+     * @param interps        使用するインタープリタリスト
+     * @param source         値の検査に失敗したときに例外メッセージへ出す出所
+     *                       （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
+     */
+    private static void buildFragmentsInternal(DataFile file, List<Object> records,
+                                               boolean messaging, boolean keepRecordType, boolean withId,
+                                               List<TestDataInterpreter> interps, String source) {
+        for (Object recordObj : records) {
+            Map<String, Object> record = castMap(recordObj);
+            String recordType = toStr(record.get(FIELD_RECORD_TYPE));
+
+            DataFileFragment fragment = file.getNewFragment();
+            fragment.setRecordType(keepRecordType && recordType != null
+                    ? recordType
+                    : DEFAULT_RECORD_TYPE);
+
+            List<Object> fields = getList(record, FIELD_FIELDS);
+            List<String> names = new ArrayList<String>(fields.size());
+            List<String> types = new ArrayList<String>(fields.size());
+            List<String> lengths = new ArrayList<String>(fields.size());
+            boolean hasLength = false;
+            for (Object fieldObj : fields) {
+                Map<String, Object> field = castMap(fieldObj);
+                names.add(toStr(field.get(FIELD_NAME)));
+                types.add(toStr(field.get(FIELD_TYPE)));
+                String length = toStr(field.get(FIELD_LENGTH));
+                if (length != null) {
+                    hasLength = true;
+                    lengths.add(length);
+                } else {
+                    lengths.add(null);
+                }
+            }
+
+            fragment.setNames(names);
+            fragment.setTypes(types);
+
+            // メッセージファイル（messaging=true）は常に固定長のため setLengths が必要。
+            // それ以外は length フィールドが 1 件以上ある場合のみ setLengths を呼ぶ。
+            if (messaging || hasLength) {
+                List<String> cleanedLengths = new ArrayList<String>(lengths.size());
+                for (String l : lengths) {
+                    // messaging=true（メッセージ）の場合 length 未指定フィールドを "-"（動的計算）として扱う。
+                    cleanedLengths.add(l != null ? l : (messaging ? "-" : ""));
+                }
+                fragment.setLengths(cleanedLengths);
+            }
+
+            int rowNo = 1;
+            for (Object rowObj : getList(record, FIELD_ROWS)) {
+                // SnakeYAML Engine では rows: の各要素は通常 List だが、外部入力（YAML ファイル）にマッピングや null が
+                // 混入した場合への防御的ガード。Java 言語仕様上この分岐は通常到達不能だが、堅牢性のために残す。
+                if (!(rowObj instanceof List)) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                List<Object> rowList = (List<Object>) rowObj;
+                List<String> rowValues = new ArrayList<String>(rowList.size());
+                for (Object cell : rowList) {
+                    rowValues.add(interpret(objectToString(cell), interps, source));
+                }
+                // 本体（DataFileParser#onReadLine）と同じく、解釈後・値の追加前に末尾の空要素
+                // （null または空文字）を取り除く。順序は interpret → trimTail → addValue である。
+                // 末尾のフィールドに null と記述した場合に "" になり、後ろに値のあるフィールドがあれば
+                // null のまま保持されるのは、この trim と DataFileFragment#addValue
+                // （フィールド名称の数だけ "" で埋める）の組み合わせによる。規則を手写しせず
+                // 本体の実装（NablarchTestUtils#trimTailCopy）をそのまま使う。
+                List<String> trimmedValues = NablarchTestUtils.trimTailCopy(rowValues);
+                if (withId) {
+                    // 送信同期メッセージ：値行先頭の連番（本体は値行先頭セル）を 1 始まりの行インデックスで補う。
+                    fragment.addValueWithId(trimmedValues, String.valueOf(rowNo));
+                } else {
+                    fragment.addValue(trimmedValues);
+                }
+                rowNo++;
+            }
+        }
+    }
+
+    /**
+     * ディレクティブ Map を {@link DataFile} に適用する。
+     *
+     * @param file       ファイル
+     * @param directives ディレクティブ Map（YAML 記述順）
+     * @param interps    使用するインタープリタリスト
+     * @param source     値の検査に失敗したときに例外メッセージへ出す出所
+     *                   （{@link YamlSection#rejectLiteralCr(String, String)} の {@code source} 引数）
+     */
+    static void applyDirectives(DataFile file, Map<String, String> directives,
+                                List<TestDataInterpreter> interps, String source) {
+        for (Map.Entry<String, String> e : directives.entrySet()) {
+            // ディレクティブ値にも渡されたインタープリタを適用する。
+            // YAML 経路では yamlInterpreters（QuotationTrimmer なし）が渡されるため
+            // YAML パーサが処理済みのクォートを二重処理することはない。
+            // Excel 経路では interpreters（QuotationTrimmer 含む）が渡される。
+            file.setDirective(e.getKey(), interpret(e.getValue(), interps, source));
+        }
+    }
+
+}

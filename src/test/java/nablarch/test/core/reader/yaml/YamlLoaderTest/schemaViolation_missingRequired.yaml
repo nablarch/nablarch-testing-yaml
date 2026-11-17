@@ -1,0 +1,3 @@
+setup_tables:
+  - rows:          # table が missing
+      - COL1: "val1"

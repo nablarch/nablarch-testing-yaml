@@ -1,0 +1,11 @@
+# マスタデータ投入ツール（MasterDataSetUpper）の YAML 経路を模したフィクスチャ。
+# マスタデータディレクトリ直下に置かれ、リソース名に "/" を含まない形で読み込まれる。
+
+setup_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000009001"
+        PK_COL2: "MD"
+        VARCHAR2_COL: "マスタ"
+        NUMBER_COL: "9"
+        NUMBER_COL2: "9.9"

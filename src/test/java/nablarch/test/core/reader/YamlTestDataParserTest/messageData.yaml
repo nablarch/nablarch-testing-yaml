@@ -1,0 +1,144 @@
+# getMessage / getMessageWithoutCache テスト用
+
+messages:
+  - id: req001
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+      resendFlag: "0"
+      resultCode: "0000"
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+  # record_type に予約値はない。"FW_HEADER" という値も装飾的な名前として扱われ、
+  # レコードは読み飛ばされずフラグメントになる（FW 制御ヘッダは fw_header: マップから別途取得される）。
+  # 電文のレコードレイアウトは1つなので records は1件だけ書く。
+  - id: fwHeaderRecordType001
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000002"
+      userId: "testUser02"
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: HEAD_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["HEADKEY001"]
+          - ["HEADKEY002"]
+
+  # データタイプ MESSAGE の識別子 setUpMessages（要求電文）・expectedMessages（応答電文）は
+  # テスティングフレームワークの予約語であり固定である。
+  - id: setUpMessages
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "RM11AC0101"
+      userId: "setUpUser0"
+    records:
+      - record_type: BODY
+        fields:
+          - name: REQUEST_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SETUPKEY01"]
+
+  - id: expectedMessages
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "RM11AC0101"
+      userId: "expectUser"
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESPONSE_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["EXPECTKEY1"]
+
+expected_request_header_messages:
+  - id: req001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+          - name: userId
+            type: 半角
+            length: 10
+          - name: resendFlag
+            type: 半角
+            length: 1
+          - name: resultCode
+            type: 半角
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+
+expected_request_body_messages:
+  - id: req001
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+response_body_messages:
+  - group_id: grp1
+    id: resp001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: 半角
+            length: 4
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["0000", "RESULT_DAT"]
+
+  # 送信同期（getSendSyncMessage）経路でも record_type の値 "FW_HEADER" は特別扱いされない。
+  # 電文のレコードレイアウトは1つなので records は1件だけ書く。
+  - group_id: fwHeaderSync
+    id: sync001
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: HEAD_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["HEADKEY001"]
+          - ["HEADKEY002"]
+
+response_header_messages:
+  - group_id: grp1
+    id: resp001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+        rows:
+          - ["0000000001"]

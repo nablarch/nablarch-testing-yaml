@@ -1,0 +1,23 @@
+# rows: [] （レコード定義はあるがデータ行が 0 件）を書いた例。
+# ファイルデータと期待要求電文の両方に置く。
+
+setup_files:
+  - path: dummy/no_rows.dat
+    type: fixed
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows: []
+
+expected_request_header_messages:
+  - id: noSend001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+        rows: []

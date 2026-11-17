@@ -1,0 +1,33 @@
+# integer / boolean のディレクティブ値をクォート付きの文字列で書いた例。
+# 変換ツールはディレクティブの値を必ず文字列で出力するため、この形が読めることを担保する。
+
+setup_files:
+  - path: dummy/fixed.dat
+    type: fixed
+    directives:
+      record-length: "10"
+      required-decimal-point: "false"
+      fixed-sign-position: "false"
+      required-plus-sign: "false"
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+            length: 10
+        rows:
+          - ["value1    "]
+
+  - path: dummy/variable.csv
+    type: variable
+    directives:
+      ignore-blank-lines: "true"
+      requires-title: "true"
+      max-record-length: "1024"
+    records:
+      - record_type: DATA
+        fields:
+          - name: field1
+            type: 半角
+        rows:
+          - ["value1"]
