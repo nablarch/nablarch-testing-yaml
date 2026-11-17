@@ -122,8 +122,11 @@ public final class YamlMessageBuilder {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {
                 String source = YamlSection.entrySource(sectionKey, FIELD_ID, id);
+                boolean sendSync = YamlSection.isSendSyncMessageSectionKey(sectionKey);
+                // 同期応答メッセージ送信の電文は、本体の SendSyncMessageParser と同じく MockMessages で組み立てる。
+                // MockMessages は、障害系テストの値（errorMode:timeout など）をパディング除去の対象外にする。
                 FixedLengthFile file = buildMessageBodyFile(
-                        new FixedLengthFile(id), map, YamlSection.isSendSyncMessageSectionKey(sectionKey),
+                        sendSync ? new MockMessages(id) : new FixedLengthFile(id), map, sendSync,
                         interps, source);
                 Map<String, String> fwHeader = useFwHeader
                         ? convertFwHeader(map.get(FIELD_FW_HEADER), source)

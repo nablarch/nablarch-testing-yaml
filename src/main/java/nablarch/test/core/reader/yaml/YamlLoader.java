@@ -151,11 +151,42 @@ public final class YamlLoader {
         if (cached != null) {
             return cached;
         }
+        Map<String, Object> result = parse(filePath);
+        YAML_CACHE.put(filePath, result);
+        return result;
+    }
+
+    /**
+     * 指定した YAML ファイルを、キャッシュを使わずにロードし、トップレベルの Map を返す。
+     *
+     * <p>
+     * キャッシュを参照も更新もしない。テストの実行中に書き換えられうるテストデータ
+     * （取引単体テストの同期送信の応答電文など）を読み直す場合に使う。
+     * キャッシュのキーはファイルパスだけで、ファイルの内容の変化を検知しないため、
+     * {@link #load(String, String)} では書き換える前の内容が返る。
+     * </p>
+     *
+     * @param basePath     ベースディレクトリパス
+     * @param resourceName リソース名（拡張子なし）
+     * @return YAML トップレベル Map（キー: セクション名、値: セクションデータ）
+     * @throws IllegalStateException ファイルが存在しない・IO エラー・重複キー・ルートがマッピングでない場合
+     * @throws YamlSchemaValidationException スキーマ違反が検出された場合
+     */
+    public static Map<String, Object> loadWithoutCache(String basePath, String resourceName) {
+        return parse(buildFilePath(basePath, resourceName));
+    }
+
+    /**
+     * YAML ファイルを読み、スキーマで検証して、トップレベルの Map を返す。
+     *
+     * @param filePath YAML ファイルのパス
+     * @return YAML トップレベル Map
+     */
+    private static Map<String, Object> parse(String filePath) {
         Load loader = new Load(loadSettings());
         try (FileInputStream in = new FileInputStream(new File(filePath))) {
             Object loaded = loader.loadFromInputStream(in);
             if (loaded == null) {
-                YAML_CACHE.put(filePath, Collections.emptyMap());
                 return Collections.emptyMap();
             }
             if (!(loaded instanceof Map)) {
@@ -170,7 +201,6 @@ public final class YamlLoader {
             if (!errors.isEmpty()) {
                 throw new YamlSchemaValidationException(filePath, new ArrayList<>(errors));
             }
-            YAML_CACHE.put(filePath, result);
             return result;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load YAML file: " + filePath, e);

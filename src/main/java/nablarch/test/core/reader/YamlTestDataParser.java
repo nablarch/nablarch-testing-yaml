@@ -179,7 +179,8 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /** {@inheritDoc} */
     @Override
     public MessagePool getMessageWithoutCache(String path, String resourceName, DataType dataType, String id) {
-        Map<String, Object> yaml = YamlLoader.load(path, resourceName);
+        // テストの実行中に書き換えられうる応答電文を読み直すため、YAML のキャッシュも使わない
+        Map<String, Object> yaml = YamlLoader.loadWithoutCache(path, resourceName);
         String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
         boolean useFwHeader = YamlSection.KEY_MESSAGES.equals(sectionKey);
         return messageBuilder.buildMessagePool(yaml, sectionKey, id, useFwHeader, path);

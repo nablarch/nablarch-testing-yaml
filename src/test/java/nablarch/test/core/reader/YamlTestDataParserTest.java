@@ -22,11 +22,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +63,10 @@ public class YamlTestDataParserTest {
     private static final String OTHER_DIR = DIR + "YamlTestDataParserTest/otherDir";
 
     private YamlTestDataParser sut;
+
+    /** テストの中で書き換える応答電文を置くディレクトリ。 */
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @BeforeClass
     public static void beforeClass() {
@@ -1923,5 +1931,98 @@ public class YamlTestDataParserTest {
         Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
         fwHeaderField.setAccessible(true);
         return (Map<String, String>) fwHeaderField.get(pool);
+    }
+
+    // ========================================================================
+    // getMessageWithoutCache: 取引単体テストの同期送信（モックアップクラス）で読む応答電文
+    // ========================================================================
+
+    /**
+     * getMessageWithoutCache: 応答電文の YAML を書き換えると、書き換えた後の内容が返ること。
+     *
+     * <p>
+     * モックアップクラス（{@code SendSyncSupport}）は、テストデータの最終更新日時が変わると応答電文を読み直す。
+     * 読み直しで古い内容が返らないよう、YAML のキャッシュも使わずに読むことを確かめる。<br>
+     * Given: response_body_messages の値が "before" の YAML を読んだ後、値を "after" に書き換える<br>
+     * When:  もう一度 getMessageWithoutCache を呼ぶ<br>
+     * Then:  "after" が返ること
+     * </p>
+     */
+    @Test
+    public void getMessageWithoutCache_returnsUpdatedContentAfterRewrite() throws Exception {
+        // Given
+        File dir = temporaryFolder.newFolder("RM00000001");
+        File yaml = new File(dir, "message.yaml");
+        writeResponseBody(yaml, "before");
+        MessagePool first = sut.getMessageWithoutCache(
+                temporaryFolder.getRoot().getPath(), "RM00000001/message", DataType.RESPONSE_BODY_MESSAGES, "RM00000001");
+        assertThat(firstFailureCode(first), is("before"));
+        writeResponseBody(yaml, "after");
+
+        // When
+        MessagePool second = sut.getMessageWithoutCache(
+                temporaryFolder.getRoot().getPath(), "RM00000001/message", DataType.RESPONSE_BODY_MESSAGES, "RM00000001");
+
+        // Then
+        assertThat(firstFailureCode(second), is("after"));
+    }
+
+    /**
+     * getMessageWithoutCache: 障害系テストの値（errorMode:）がフィールドの長さより長くても、そのまま返ること。
+     *
+     * <p>
+     * Excel 形式（本体の {@code SendSyncMessageParser}）と同じく、errorMode: の値はパディング除去の対象外とする。<br>
+     * Given: 長さ 10 のフィールドに "errorMode:msgException"（22 バイト）と "errorMode:timeout"（17 バイト）を書いた応答電文<br>
+     * When:  getMessageWithoutCache で読み、データレコードに変換する<br>
+     * Then:  例外にならず、値がそのまま返ること
+     * </p>
+     */
+    @Test
+    public void getMessageWithoutCache_errorModeValueLongerThanFieldIsKept() throws Exception {
+        // Given
+        File dir = temporaryFolder.newFolder("RM00000002");
+        String content = "response_body_messages:\n"
+                + "  - id: \"RM00000002\"\n"
+                + "    directives:\n"
+                + "      \"file-type\": \"Fixed\"\n"
+                + "      \"text-encoding\": \"UTF-8\"\n"
+                + "    records:\n"
+                + "      - record_type: \"no\"\n"
+                + "        fields:\n"
+                + "          - {name: \"failureCode\", type: \"半角\", length: \"10\"}\n"
+                + "        rows:\n"
+                + "          - [\"errorMode:msgException\"]\n"
+                + "          - [\"errorMode:timeout\"]\n";
+        Files.write(new File(dir, "message.yaml").toPath(), content.getBytes(StandardCharsets.UTF_8));
+
+        // When
+        List<DataRecord> records = ((RequestTestingMessagePool) sut.getMessageWithoutCache(
+                temporaryFolder.getRoot().getPath(), "RM00000002/message", DataType.RESPONSE_BODY_MESSAGES, "RM00000002"))
+                .getExpectedMessageList();
+
+        // Then
+        assertThat(records.get(0).getString("failureCode"), is("errorMode:msgException"));
+        assertThat(records.get(1).getString("failureCode"), is("errorMode:timeout"));
+    }
+
+    /** 応答電文（本文）の 1 件目の failureCode を返す。 */
+    private static String firstFailureCode(MessagePool pool) {
+        return ((RequestTestingMessagePool) pool).getExpectedMessageList().get(0).getString("failureCode");
+    }
+
+    /** 1 行だけの応答電文（本文）を書き出す。 */
+    private static void writeResponseBody(File yaml, String failureCode) throws Exception {
+        String content = "response_body_messages:\n"
+                + "  - id: \"" + yaml.getParentFile().getName() + "\"\n"
+                + "    directives:\n"
+                + "      \"file-type\": \"Fixed\"\n"
+                + "      \"text-encoding\": \"UTF-8\"\n"
+                + "    records:\n"
+                + "      - record_type: \"no\"\n"
+                + "        fields:\n"
+                + "          - {name: \"failureCode\", type: \"半角\", length: \"10\"}\n"
+                + "        rows:\n"
+                + "          - [\"" + failureCode + "\"]\n";
+        Files.write(yaml.toPath(), content.getBytes(StandardCharsets.UTF_8));
     }
 }
